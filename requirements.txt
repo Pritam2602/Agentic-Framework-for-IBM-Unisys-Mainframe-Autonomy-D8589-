@@ -1,0 +1,39 @@
+# -----------------------------
+# Core Backend Framework
+# -----------------------------
+flask==3.0.0
+flask-cors==4.0.0
+
+# -----------------------------
+# Data Handling & Persistence
+# -----------------------------
+pandas==2.2.0
+jsonschema==4.21.1
+
+# -----------------------------
+# Agentic / Orchestration Logic
+# -----------------------------
+networkx==3.2.1          # Agent planning & dependency graphs
+pydantic==2.6.1          # Strong schemas for agents & plans
+
+# -----------------------------
+# Logging, Audit & Lineage
+# -----------------------------
+loguru==0.7.2
+
+# -----------------------------
+# API & HTTP (Simulation / Integration)
+# -----------------------------
+requests==2.31.0
+
+# -----------------------------
+# LLM / AI (Future – Optional)
+# -----------------------------
+openai==1.12.0           # Only if LLM reasoning is added later
+tiktoken==0.5.2          # Token accounting for prompts
+
+# -----------------------------
+# Dev & Quality (Optional)
+# -----------------------------
+python-dotenv==1.0.1     # Config management
+pytest==7.4.0            # Testing framework
