@@ -41,167 +41,128 @@ catalog_entries = [
 
     # -------- DB2 --------
     (
-        "zowe db2 list databases",
-        "metadata",
-        "DB2",
-        "DB2 System Catalog",
-        "DB2",
-        "READ",
-        "REST",
-        "List of DB2 databases with owner and status",
-        "JSON",
-        "DiscoveryAgent",
-        "Read-only; no PII",
-        "SYSTEM",
-        "SYSTEM",
-        True,
-        None,
-        "LOW",
-        0.95
+        "zowe db2 list databases", "metadata", "DB2",
+        "DB2", "DB2 System Catalog",
+        "READ", "REST",
+        "List of DB2 databases with owner and status", "JSON",
+        "DiscoveryAgent", "Read-only; no PII",
+        "SYSTEM", "SYSTEM",
+        True, None, "LOW", 0.95
     ),
 
     (
-        "zowe db2 execute query",
-        "database",
-        "DB2",
-        "DB2 User Tables",
-        "DB2",
-        "READ",
-        "REST",
-        "Tabular query result set",
-        "JSON",
-        "IngestAgent",
-        "PII risk; SELECT-only queries allowed",
-        "TABLE",
-        "TABLE",
-        True,
-        None,
-        "MEDIUM",
-        0.95
+        "zowe db2 list tables", "metadata", "DB2",
+        "DB2", "DB2 System Catalog (SYSTABLES)",
+        "READ", "REST",
+        "List of tables within a DB2 database", "JSON",
+        "DiscoveryAgent", "Read-only metadata",
+        "TABLE", "DATABASE",
+        True, None, "LOW", 0.95
+    ),
+
+    (
+        "zowe db2 execute query", "database", "DB2",
+        "DB2", "DB2 User Tables",
+        "READ", "REST",
+        "Tabular query result set", "JSON",
+        "IngestAgent", "PII risk; SELECT-only queries",
+        "TABLE", "TABLE",
+        True, None, "MEDIUM", 0.95
     ),
 
     # -------- CICS --------
     (
-        "zowe cics list regions",
-        "metadata",
-        "CICS",
-        "CICS Region Control Table",
-        "CICS",
-        "READ",
-        "REST",
-        "List of CICS regions and their status",
-        "JSON",
-        "DiscoveryAgent",
-        "Read-only",
-        "SYSTEM",
-        "SYSTEM",
-        True,
-        None,
-        "LOW",
-        0.97
+        "zowe cics list regions", "metadata", "CICS",
+        "CICS", "CICS Region Control Table",
+        "READ", "REST",
+        "List of CICS regions and runtime status", "JSON",
+        "DiscoveryAgent", "Read-only",
+        "SYSTEM", "SYSTEM",
+        True, None, "LOW", 0.97
     ),
 
     (
-        "zowe cics list programs",
-        "metadata",
-        "CICS",
-        "CICS Program Definition Table",
-        "CICS",
-        "READ",
-        "REST",
-        "List of CICS programs with status",
-        "JSON",
-        "DiscoveryAgent",
-        "Read-only",
-        "PROGRAM",
-        "SYSTEM",
-        True,
-        None,
-        "LOW",
-        0.97
+        "zowe cics list programs", "metadata", "CICS",
+        "CICS", "CICS Program Definition Table",
+        "READ", "REST",
+        "List of CICS programs with enablement status", "JSON",
+        "DiscoveryAgent", "Read-only",
+        "PROGRAM", "SYSTEM",
+        True, None, "LOW", 0.97
     ),
 
     (
-        "zowe cics start program",
-        "transaction",
-        "CICS",
-        "CICS Program Control Definition",
-        "CICS",
-        "EXECUTE",
-        "REST",
-        "Confirmation of program start",
-        "JSON",
-        "ControlAgent",
-        "State-changing; requires admin role",
-        "PROGRAM",
-        "PROGRAM",
-        False,
-        None,
-        "MEDIUM",
-        0.9
+        "zowe cics list transactions", "metadata", "CICS",
+        "CICS", "CICS Transaction Definition Table",
+        "READ", "REST",
+        "List of CICS transactions and status", "JSON",
+        "MonitoringAgent", "Read-only",
+        "TRANSACTION", "SYSTEM",
+        True, None, "LOW", 0.96
+    ),
+
+    (
+        "zowe cics start program", "transaction", "CICS",
+        "CICS", "CICS Program Control Definition",
+        "EXECUTE", "REST",
+        "Confirmation of program start", "JSON",
+        "ControlAgent", "State-changing; admin required",
+        "PROGRAM", "PROGRAM",
+        False, None, "MEDIUM", 0.90
+    ),
+
+    (
+        "zowe cics stop program", "transaction", "CICS",
+        "CICS", "CICS Program Control Definition",
+        "EXECUTE", "REST",
+        "Confirmation of program stop", "JSON",
+        "ControlAgent", "State-changing; admin required",
+        "PROGRAM", "PROGRAM",
+        False, None, "MEDIUM", 0.90
     ),
 
     # -------- IMS --------
     (
-        "zowe ims list regions",
-        "metadata",
-        "IMS",
-        "IMS Region Definition",
-        "IMS",
-        "READ",
-        "REST",
-        "List of IMS regions",
-        "JSON",
-        "DiscoveryAgent",
-        "Read-only",
-        "SYSTEM",
-        "SYSTEM",
-        True,
-        None,
-        "LOW",
-        0.96
+        "zowe ims list regions", "metadata", "IMS",
+        "IMS", "IMS Region Definition",
+        "READ", "REST",
+        "List of IMS regions", "JSON",
+        "DiscoveryAgent", "Read-only",
+        "SYSTEM", "SYSTEM",
+        True, None, "LOW", 0.96
     ),
 
     (
-        "zowe ims list transactions",
-        "metadata",
-        "IMS",
-        "IMS Transaction Definition Table",
-        "IMS",
-        "READ",
-        "REST",
-        "List of IMS transactions and status",
-        "JSON",
-        "MonitoringAgent",
-        "Read-only",
-        "TRANSACTION",
-        "SYSTEM",
-        True,
-        None,
-        "LOW",
-        0.96
+        "zowe ims list transactions", "metadata", "IMS",
+        "IMS", "IMS Transaction Definition Table",
+        "READ", "REST",
+        "List of IMS transactions and status", "JSON",
+        "MonitoringAgent", "Read-only",
+        "TRANSACTION", "SYSTEM",
+        True, None, "LOW", 0.96
     ),
 
     (
-        "zowe ims stop transaction",
-        "transaction",
-        "IMS",
-        "IMS Transaction Control Block",
-        "IMS",
-        "EXECUTE",
-        "REST",
-        "Confirmation of transaction stop",
-        "JSON",
-        "ControlAgent",
-        "State-changing; high privilege required",
-        "TRANSACTION",
-        "TRANSACTION",
-        False,
-        "transactionId",
-        "HIGH",
-        0.9
+        "zowe ims start transaction", "transaction", "IMS",
+        "IMS", "IMS Transaction Control Block",
+        "EXECUTE", "REST",
+        "Confirmation of transaction start", "JSON",
+        "ControlAgent", "High privilege required",
+        "TRANSACTION", "TRANSACTION",
+        False, "transactionId", "HIGH", 0.90
+    ),
+
+    (
+        "zowe ims stop transaction", "transaction", "IMS",
+        "IMS", "IMS Transaction Control Block",
+        "EXECUTE", "REST",
+        "Confirmation of transaction stop", "JSON",
+        "ControlAgent", "High privilege required",
+        "TRANSACTION", "TRANSACTION",
+        False, "transactionId", "HIGH", 0.90
     )
 ]
+
 
 # 4. Insert entries
 cursor.executemany("""
