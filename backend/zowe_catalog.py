@@ -160,6 +160,66 @@ catalog_entries = [
         "ControlAgent", "High privilege required",
         "TRANSACTION", "TRANSACTION",
         False, "transactionId", "HIGH", 0.90
+    ),
+    (
+        "zowe jobs list", "jobs", "JOBS", "Job spool files", "JES2",
+        "READ", "REST", "Active and recent job list with status", "JSON",
+        "MonitoringAgent", "Read-only job query", "JOB", "SYSTEM",
+        True, "jobId", "LOW", 0.98
+    ),
+    (
+        "zowe jobs submit", "jobs", "JOBS", "JCL execution", "JES2",
+        "EXECUTE", "REST", "Job submission confirmation with jobId", "JSON",
+        "ControlAgent", "Job submission privilege required", "JOB", "JOB",
+        False, "jobId", "MEDIUM", 0.98
+    ),
+    (
+        "zowe jobs download", "jobs", "JOBS", "SYSOUT spool", "JES2",
+        "READ", "REST", "Job output content", "TEXT",
+        "AnalysisAgent", "Job exists", "JOB", "JOB",
+        True, "jobId", "MEDIUM", 0.98
+    ),
+    (
+	"zowe jobs delete", "jobs", "JOBS", "Job queue", "JES2", "EXECUTE", "REST",     	"Delete confirmation", "JSON", "CleanupAgent", "Delete privilege", "JOB",  	"JOB", False, None, "MEDIUM", 0.97
+    ),
+    (
+        "zowe files list", "files", "FILES", "USS Directory", "z/OSMF",
+        "READ", "REST", "File/directory listing", "JSON",
+        "DiscoveryAgent", "USS read access", None, "SYSTEM",
+        True, None, "LOW", 0.99
+    ),
+    (
+        "zowe files upload", "files", "FILES", "USS file", "z/OSMF",
+        "EXECUTE", "REST", "Upload status", "JSON",
+        "DataAgent", "USS write access", None, None,
+        False, None, "MEDIUM", 0.99
+    ),
+   (
+        "zowe console issue", "console", "CONSOLE", "MVS operator console", "z/OSMF",
+        "EXECUTE", "REST", "Console command response", "TEXT",
+        "ControlAgent", "Operator console authority required", None, "SYSTEM",
+        False, None, "HIGH", 0.97
+    ),
+    (
+	"zowe console retrieve", "console", "CONSOLE", "Console reply", "z/OSMF", 	"READ", "REST", "Reply content", "TEXT", "MonitoringAgent", "Console read", 	None, "SYSTEM", True, "replyToken", "LOW", 0.97
+    ),
+   (
+        "zowe tso start", "tso", "TSO", "TSO Address Space", "z/OSMF",
+        "EXECUTE", "REST", "TSO session token", "JSON",
+        "ScriptingAgent", "TSO execution privilege", None, "SYSTEM",
+        False, "tsoAddressSpaceId", "MEDIUM", 0.96
+    ),
+   (
+	"zowe tso send-input", "tso", "TSO", "REXX input", "z/OSMF", "EXECUTE", "REST", 	"Input status", "JSON", "ScriptingAgent", "TSO input", None, None, False, None, 	"MEDIUM", 0.95
+    ),
+   (
+        "zowe zosmf info", "zosmf", "SYSTEM", "z/OSMF configuration", "z/OSMF",
+        "READ", "REST", "z/OSMF version and services", "JSON",
+        "DiscoveryAgent", "Read-only", None, "SYSTEM",
+        True, None, "LOW", 0.99
+    ),
+    (
+	"zowe ssh start", "ssh", "SSH", "USS shell", "z/OSMF", "EXECUTE", "REST", "SSH 	session", "JSON", "AutomationAgent", "SSH access", None, "SYSTEM", False, 	"sshSessionId", "MEDIUM", 0.94
     )
 ]
 
