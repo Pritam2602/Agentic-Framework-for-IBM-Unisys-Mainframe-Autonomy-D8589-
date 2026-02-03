@@ -1,0 +1,202 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* IBM-inspired Enterprise Design System for Mainframe Catalog
+   Color palette: IBM Blue, neutral grays, semantic status colors
+   All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Core backgrounds - clean enterprise grays */
+    --background: 220 14% 96%;
+    --foreground: 220 25% 10%;
+
+    /* Card surfaces */
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 10%;
+
+    /* Popover/dropdown surfaces */
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 25% 10%;
+
+    /* IBM Blue - Primary brand */
+    --primary: 214 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Cool gray */
+    --secondary: 220 14% 92%;
+    --secondary-foreground: 220 25% 20%;
+
+    /* Muted surfaces */
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 10% 45%;
+
+    /* Accent - Lighter blue */
+    --accent: 214 95% 93%;
+    --accent-foreground: 214 100% 35%;
+
+    /* Destructive - Red for warnings */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders and inputs */
+    --border: 220 13% 88%;
+    --input: 220 13% 88%;
+    --ring: 214 100% 50%;
+
+    --radius: 0.5rem;
+
+    /* Semantic status colors */
+    --status-safe: 142 71% 45%;
+    --status-safe-bg: 142 76% 94%;
+    --status-safe-foreground: 142 72% 25%;
+
+    --status-caution: 38 92% 50%;
+    --status-caution-bg: 38 100% 93%;
+    --status-caution-foreground: 32 95% 30%;
+
+    --status-info: 214 100% 50%;
+    --status-info-bg: 214 95% 93%;
+    --status-info-foreground: 214 100% 35%;
+
+    /* Execution cost indicators */
+    --cost-low: 142 71% 45%;
+    --cost-medium: 38 92% 50%;
+    --cost-high: 0 72% 51%;
+
+    /* Platform colors */
+    --platform-db2: 214 100% 50%;
+    --platform-cics: 271 81% 56%;
+    --platform-ims: 173 80% 40%;
+    --platform-files: 220 10% 50%;
+    --platform-platform: 32 95% 44%;
+    --platform-observability: 199 89% 48%;
+
+    /* Sidebar */
+    --sidebar-background: 220 20% 14%;
+    --sidebar-foreground: 220 14% 90%;
+    --sidebar-primary: 214 100% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 20% 22%;
+    --sidebar-accent-foreground: 220 14% 90%;
+    --sidebar-border: 220 20% 22%;
+    --sidebar-ring: 214 100% 50%;
+  }
+
+  .dark {
+    --background: 220 20% 8%;
+    --foreground: 220 14% 95%;
+
+    --card: 220 20% 12%;
+    --card-foreground: 220 14% 95%;
+
+    --popover: 220 20% 12%;
+    --popover-foreground: 220 14% 95%;
+
+    --primary: 214 100% 60%;
+    --primary-foreground: 220 20% 8%;
+
+    --secondary: 220 20% 18%;
+    --secondary-foreground: 220 14% 90%;
+
+    --muted: 220 20% 16%;
+    --muted-foreground: 220 10% 60%;
+
+    --accent: 214 50% 20%;
+    --accent-foreground: 214 100% 70%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 214 100% 60%;
+
+    --status-safe: 142 71% 50%;
+    --status-safe-bg: 142 50% 15%;
+    --status-safe-foreground: 142 71% 70%;
+
+    --status-caution: 38 92% 55%;
+    --status-caution-bg: 38 50% 15%;
+    --status-caution-foreground: 38 92% 70%;
+
+    --status-info: 214 100% 60%;
+    --status-info-bg: 214 50% 15%;
+    --status-info-foreground: 214 100% 75%;
+
+    --sidebar-background: 220 25% 6%;
+    --sidebar-foreground: 220 14% 90%;
+    --sidebar-primary: 214 100% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 20% 12%;
+    --sidebar-accent-foreground: 220 14% 90%;
+    --sidebar-border: 220 20% 14%;
+    --sidebar-ring: 214 100% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* Enterprise card styling */
+  .enterprise-card {
+    @apply bg-card rounded-lg border border-border shadow-sm;
+  }
+
+  /* Table row hover effect */
+  .table-row-interactive {
+    @apply cursor-pointer transition-colors hover:bg-accent/50;
+  }
+
+  /* Command code styling */
+  .command-code {
+    @apply font-mono text-sm bg-secondary px-2 py-1 rounded text-foreground;
+  }
+
+  /* Platform badge base */
+  .platform-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+}
+
+@layer utilities {
+  /* Smooth entrance animations */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+}

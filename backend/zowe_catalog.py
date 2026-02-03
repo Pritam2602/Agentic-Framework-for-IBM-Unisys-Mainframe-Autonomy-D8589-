@@ -42,7 +42,7 @@ catalog_entries = [
     # -------- DB2 --------
     (
         "zowe db2 list databases", "metadata", "DB2",
-        "DB2", "DB2 System Catalog",
+        "DB2 System Catalog", "DB2",
         "READ", "REST",
         "List of DB2 databases with owner and status", "JSON",
         "DiscoveryAgent", "Read-only; no PII",
@@ -52,7 +52,7 @@ catalog_entries = [
 
     (
         "zowe db2 list tables", "metadata", "DB2",
-        "DB2", "DB2 System Catalog (SYSTABLES)",
+        "DB2 System Catalog (SYSTABLES)", "DB2",
         "READ", "REST",
         "List of tables within a DB2 database", "JSON",
         "DiscoveryAgent", "Read-only metadata",
@@ -62,7 +62,7 @@ catalog_entries = [
 
     (
         "zowe db2 execute query", "database", "DB2",
-        "DB2", "DB2 User Tables",
+        "DB2 User Tables", "DB2",
         "READ", "REST",
         "Tabular query result set", "JSON",
         "IngestAgent", "PII risk; SELECT-only queries",
@@ -73,7 +73,7 @@ catalog_entries = [
     # -------- CICS --------
     (
         "zowe cics list regions", "metadata", "CICS",
-        "CICS", "CICS Region Control Table",
+        "CICS Region Control Table", "CICS",
         "READ", "REST",
         "List of CICS regions and runtime status", "JSON",
         "DiscoveryAgent", "Read-only",
@@ -83,7 +83,7 @@ catalog_entries = [
 
     (
         "zowe cics list programs", "metadata", "CICS",
-        "CICS", "CICS Program Definition Table",
+        "CICS Program Definition Table", "CICS",
         "READ", "REST",
         "List of CICS programs with enablement status", "JSON",
         "DiscoveryAgent", "Read-only",
@@ -93,7 +93,7 @@ catalog_entries = [
 
     (
         "zowe cics list transactions", "metadata", "CICS",
-        "CICS", "CICS Transaction Definition Table",
+        "CICS Transaction Definition Table", "CICS",
         "READ", "REST",
         "List of CICS transactions and status", "JSON",
         "MonitoringAgent", "Read-only",
@@ -103,7 +103,7 @@ catalog_entries = [
 
     (
         "zowe cics start program", "transaction", "CICS",
-        "CICS", "CICS Program Control Definition",
+        "CICS Program Control Definition", "CICS",
         "EXECUTE", "REST",
         "Confirmation of program start", "JSON",
         "ControlAgent", "State-changing; admin required",
@@ -113,7 +113,7 @@ catalog_entries = [
 
     (
         "zowe cics stop program", "transaction", "CICS",
-        "CICS", "CICS Program Control Definition",
+        "CICS Program Control Definition", "CICS",
         "EXECUTE", "REST",
         "Confirmation of program stop", "JSON",
         "ControlAgent", "State-changing; admin required",
@@ -124,7 +124,7 @@ catalog_entries = [
     # -------- IMS --------
     (
         "zowe ims list regions", "metadata", "IMS",
-        "IMS", "IMS Region Definition",
+        "IMS Region Definition", "IMS",
         "READ", "REST",
         "List of IMS regions", "JSON",
         "DiscoveryAgent", "Read-only",
@@ -134,7 +134,7 @@ catalog_entries = [
 
     (
         "zowe ims list transactions", "metadata", "IMS",
-        "IMS", "IMS Transaction Definition Table",
+        "IMS Transaction Definition Table", "IMS",
         "READ", "REST",
         "List of IMS transactions and status", "JSON",
         "MonitoringAgent", "Read-only",
@@ -144,7 +144,7 @@ catalog_entries = [
 
     (
         "zowe ims start transaction", "transaction", "IMS",
-        "IMS", "IMS Transaction Control Block",
+        "IMS Transaction Control Block", "IMS",
         "EXECUTE", "REST",
         "Confirmation of transaction start", "JSON",
         "ControlAgent", "High privilege required",
@@ -154,7 +154,7 @@ catalog_entries = [
 
     (
         "zowe ims stop transaction", "transaction", "IMS",
-        "IMS", "IMS Transaction Control Block",
+        "IMS Transaction Control Block", "IMS",
         "EXECUTE", "REST",
         "Confirmation of transaction stop", "JSON",
         "ControlAgent", "High privilege required",
@@ -220,7 +220,232 @@ catalog_entries = [
     ),
     (
 	"zowe ssh start", "ssh", "SSH", "USS shell", "z/OSMF", "EXECUTE", "REST", "SSH 	session", "JSON", "AutomationAgent", "SSH access", None, "SYSTEM", False, 	"sshSessionId", "MEDIUM", 0.94
-    )
+    ),
+        # -------- ZOWE PLUGIN MANAGEMENT --------
+
+    (
+        "zowe plugins list",
+        "metadata",
+        "PLATFORM",
+        "Zowe Plugin Registry",
+        "z/OSMF",
+        "READ",
+        "CLI",
+        "List of installed Zowe plugins and versions",
+        "JSON",
+        "GovernanceAgent",
+        "Read-only; no system impact",
+        "SYSTEM",
+        "SYSTEM",
+        True,
+        None,
+        "LOW",
+        0.98
+    ),
+
+    (
+        "zowe plugins install",
+        "workflow",
+        "PLATFORM",
+        "Zowe Plugin Registry",
+        "z/OSMF",
+        "EXECUTE",
+        "CLI",
+        "Confirmation of plugin installation",
+        "TEXT",
+        "InfraAgent",
+        "Requires network access and install privileges",
+        "SYSTEM",
+        "SYSTEM",
+        False,
+        None,
+        "MEDIUM",
+        0.9
+    ),
+
+    (
+        "zowe plugins update",
+        "workflow",
+        "PLATFORM",
+        "Zowe Plugin Registry",
+        "z/OSMF",
+        "EXECUTE",
+        "CLI",
+        "Confirmation of plugin update",
+        "TEXT",
+        "InfraAgent",
+        "State-changing; may affect compatibility",
+        "SYSTEM",
+        "SYSTEM",
+        False,
+        None,
+        "MEDIUM",
+        0.9
+    ),
+
+    (
+        "zowe plugins uninstall",
+        "workflow",
+        "PLATFORM",
+        "Zowe Plugin Registry",
+        "z/OSMF",
+        "EXECUTE",
+        "CLI",
+        "Confirmation of plugin removal",
+        "TEXT",
+        "InfraAgent",
+        "State-changing; capability removal",
+        "SYSTEM",
+        "SYSTEM",
+        False,
+        None,
+        "MEDIUM",
+        0.9
+    ),
+        # -------- ZOWE LOGS --------
+
+    (
+        "zowe logs list",
+        "metadata",
+        "OBSERVABILITY",
+        "Zowe System Logs",
+        "z/OSMF",
+        "READ",
+        "CLI",
+        "List of available Zowe and system logs",
+        "JSON",
+        "MonitoringAgent",
+        "Read-only; diagnostic data only",
+        "SYSTEM",
+        "SYSTEM",
+        True,
+        None,
+        "LOW",
+        0.95
+    ),
+
+    (
+        "zowe logs view",
+        "metadata",
+        "OBSERVABILITY",
+        "Zowe Log Files",
+        "z/OSMF",
+        "READ",
+        "CLI",
+        "Detailed log content for a specified log source",
+        "TEXT",
+        "MonitoringAgent",
+        "Read-only; may expose sensitive operational data",
+        "SYSTEM",
+        "SYSTEM",
+        True,
+        None,
+        "LOW",
+        0.94
+    ),
+        # -------- ZOWE FILES (DATASETS) --------
+
+    (
+        "zowe files list ds",
+        "metadata",
+        "FILES",
+        "z/OS Datasets (PS/PDS/VSAM)",
+        "z/OSMF",
+        "READ",
+        "REST",
+        "List of datasets matching search criteria",
+        "JSON",
+        "DiscoveryAgent",
+        "Read-only; dataset names may reveal structure",
+        "DATASET",
+        "SYSTEM",
+        True,
+        None,
+        "LOW",
+        0.97
+    ),
+
+    (
+        "zowe files view ds",
+        "data",
+        "FILES",
+        "z/OS Sequential or Partitioned Dataset",
+        "z/OSMF",
+        "READ",
+        "REST",
+        "Dataset content in text format",
+        "TEXT",
+        "IngestAgent",
+        "May expose PII or business data; read-only enforced",
+        "DATASET",
+        "DATASET",
+        True,
+        None,
+        "MEDIUM",
+        0.95
+    ),
+
+    (
+        "zowe files upload ds",
+        "data",
+        "FILES",
+        "z/OS Dataset",
+        "z/OSMF",
+        "EXECUTE",
+        "REST",
+        "Confirmation of dataset upload",
+        "TEXT",
+        "ControlAgent",
+        "State-changing; write access required",
+        "DATASET",
+        "DATASET",
+        False,
+        None,
+        "HIGH",
+        0.9
+    ),
+        # -------- ZOWE DAEMON --------
+
+    (
+        "zowe daemon status",
+        "metadata",
+        "PLATFORM",
+        "Zowe Background Services",
+        "z/OSMF",
+        "READ",
+        "CLI",
+        "Current status of Zowe daemon and services",
+        "JSON",
+        "InfraAgent",
+        "Read-only; platform diagnostic",
+        "SYSTEM",
+        "SYSTEM",
+        True,
+        None,
+        "LOW",
+        0.96
+    ),
+
+    (
+        "zowe daemon start",
+        "workflow",
+        "PLATFORM",
+        "Zowe Background Services",
+        "z/OSMF",
+        "EXECUTE",
+        "CLI",
+        "Confirmation of daemon startup",
+        "TEXT",
+        "InfraAgent",
+        "State-changing; platform-level operation",
+        "SYSTEM",
+        "SYSTEM",
+        False,
+        None,
+        "MEDIUM",
+        0.9
+    ),
+
 ]
 
 
