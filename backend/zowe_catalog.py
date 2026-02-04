@@ -54,7 +54,7 @@ CREATE TABLE zowe_capability_precondition (
 """)
 
 # =====================================================
-# ALL COMMAND DEFINITIONS (YOU GAVE)
+# ALL COMMAND DEFINITIONS 
 # =====================================================
 
 job_commands = [
@@ -141,7 +141,7 @@ NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
 """, ALL_COMMANDS)
 
 # =====================================================
-# INSERT PRECONDITIONS (CRITICAL)
+# INSERT PRECONDITIONS 
 # =====================================================
 job_preconditions = [
     ("JOB_SUBMITTED", "zowe zos-jobs list spool-files"),
