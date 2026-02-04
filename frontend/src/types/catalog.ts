@@ -1,8 +1,8 @@
 export type Category = "metadata" | "data" | "workflow" | "transaction";
 
-export type CommandFamily = "DB2" | "CICS" | "IMS" | "FILES" | "PLATFORM" | "OBSERVABILITY";
+export type CommandFamily = "DB2" | "CICS" | "IMS" | "FILES" | "PLATFORM" | "OBSERVABILITY" | "JOB" | "WORKFLOW";
 
-export type Subsystem = "DB2" | "CICS" | "IMS" | "z/OSMF";
+export type Subsystem = "DB2" | "CICS" | "IMS" | "z/OSMF" | "JES2";
 
 export type Operation = "READ" | "EXECUTE";
 
@@ -14,11 +14,11 @@ export type ExecutionCost = "LOW" | "MEDIUM" | "HIGH";
 
 export type ConfidenceLevel = "HIGH" | "MEDIUM" | "LOW";
 
-export type AgentType = 
-  | "DiscoveryAgent" 
-  | "InfraAgent" 
-  | "ControlAgent" 
-  | "MonitorAgent" 
+export type AgentType =
+  | "DiscoveryAgent"
+  | "InfraAgent"
+  | "ControlAgent"
+  | "MonitorAgent"
   | "ComplianceAgent";
 
 export interface CatalogEntry {
@@ -42,4 +42,14 @@ export interface CatalogFilters {
   commandFamily: CommandFamily | "ALL";
   subsystem: Subsystem | "ALL";
   operation: Operation | "ALL";
+  executionCost: ExecutionCost | "ALL";
+}
+
+export interface Precondition {
+  precondition: string;
+}
+
+export interface CatalogEntryDetail {
+  capability: CatalogEntry;
+  preconditions: string[];
 }

@@ -6,16 +6,20 @@ import { AgentBadge } from "./AgentBadge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Terminal, 
-  Box, 
-  Shield, 
-  Gauge, 
-  AlertTriangle, 
-  FileJson, 
+import {
+  Terminal,
+  Box,
+  Shield,
+  Gauge,
+  AlertTriangle,
+  FileJson,
   Network,
   CheckCircle2
 } from "lucide-react";
+
+import { useQuery } from "@tanstack/react-query";
+import { fetchCapability } from "@/lib/api";
+import { ListChecks } from "lucide-react";
 
 interface CatalogDetailDrawerProps {
   entry: CatalogEntry | null;
@@ -23,13 +27,13 @@ interface CatalogDetailDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function DetailSection({ 
-  icon: Icon, 
-  title, 
-  children 
-}: { 
-  icon: React.ElementType; 
-  title: string; 
+function DetailSection({
+  icon: Icon,
+  title,
+  children
+}: {
+  icon: React.ElementType;
+  title: string;
   children: React.ReactNode;
 }) {
   return (
@@ -44,6 +48,13 @@ function DetailSection({
 }
 
 export function CatalogDetailDrawer({ entry, open, onOpenChange }: CatalogDetailDrawerProps) {
+  // Fetch detailed info (preconditions) when drawer is open and entry is selected
+  const { data: detailData, isLoading: isLoadingDetail } = useQuery({
+    queryKey: ['capability', entry?.zowe_command],
+    queryFn: () => fetchCapability(entry!.zowe_command),
+    enabled: !!entry && open,
+  });
+
   if (!entry) return null;
 
   return (
@@ -58,6 +69,25 @@ export function CatalogDetailDrawer({ entry, open, onOpenChange }: CatalogDetail
         </SheetHeader>
 
         <div className="mt-6 space-y-6 animate-fade-in">
+          {/* Preconditions (Loaded from API) */}
+          {isLoadingDetail ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground pl-6">
+              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+              Loading details...
+            </div>
+          ) : detailData?.preconditions && detailData.preconditions.length > 0 ? (
+            <>
+              <DetailSection icon={ListChecks} title="Preconditions">
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  {detailData.preconditions.map((pre, idx) => (
+                    <li key={idx}>{pre}</li>
+                  ))}
+                </ul>
+              </DetailSection>
+              <Separator />
+            </>
+          ) : null}
+
           {/* Command */}
           <DetailSection icon={Terminal} title="Zowe Command">
             <div className="bg-secondary p-3 rounded-lg font-mono text-sm break-all">
@@ -124,10 +154,9 @@ export function CatalogDetailDrawer({ entry, open, onOpenChange }: CatalogDetail
           {/* Confidence Level */}
           <DetailSection icon={CheckCircle2} title="Mapping Confidence">
             <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${
-                entry.confidence_level === "HIGH" ? "bg-cost-low" :
-                entry.confidence_level === "MEDIUM" ? "bg-cost-medium" : "bg-cost-high"
-              }`} />
+              <div className={`w-2 h-2 rounded-full ${entry.confidence_level === "HIGH" ? "bg-cost-low" :
+                  entry.confidence_level === "MEDIUM" ? "bg-cost-medium" : "bg-cost-high"
+                }`} />
               <span className="text-sm font-medium">{entry.confidence_level}</span>
               <span className="text-sm text-muted-foreground">confidence</span>
             </div>

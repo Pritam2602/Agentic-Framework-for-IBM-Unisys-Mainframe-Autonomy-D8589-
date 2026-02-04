@@ -1,13 +1,13 @@
 import { cn } from "@/lib/utils";
 import { AgentType } from "@/types/catalog";
-import { Search, Wrench, Settings, Eye, FileCheck, HelpCircle } from "lucide-react";
+import { Search, Wrench, Settings, Eye, FileCheck } from "lucide-react";
 
 interface AgentBadgeProps {
-  agent?: AgentType | string;
+  agent: AgentType;
   className?: string;
 }
 
-const agentConfig: Record<string, { icon: React.ElementType; label: string }> = {
+const agentConfig: Record<AgentType, { icon: React.ElementType; label: string }> = {
   DiscoveryAgent: { icon: Search, label: "Discovery" },
   InfraAgent: { icon: Wrench, label: "Infrastructure" },
   ControlAgent: { icon: Settings, label: "Control" },
@@ -16,9 +16,8 @@ const agentConfig: Record<string, { icon: React.ElementType; label: string }> = 
 };
 
 export function AgentBadge({ agent, className }: AgentBadgeProps) {
-  const config = agent ? agentConfig[agent] : null;
-  const Icon = config?.icon ?? HelpCircle;
-  const label = config?.label ?? agent ?? "Unknown Agent";
+  const config = agentConfig[agent] || { icon: Search, label: agent || "Unknown" };
+  const Icon = config.icon;
 
   return (
     <span
@@ -28,7 +27,7 @@ export function AgentBadge({ agent, className }: AgentBadgeProps) {
       )}
     >
       <Icon className="h-3 w-3" />
-      {label}
+      {config.label}
     </span>
   );
 }
