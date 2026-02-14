@@ -1,0 +1,274 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --terminal-bg: #0a0e1a;
+  --terminal-panel: #111827;
+  --terminal-border: #1f2937;
+  --terminal-accent: #00ff88;
+  --terminal-amber: #ffb000;
+  --terminal-blue: #00d4ff;
+  --terminal-purple: #a855f7;
+  --terminal-red: #ff3366;
+  --glow-intensity: 0.6;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--terminal-bg);
+  color: #e5e7eb;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--terminal-panel);
+  border-left: 1px solid var(--terminal-border);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--terminal-accent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--terminal-blue);
+}
+
+/* CRT scan line effect */
+@keyframes scan {
+  0%, 100% {
+    transform: translateY(-100%);
+  }
+  50% {
+    transform: translateY(100%);
+  }
+}
+
+.crt-effect::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    rgba(0, 255, 136, 0.02) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 9999;
+  animation: scan 8s linear infinite;
+}
+
+/* Glow effects */
+.glow-text {
+  text-shadow: 
+    0 0 10px currentColor,
+    0 0 20px currentColor,
+    0 0 30px currentColor;
+}
+
+.glow-border {
+  box-shadow: 
+    0 0 5px currentColor,
+    inset 0 0 5px currentColor;
+}
+
+/* Panel styles */
+.terminal-panel {
+  background: var(--terminal-panel);
+  border: 1px solid var(--terminal-border);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.terminal-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--terminal-accent),
+    transparent
+  );
+  opacity: 0.5;
+}
+
+/* Grid background */
+.grid-bg {
+  background-image: 
+    linear-gradient(var(--terminal-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--terminal-border) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: -1px -1px;
+}
+
+/* Status indicators */
+.status-online {
+  color: var(--terminal-accent);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.status-busy {
+  color: var(--terminal-amber);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.status-offline {
+  color: var(--terminal-red);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Button styles */
+.btn-primary {
+  @apply px-4 py-2 bg-terminal-accent text-terminal-bg font-medium rounded;
+  @apply hover:bg-terminal-blue transition-colors duration-200;
+  @apply border border-terminal-accent hover:border-terminal-blue;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+}
+
+.btn-secondary {
+  @apply px-4 py-2 bg-transparent text-terminal-accent font-medium rounded;
+  @apply border border-terminal-accent hover:bg-terminal-accent hover:text-terminal-bg;
+  @apply transition-all duration-200;
+}
+
+/* Input styles */
+.input-terminal {
+  @apply w-full px-4 py-2 bg-terminal-panel border border-terminal-border rounded;
+  @apply text-terminal-accent font-mono text-sm;
+  @apply focus:outline-none focus:border-terminal-accent focus:ring-1 focus:ring-terminal-accent;
+  @apply transition-all duration-200;
+}
+
+/* Table styles */
+.terminal-table {
+  @apply w-full;
+}
+
+.terminal-table thead {
+  @apply bg-terminal-panel border-b border-terminal-accent;
+}
+
+.terminal-table th {
+  @apply px-4 py-3 text-left text-xs font-semibold text-terminal-accent uppercase tracking-wider;
+}
+
+.terminal-table tbody tr {
+  @apply border-b border-terminal-border hover:bg-terminal-panel/50 transition-colors;
+}
+
+.terminal-table td {
+  @apply px-4 py-3 text-sm;
+}
+
+/* Card styles */
+.stat-card {
+  @apply terminal-panel p-6;
+  background: linear-gradient(135deg, var(--terminal-panel) 0%, rgba(17, 24, 39, 0.8) 100%);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 255, 136, 0.1);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Terminal text effect */
+.terminal-text {
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.05em;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  border: 2px solid var(--terminal-border);
+  border-top-color: var(--terminal-accent);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 0.6s linear infinite;
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .terminal-table {
+    font-size: 0.75rem;
+  }
+  
+  .terminal-table th,
+  .terminal-table td {
+    padding: 0.5rem;
+  }
+}

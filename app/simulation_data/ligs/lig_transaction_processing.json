@@ -1,0 +1,27 @@
+{
+  "nodes": [
+    "request",
+    "validate",
+    "process",
+    "audit",
+    "output"
+  ],
+  "edges": [
+    [
+      "request",
+      "validate"
+    ],
+    [
+      "validate",
+      "process"
+    ],
+    [
+      "process",
+      "audit"
+    ],
+    [
+      "audit",
+      "output"
+    ]
+  ]
+}

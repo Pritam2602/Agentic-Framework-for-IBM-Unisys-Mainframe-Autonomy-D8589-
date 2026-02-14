@@ -1,0 +1,22 @@
+{
+  "nodes": [
+    "input",
+    "kyc",
+    "account_create",
+    "response"
+  ],
+  "edges": [
+    [
+      "input",
+      "kyc"
+    ],
+    [
+      "kyc",
+      "account_create"
+    ],
+    [
+      "account_create",
+      "response"
+    ]
+  ]
+}
