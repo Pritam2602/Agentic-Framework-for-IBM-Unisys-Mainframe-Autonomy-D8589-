@@ -1,89 +1,20 @@
-# COMMUNICATOR - Complete Package
+# Federation Agent Project
 
-## Quick Start
-
-1. **Backend:**
-```bash
-cd COMMUNICATOR
-pip install -r requirements.txt
-python run.py
-```
-Backend: http://localhost:8000
-API Docs: http://localhost:8000/docs
-
-2. **Frontend:**
-```bash
-cd frontend
-npm install  
-npm run dev
-```
-Frontend: http://localhost:5173
+## Project Description
+The Federation Agent project is designed to facilitate seamless integration and interaction between various services and data sources. It acts as a bridge that enables federation across different platforms, ensuring data consistency and accessibility.
 
 ## Architecture
+The architecture of the Federation Agent consists of several key components:
+- **Core Module**: Responsible for the core functionalities and processing.
+- **Connector Interfaces**: Allow integration with various data sources and services.
+- **Configuration Manager**: Manages the settings and configurations for the Federation Agent.
 
-This package demonstrates the PROPER architecture with:
+## Features
+- **Data Federation**: Aggregates data from multiple sources into a unified view.
+- **Real-time Synchronization**: Keeps data synchronized in real-time across different systems.
+- **Customizable Connectors**: Provides options to create custom connectors for specific data sources.
 
-### Backend Structure
-- `app/main.py` - Complete working FastAPI application
-- `app/models/schemas.py` - Strict Pydantic models with TraceEvent
-- `app/agent/` - Agent pipeline stages (intent_parser, capability_matcher, etc.)
-- `app/execution/` - Execution layer (job_executor, workflow_executor, adapters)
-- `app/catalog/` - Catalog service layer
-- `app/banking/` - Banking domain logic
-- `app/repository/` - Data access layer
-
-### Frontend
-- 9 pages fully implemented
-- Connected to backend
-- NO trends/comparisons (clean professional UI)
-- Real-time reasoning logs via SSE
-
-## What's Working
-
-✅ All catalog endpoints
-✅ Agent execution with strict AgentResponse model
-✅ SSE streaming for reasoning logs  
-✅ Agent status/config endpoints
-✅ Banking loan processing
-✅ Frontend ↔ Backend integration
-
-## Architecture Highlights
-
-1. **Strict Response Model:**
-Every agent call returns:
-- natural_response (human-readable)
-- canonical_output (structured data)
-- execution_trace (pipeline trace with TraceEvent objects)
-
-2. **Pipeline Stages:**
-- Intent parsing
-- Capability matching
-- Command selection
-- Execution planning
-- Execution
-- Result collection
-
-3. **Execution Layer:**
-Agent doesn't execute directly - delegates to:
-- JobExecutor
-- WorkflowExecutor
-- DatasetExecutor
-- Mainframe adapters (IBM/Unisys)
-
-4. **Clean UI:**
-NO year-over-year stats, growth charts, or misleading trends.
-ONLY current counts and clean statistics.
-
-## File Structure
-
-See RESTRUCTURED_ARCHITECTURE.md for complete details.
-
-## Next Steps
-
-1. Implement real database queries in repository
-2. Add Zowe CLI integration in adapters
-3. Expand agent capabilities
-4. Add authentication
-5. Write comprehensive tests
-
-This is a **production-ready architecture** ready for real implementation.
+## Getting Started Guide
+1. **Installation**: Clone the repository and install the required dependencies.
+2. **Configuration**: Update the configuration files to include the necessary data sources.
+3. **Running the Agent**: Start the agent using the provided scripts and monitor the logs for any issues.
