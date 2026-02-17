@@ -1,0 +1,6 @@
+steps:
+  - validate_accounts
+  - check_balance
+  - debit_source
+  - credit_target
+  - record_transaction

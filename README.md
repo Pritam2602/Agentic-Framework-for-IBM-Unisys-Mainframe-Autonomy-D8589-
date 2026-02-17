@@ -1,42 +1,20 @@
-Agentic Framework for IBM–Unisys Mainframe Autonomy (D8589)
-📌 Project Overview
+# Federation Agent Project
 
-This project implements a Zowe Capability Catalog as part of an agentic framework to enable explainable, safe, and structured interaction with IBM mainframe systems.
-The catalog maps Zowe CLI commands to their underlying IBM subsystems and artifacts, enabling AI agents to reason about legacy systems without directly executing commands.
+## Project Description
+The Federation Agent project is designed to facilitate seamless integration and interaction between various services and data sources. It acts as a bridge that enables federation across different platforms, ensuring data consistency and accessibility.
 
-The current implementation focuses on catalog creation, persistence, API exposure, and visualization.
+## Architecture
+The architecture of the Federation Agent consists of several key components:
+- **Core Module**: Responsible for the core functionalities and processing.
+- **Connector Interfaces**: Allow integration with various data sources and services.
+- **Configuration Manager**: Manages the settings and configurations for the Federation Agent.
 
-🎯 Objectives Achieved (Current Scope)
+## Features
+- **Data Federation**: Aggregates data from multiple sources into a unified view.
+- **Real-time Synchronization**: Keeps data synchronized in real-time across different systems.
+- **Customizable Connectors**: Provides options to create custom connectors for specific data sources.
 
-1. Design a fixed, structured catalog schema for Zowe capabilities
-2. Map Zowe commands to IBM subsystems and artifacts
-3. Persist catalog entries in SQLite
-4. Expose catalog via a Flask REST API
-5. Visualize catalog entries using a React frontend
-6. Ensure the design supports agentic reasoning and governance
-
-🧠 Key Concepts
-Zowe Capability Catalog
-
-A structured knowledge base that describes:
-
-1. What a Zowe command does
-2. Which IBM subsystem executes it
-3. Which IBM artifact it accesses or modifies
-4. Whether it is read-only or state-changing
-5. Which agent should use it
-
-Agentic Perspective
-
-Agents do not execute commands blindly.
-They first consult the catalog to:
-
-1. Discover safe capabilities
-2. Understand execution impact
-3. Maintain explainability and audit trails
-
-To create catalog and visulaize it:
-1. open terminal -> cd backend -> python zowe_catalog.py
-2. in same terminal and folder -> python app.py
-3. open new terminal while the old one is still running
-4. in new terminal -> cd frontend -> npm start
+## Getting Started Guide
+1. **Installation**: Clone the repository and install the required dependencies.
+2. **Configuration**: Update the configuration files to include the necessary data sources.
+3. **Running the Agent**: Start the agent using the provided scripts and monitor the logs for any issues.

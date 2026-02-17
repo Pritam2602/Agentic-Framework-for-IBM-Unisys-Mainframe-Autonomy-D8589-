@@ -1,0 +1,6 @@
+steps:
+  - accept_application
+  - credit_score_check
+  - risk_assessment
+  - approve_or_reject
+  - create_loan_account

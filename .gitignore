@@ -1,15 +1,18 @@
-# Virtual environments
-venv/
-env/
-.venv/
-
-# Python cache
 __pycache__/
 *.pyc
-
-# SQLite databases
-*.db
-
-# OS files
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.env
+.venv
+venv/
+ENV/
+node_modules/
 .DS_Store
-Thumbs.db
+database/*.db
+!database/.gitkeep

@@ -1,0 +1,5 @@
+steps:
+  - validate_account
+  - fetch_transactions
+  - calculate_balances
+  - generate_statement

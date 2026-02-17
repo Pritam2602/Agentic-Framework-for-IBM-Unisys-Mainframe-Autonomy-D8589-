@@ -1,0 +1,6 @@
+{
+  "customer_id": "C001",
+  "loan_type": "PERSONAL",
+  "requested_amount": 300000,
+  "tenure_months": 36
+}

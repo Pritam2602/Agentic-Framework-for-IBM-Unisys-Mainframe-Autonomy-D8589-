@@ -1,0 +1,5 @@
+customer_id,name,dob,kyc_status,risk_level
+C001,Ravi Kumar,1995-04-12,VERIFIED,LOW
+C002,Anita Sharma,1988-09-30,VERIFIED,MEDIUM
+C003,John Mathews,1979-01-21,PENDING,HIGH
+C004,Meera Iyer,2000-07-19,VERIFIED,LOW

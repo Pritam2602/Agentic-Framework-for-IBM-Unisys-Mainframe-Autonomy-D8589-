@@ -1,0 +1,27 @@
+{
+  "nodes": [
+    "request",
+    "fetch_txn",
+    "compute",
+    "render",
+    "output"
+  ],
+  "edges": [
+    [
+      "request",
+      "fetch_txn"
+    ],
+    [
+      "fetch_txn",
+      "compute"
+    ],
+    [
+      "compute",
+      "render"
+    ],
+    [
+      "render",
+      "output"
+    ]
+  ]
+}

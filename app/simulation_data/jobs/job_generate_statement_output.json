@@ -1,0 +1,17 @@
+{
+  "account_id": "A001",
+  "opening_balance": 25000,
+  "closing_balance": 23800,
+  "transactions": [
+    {
+      "txn_id": "T001",
+      "amount": 1200,
+      "type": "DEBIT"
+    },
+    {
+      "txn_id": "T003",
+      "amount": 9000,
+      "type": "DEBIT"
+    }
+  ]
+}

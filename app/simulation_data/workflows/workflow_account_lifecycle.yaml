@@ -1,0 +1,5 @@
+steps:
+  - create_customer
+  - kyc_verification
+  - open_account
+  - notify_customer
