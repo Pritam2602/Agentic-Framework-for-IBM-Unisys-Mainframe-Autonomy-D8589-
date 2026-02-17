@@ -1,14 +1,15 @@
 """
 Catalog Repository - Data access layer
 
-Commands → SQLite (zowe_capability_catalog.db)
-Jobs / Workflows / Datasets → simulation_data folder
+Commands  SQLite (zowe_capability_catalog.db)
+Jobs / Workflows / Datasets  simulation_data folder
 """
 
 import sqlite3
 from typing import List, Dict, Any
 from pathlib import Path
 from datetime import datetime
+import csv
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -48,43 +49,85 @@ class CatalogRepository:
 
     def get_all_commands(self) -> List[Dict[str, Any]]:
         with self.get_connection() as conn:
+            # Get commands with their preconditions
             cursor = conn.execute("""
                 SELECT 
+                    id,
                     zowe_command,
                     category,
                     command_family,
                     description,
-                    data_scope,
-                    mutability,
-                    idempotent,
-                    execution_cost,
-                    ibm_artifact,
-                    data_returned,
-                    intended_agent,
-                    constraints,
+                    response_format,
                     output_file
                 FROM zowe_capability
+                ORDER BY id
             """)
 
             rows = cursor.fetchall()
+            
+            # Get preconditions map
+            precond_cursor = conn.execute("""
+                SELECT capability_id, precondition
+                FROM zowe_capability_precondition
+            """)
+            
+            preconditions_map: Dict[int, List[str]] = {}
+            for precond_row in precond_cursor.fetchall():
+                capability_id = precond_row["capability_id"]
+                if capability_id not in preconditions_map:
+                    preconditions_map[capability_id] = []
+                preconditions_map[capability_id].append(precond_row["precondition"])
 
             commands = []
+            now = datetime.now()
+            
             for row in rows:
-                commands.append({
-                    "zowe_command": row["zowe_command"],
-                    "category": row["category"],
-                    "command_family": row["command_family"],
-                    "description": row["description"],
-                    "data_scope": row["data_scope"],
-                    "mutability": row["mutability"],
-                    "idempotent": bool(row["idempotent"]),
-                    "cost": row["execution_cost"],
-                    "ibm_artifact": row["ibm_artifact"],
-                    "data_returned": row["data_returned"],
-                    "intended_agent": row["intended_agent"],
-                    "constraints": row["constraints"],
-                    "output_file": row["output_file"]
-                })
+                capability_id = row["id"]
+                zowe_command = row["zowe_command"]
+                category = row["category"]
+                command_family = row["command_family"]
+                description = row["description"]
+                response_format = row["response_format"]
+                output_file = row["output_file"]
+                
+                # Map response_format to outputType
+                output_type = "JSON" if response_format == "JSON" else "TEXT"
+                
+                # Get preconditions for this command
+                preconditions = preconditions_map.get(capability_id, [])
+                
+                # Map category to type
+                type_mapping = {
+                    "batch": "batch",
+                    "workflow": "workflow",
+                    "metadata": "metadata",
+                    "database": "query",
+                    "query": "query",
+                    "system": "system",
+                    "data": "system",
+                    "tso": "system",
+                    "zosmf": "system",
+                    "ssh": "system",
+                    "console": "system",
+                    "files": "system"
+                }
+                command_type = type_mapping.get(category.lower(), "system")
+                
+                # Create command dict (matching CommandModel schema)
+                command = {
+                    "id": str(capability_id),
+                    "name": zowe_command,
+                    "type": command_type,
+                    "family": command_family,
+                    "preconditions": preconditions,
+                    "outputType": output_type,
+                    "outputFile": output_file if output_file else None,
+                    "description": description or "",
+                    "createdAt": now.isoformat(),
+                    "updatedAt": now.isoformat()
+                }
+                
+                commands.append(command)
 
             return commands
 
@@ -100,14 +143,55 @@ class CatalogRepository:
     # =========================================================
 
     def get_all_workflows(self) -> List[Dict[str, Any]]:
-        return self._scan_directory(WORKFLOWS_DIR, "WORKFLOW")
+        items = self._scan_directory(WORKFLOWS_DIR, "WORKFLOW")
+        # Add workflow-specific fields
+        for idx, item in enumerate(items):
+            item["id"] = f"wf-{idx+1:03d}"
+            item["steps"] = 3  # Default steps
+            item["dependencies"] = []  # No dependencies
+            item["status"] = "active"
+            item["lastRun"] = datetime.now().isoformat()
+        return items
 
     # =========================================================
     # DATASETS (From simulation_data/datasets)
     # =========================================================
 
     def get_all_datasets(self) -> List[Dict[str, Any]]:
-        return self._scan_directory(DATASETS_DIR, "DATASET")
+        items = []
+        if not DATASETS_DIR.exists():
+            return items
+
+        for file in DATASETS_DIR.iterdir():
+            if file.is_file():
+                # Try to get file size and record count
+                size_bytes = file.stat().st_size
+                size_mb = size_bytes / (1024 * 1024)
+                size_str = f"{size_mb:.2f} MB" if size_mb > 0.1 else f"{int(size_bytes)} B"
+                
+                # Count records if it's a CSV
+                record_count = 0
+                if file.suffix == ".csv":
+                    try:
+                        with open(file, "r") as f:
+                            record_count = sum(1 for _ in f) - 1  # -1 for header
+                    except:
+                        record_count = 0
+                
+                item = {
+                    "id": f"ds-{file.stem}",
+                    "name": file.stem,
+                    "scope": "simulation",
+                    "mainframe": "SIMULATED",
+                    "type": "DATASET",
+                    "accessLevel": "restricted",
+                    "size": size_str,
+                    "records": record_count,
+                    "downloadUrl": f"/simulation_data/datasets/{file.name}"
+                }
+                items.append(item)
+
+        return items
 
     # =========================================================
     # DIRECTORY SCANNER

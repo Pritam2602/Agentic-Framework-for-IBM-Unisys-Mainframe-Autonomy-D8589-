@@ -8,6 +8,11 @@ from fastapi.responses import StreamingResponse
 import asyncio
 import json
 from datetime import datetime
+from functools import lru_cache
+
+# Import repository and service
+from app.repository.catalog_repository import CatalogRepository
+from app.catalog.catalog_service import CatalogService
 
 app = FastAPI(
     title="COMMUNICATOR",
@@ -27,31 +32,38 @@ app.add_middleware(
 # Import models  
 from app.models.schemas import *
 
-# Minimal mock data
-MOCK_COMMANDS = [
-    {"id": "cmd-001", "name": "LISTCAT", "type": "query", "family": "DATASET", 
-     "preconditions": ["RACF_AUTH"], "outputType": "JSON", 
-     "description": "List catalog entries", "createdAt": "2024-01-15T00:00:00", "updatedAt": "2024-02-01T00:00:00"},
-    {"id": "cmd-002", "name": "SUBMIT_JOB", "type": "batch", "family": "JOB",
-     "preconditions": ["JOB_AUTH"], "outputType": "STREAM",
-     "description": "Submit JCL job", "createdAt": "2024-01-20T00:00:00", "updatedAt": "2024-01-28T00:00:00"},
-]
+# Initialize catalog service
+catalog_service = CatalogService()
 
-MOCK_JOBS = [
-    {"id": "job-001", "name": "PAYROLL_BATCH", "scope": "enterprise", "mainframe": "ZPROD01",
-     "type": "JCL", "accessLevel": "restricted", "status": "active", "lastRun": "2024-02-09T03:00:00"},
-]
+# Cache the commands since they don't change often
+_commands_cache = None
+_jobs_cache = None
+_workflows_cache = None
+_datasets_cache = None
 
-MOCK_WORKFLOWS = [
-    {"id": "wf-001", "name": "ETL_PIPELINE", "scope": "enterprise", "mainframe": "ZPROD01",
-     "type": "WORKFLOW", "accessLevel": "admin", "status": "active", "lastRun": "2024-02-10T00:00:00",
-     "steps": 5, "dependencies": ["DATASET.EXTRACT"]},
-]
+def get_cached_commands():
+    global _commands_cache
+    if _commands_cache is None:
+        _commands_cache = catalog_service.get_all_commands()
+    return _commands_cache
 
-MOCK_DATASETS = [
-    {"id": "ds-001", "name": "PROD.MASTER.DATA", "scope": "enterprise", "mainframe": "ZPROD01",
-     "type": "DATASET", "accessLevel": "read-only", "size": "2.4 GB", "records": 1500000},
-]
+def get_cached_jobs():
+    global _jobs_cache
+    if _jobs_cache is None:
+        _jobs_cache = catalog_service.get_all_jobs()
+    return _jobs_cache
+
+def get_cached_workflows():
+    global _workflows_cache
+    if _workflows_cache is None:
+        _workflows_cache = catalog_service.get_all_workflows()
+    return _workflows_cache
+
+def get_cached_datasets():
+    global _datasets_cache
+    if _datasets_cache is None:
+        _datasets_cache = catalog_service.get_all_datasets()
+    return _datasets_cache
 
 @app.get("/")
 async def root():
@@ -61,32 +73,64 @@ async def root():
 async def health():
     return {"status": "healthy"}
 
-# CATALOG ENDPOINTS  
+# CATALOG ENDPOINTS - Now using real database
 @app.get("/api/catalog/commands")
 async def get_commands():
-    return MOCK_COMMANDS
+    """Get all commands from database"""
+    try:
+        commands = get_cached_commands()
+        return commands
+    except Exception as e:
+        print(f"Error fetching commands: {e}")
+        return []
 
 @app.get("/api/catalog/jobs")
 async def get_jobs():
-    return MOCK_JOBS
+    """Get all jobs from simulation data"""
+    try:
+        return get_cached_jobs()
+    except Exception as e:
+        print(f"Error fetching jobs: {e}")
+        return []
 
 @app.get("/api/catalog/workflows")
 async def get_workflows():
-    return MOCK_WORKFLOWS
+    """Get all workflows from simulation data"""
+    try:
+        return get_cached_workflows()
+    except Exception as e:
+        print(f"Error fetching workflows: {e}")
+        return []
 
 @app.get("/api/catalog/datasets")
 async def get_datasets():
-    return MOCK_DATASETS
+    """Get all datasets from simulation data"""
+    try:
+        return get_cached_datasets()
+    except Exception as e:
+        print(f"Error fetching datasets: {e}")
+        return []
 
 @app.get("/api/catalog/stats")
 async def get_stats():
-    return {
-        "totalCommands": len(MOCK_COMMANDS),
-        "totalJobs": len(MOCK_JOBS),
-        "totalWorkflows": len(MOCK_WORKFLOWS),
-        "totalDatasets": len(MOCK_DATASETS),
-        "lastUpdated": datetime.now().isoformat()
-    }
+    """Get catalog statistics from actual data"""
+    try:
+        return {
+            "totalCommands": len(get_cached_commands()),
+            "totalJobs": len(get_cached_jobs()),
+            "totalWorkflows": len(get_cached_workflows()),
+            "totalDatasets": len(get_cached_datasets()),
+            "lastUpdated": datetime.now().isoformat()
+        }
+    except Exception as e:
+        print(f"Error fetching stats: {e}")
+        return {
+            "totalCommands": 0,
+            "totalJobs": 0,
+            "totalWorkflows": 0,
+            "totalDatasets": 0,
+            "lastUpdated": datetime.now().isoformat()
+        }
 
 # AGENT ENDPOINTS
 @app.post("/api/agent/execute")
@@ -176,4 +220,4 @@ async def process_loan(application: LoanApplicationRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)

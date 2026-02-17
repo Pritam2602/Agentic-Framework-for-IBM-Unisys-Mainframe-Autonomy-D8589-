@@ -2,7 +2,7 @@
 Catalog Service - Business logic layer
 """
 
-from app.catalog.catalog_repository import CatalogRepository
+from app.repository.catalog_repository import CatalogRepository
 
 
 class CatalogService:
