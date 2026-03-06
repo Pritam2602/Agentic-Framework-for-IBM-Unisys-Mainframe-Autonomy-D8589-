@@ -1,18 +1,24 @@
 """
 COMMUNICATOR - Mainframe Agent Platform
-FastAPI backend application  
+FastAPI backend application
 """
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+
 import asyncio
 import json
 from datetime import datetime
-from functools import lru_cache
+from pathlib import Path
 
-# Import repository and service
-from app.repository.catalog_repository import CatalogRepository
+from intent_agent.core import IntentAgent, init_model
 from app.catalog.catalog_service import CatalogService
+from app.models.schemas import *
+
+# -------------------------------------------------------------------
+# FastAPI App
+# -------------------------------------------------------------------
 
 app = FastAPI(
     title="COMMUNICATOR",
@@ -20,7 +26,10 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# -------------------------------------------------------------------
 # CORS
+# -------------------------------------------------------------------
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:3000"],
@@ -29,101 +38,111 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Import models  
-from app.models.schemas import *
+# -------------------------------------------------------------------
+# Paths
+# -------------------------------------------------------------------
 
-# Initialize catalog service
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+CATALOG_PATH = PROJECT_ROOT / "intent_agent" / "capability_catalog.json"
+
+# -------------------------------------------------------------------
+# Services
+# -------------------------------------------------------------------
+
 catalog_service = CatalogService()
 
-# Cache the commands since they don't change often
-_commands_cache = None
-_jobs_cache = None
-_workflows_cache = None
-_datasets_cache = None
+# Initialize LLM model
+model = init_model("gemini")
 
-def get_cached_commands():
-    global _commands_cache
-    if _commands_cache is None:
-        _commands_cache = catalog_service.get_all_commands()
-    return _commands_cache
+# Initialize IntentAgent
+intent_agent = IntentAgent(
+    catalog_path=str(CATALOG_PATH),
+    model=model
+)
 
-def get_cached_jobs():
-    global _jobs_cache
-    if _jobs_cache is None:
-        _jobs_cache = catalog_service.get_all_jobs()
-    return _jobs_cache
+# Store last execution trace
+last_execution_trace = []
 
-def get_cached_workflows():
-    global _workflows_cache
-    if _workflows_cache is None:
-        _workflows_cache = catalog_service.get_all_workflows()
-    return _workflows_cache
-
-def get_cached_datasets():
-    global _datasets_cache
-    if _datasets_cache is None:
-        _datasets_cache = catalog_service.get_all_datasets()
-    return _datasets_cache
+# -------------------------------------------------------------------
+# Root / Health
+# -------------------------------------------------------------------
 
 @app.get("/")
 async def root():
-    return {"service": "COMMUNICATOR", "version": "1.0.0", "status": "online"}
+    return {
+        "service": "COMMUNICATOR",
+        "version": "1.0.0",
+        "status": "online"
+    }
+
 
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
 
-# CATALOG ENDPOINTS - Now using real database
+
+# -------------------------------------------------------------------
+# Catalog Endpoints
+# -------------------------------------------------------------------
+
 @app.get("/api/catalog/commands")
 async def get_commands():
-    """Get all commands from database"""
     try:
-        commands = get_cached_commands()
-        return commands
+        return catalog_service.get_all_commands()
     except Exception as e:
-        print(f"Error fetching commands: {e}")
+        print("Catalog error:", e)
         return []
+
 
 @app.get("/api/catalog/jobs")
 async def get_jobs():
-    """Get all jobs from simulation data"""
     try:
-        return get_cached_jobs()
+        return catalog_service.get_all_jobs()
     except Exception as e:
-        print(f"Error fetching jobs: {e}")
+        print("Jobs error:", e)
         return []
+
 
 @app.get("/api/catalog/workflows")
 async def get_workflows():
-    """Get all workflows from simulation data"""
     try:
-        return get_cached_workflows()
+        return catalog_service.get_all_workflows()
     except Exception as e:
-        print(f"Error fetching workflows: {e}")
+        print("Workflow error:", e)
         return []
+
 
 @app.get("/api/catalog/datasets")
 async def get_datasets():
-    """Get all datasets from simulation data"""
     try:
-        return get_cached_datasets()
+        return catalog_service.get_all_datasets()
     except Exception as e:
-        print(f"Error fetching datasets: {e}")
+        print("Dataset error:", e)
         return []
+
 
 @app.get("/api/catalog/stats")
 async def get_stats():
-    """Get catalog statistics from actual data"""
+
     try:
+
+        commands = catalog_service.get_all_commands()
+        jobs = catalog_service.get_all_jobs()
+        workflows = catalog_service.get_all_workflows()
+        datasets = catalog_service.get_all_datasets()
+
         return {
-            "totalCommands": len(get_cached_commands()),
-            "totalJobs": len(get_cached_jobs()),
-            "totalWorkflows": len(get_cached_workflows()),
-            "totalDatasets": len(get_cached_datasets()),
+            "totalCommands": len(commands),
+            "totalJobs": len(jobs),
+            "totalWorkflows": len(workflows),
+            "totalDatasets": len(datasets),
             "lastUpdated": datetime.now().isoformat()
         }
+
     except Exception as e:
-        print(f"Error fetching stats: {e}")
+
+        print("Stats error:", e)
+
         return {
             "totalCommands": 0,
             "totalJobs": 0,
@@ -132,92 +151,130 @@ async def get_stats():
             "lastUpdated": datetime.now().isoformat()
         }
 
-# AGENT ENDPOINTS
+
+# -------------------------------------------------------------------
+# Agent Execution
+# -------------------------------------------------------------------
+
 @app.post("/api/agent/execute")
 async def execute_agent(request: AgentQueryRequest):
-    # Mock agent execution with proper structure
-    trace = [
-        TraceEvent(timestamp=datetime.now(), stage="intent_parsing", 
-                  message="Analyzing user query"),
-        TraceEvent(timestamp=datetime.now(), stage="capability_matching",
-                  message="Matched capabilities: JCL Execution"),
-        TraceEvent(timestamp=datetime.now(), stage="command_selection",
-                  message="Selected 1 command(s)"),
-        TraceEvent(timestamp=datetime.now(), stage="execution_planning",
-                  message="Execution plan ready"),
-        TraceEvent(timestamp=datetime.now(), stage="execution",
-                  message="Executed command: SUBMIT_JOB"),
-        TraceEvent(timestamp=datetime.now(), stage="result_collection",
-                  message="Results collected successfully"),
-    ]
-    
-    response = AgentResponse(
-        natural_response=f"I processed your request: '{request.query}'. Found 23 results.",
-        canonical_output=CanonicalOutput(
-            type="json",
-            data={"status": "completed", "records": 23, "execution_time_ms": 145}
-        ),
-        execution_trace=trace
-    )
-    return response
+
+    global last_execution_trace
+
+    try:
+
+        result = intent_agent.run(request.query)
+
+        trace = [
+            TraceEvent(
+                timestamp=datetime.now(),
+                stage="intent_parsing",
+                message=f"Intent: {result.intent}"
+            ),
+            TraceEvent(
+                timestamp=datetime.now(),
+                stage="command_selection",
+                message=f"Command: {result.zowe_command}"
+            ),
+        ]
+
+        last_execution_trace = trace
+
+        response = AgentResponse(
+            natural_response=f"Intent: {result.intent}\nCommand: {result.zowe_command}",
+            canonical_output=CanonicalOutput(
+                type="json",
+                data=result.model_dump()
+            ),
+            execution_trace=trace
+        )
+
+        return response
+
+    except Exception as e:
+
+        print("Agent error:", e)
+
+        trace = [
+            TraceEvent(
+                timestamp=datetime.now(),
+                stage="execution",
+                message=str(e)
+            )
+        ]
+
+        return AgentResponse(
+            natural_response=f"Error: {str(e)}",
+            canonical_output=CanonicalOutput(
+                type="json",
+                data={"error": str(e)}
+            ),
+            execution_trace=trace
+        )
+
+
+# -------------------------------------------------------------------
+# Reasoning Stream
+# -------------------------------------------------------------------
 
 @app.get("/api/agent/reasoning-stream")
 async def reasoning_stream():
-    """SSE stream of reasoning events"""
+
     async def generate():
-        messages = [
-            ("intent_parsing", "Analyzing user request"),
-            ("capability_matching", "Matching to capabilities"),
-            ("command_selection", "Selecting commands"),
-            ("execution_planning", "Planning execution"),
-            ("execution", "Executing commands"),
-            ("result_collection", "Collecting results"),
-        ]
-        for stage, msg in messages:
-            event = TraceEvent(timestamp=datetime.now(), stage=stage, message=msg)
+
+        if last_execution_trace:
+
+            for event in last_execution_trace:
+
+                data = json.dumps(event.model_dump(), default=str)
+
+                yield f"data: {data}\n\n"
+
+                await asyncio.sleep(0.5)
+
+        else:
+
+            event = TraceEvent(
+                timestamp=datetime.now(),
+                stage="waiting",
+                message="Waiting for agent query..."
+            )
+
             data = json.dumps(event.model_dump(), default=str)
+
             yield f"data: {data}\n\n"
-            await asyncio.sleep(1)
-    
+
     return StreamingResponse(generate(), media_type="text/event-stream")
+
+
+# -------------------------------------------------------------------
+# Agent Status
+# -------------------------------------------------------------------
 
 @app.get("/api/agent/status")
 async def get_agent_status():
+
     return {
-        "id": "agent-001", "name": "IBM z/OS Agent", "status": "online",
-        "capabilities": ["JCL Execution", "Dataset Management"],
-        "uptime": 864000000, "tasksCompleted": 1547, "lastActivity": datetime.now().isoformat()
+        "id": "intent-agent-001",
+        "name": "IBM z/OS IntentAgent",
+        "status": "online",
+        "model": "gemini",
+        "catalogCommands": 30,
+        "lastActivity": datetime.now().isoformat()
     }
 
-@app.get("/api/agent/executions")
-async def get_executions():
-    return [
-        {"id": "exec-001", "taskId": "task-1001", "command": "LISTCAT",
-         "status": "completed", "startTime": datetime.now().isoformat()}
-    ]
 
-@app.get("/api/agent/config")
-async def get_config():
-    return {
-        "environment": "z/OS 2.5", "version": "3.2.1", "maxConcurrentTasks": 10,
-        "timeout": 300000, "retryPolicy": {"maxRetries": 3, "backoffMs": 5000}
-    }
-
-# BANKING ENDPOINT (Minimal - full logic in separate module)
-@app.post("/api/banking/loan/process")
-async def process_loan(application: LoanApplicationRequest):
-    # Simplified loan processing
-    trace = [TraceEvent(timestamp=datetime.now(), stage="execution", message="Processing loan application")]
-    
-    eligible = application.age >= 21 and application.credit_score >= 650
-    
-    return {
-        "application_id": "APP-12345",
-        "status": "approved" if eligible else "rejected",
-        "eligibility": {"eligible": eligible, "max_loan_amount": 250000.0, "recommended_term": 60},
-        "execution_trace": [t.model_dump() for t in trace]
-    }
+# -------------------------------------------------------------------
+# Run Server
+# -------------------------------------------------------------------
 
 if __name__ == "__main__":
+
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)
+
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )

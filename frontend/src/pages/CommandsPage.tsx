@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Layout, Table, LoadingSpinner, Modal } from '../components/common';
 import { fetchCommandsCatalog } from '../services/api';
 import { Command } from '../types';
 import { Column } from '../components/common/Table';
-import { ArrowDownTrayIcon, EyeIcon } from '@heroicons/react/24/outline';
 
 export default function CommandsPage() {
   const [commands, setCommands] = useState<Command[]>([]);
@@ -25,130 +24,78 @@ export default function CommandsPage() {
     loadCommands();
   }, []);
 
-  const handleViewOutput = (fileName: string) => {
-    // Mock output content
-    const mockContent = {
-      'listcat_output.json': JSON.stringify({
-        datasets: ['PROD.MASTER.DATA', 'USER.TEMP.WORK'],
-        totalRecords: 1550000,
-        catalogDate: '2024-02-10',
-      }, null, 2),
-      'job_output.log': `JOB SUBMITTED SUCCESSFULLY
-JOB ID: JOB12345
-STATUS: RUNNING
-START TIME: 10:30:00
-ESTIMATED COMPLETION: 10:45:00`,
-      'workflow_status.json': JSON.stringify({
-        workflowId: 'ETL_PIPELINE',
-        status: 'running',
-        currentStep: 3,
-        totalSteps: 5,
-        progress: '60%',
-      }, null, 2),
-      'allocation_result.json': JSON.stringify({
-        datasetName: 'USER.NEW.DATASET',
-        allocated: true,
-        size: '100MB',
-        recordFormat: 'FB',
-      }, null, 2),
-    };
 
-    setSelectedOutput({
-      name: fileName,
-      content: mockContent[fileName as keyof typeof mockContent] || 'Content not available',
-    });
-  };
-
-  const handleDownloadOutput = (fileName: string) => {
-    // Mock download functionality
-    console.log('Downloading:', fileName);
-    alert(`Download initiated for: ${fileName}`);
-  };
 
   const columns: Column<Command>[] = [
     {
-      key: 'name',
-      label: 'Command Name',
+      key: 'zowe_command' as any,
+      label: 'Zowe Command',
       render: (value) => (
-        <span className="font-mono text-terminal-accent font-semibold">{value}</span>
+        <span className="font-mono text-terminal-accent font-semibold text-xs">{value}</span>
       ),
     },
     {
-      key: 'type',
-      label: 'Type',
-      render: (value) => (
-        <span className="px-2 py-1 bg-terminal-blue/20 text-terminal-blue rounded text-xs font-mono uppercase">
-          {value}
-        </span>
-      ),
-    },
-    {
-      key: 'family',
+      key: 'command_family' as any,
       label: 'Family',
       render: (value) => (
-        <span className="px-2 py-1 bg-terminal-purple/20 text-terminal-purple rounded text-xs font-mono">
+        <span className={`px-2 py-1 rounded text-xs font-mono uppercase ${value === 'DB2' ? 'bg-blue-500/20 text-blue-400' :
+          value === 'CICS' ? 'bg-purple-500/20 text-purple-400' :
+            value === 'IMS' ? 'bg-amber-500/20 text-amber-400' :
+              value === 'JES' ? 'bg-green-500/20 text-green-400' :
+                value === 'TSO' ? 'bg-cyan-500/20 text-cyan-400' :
+                  value === 'USS' ? 'bg-orange-500/20 text-orange-400' :
+                    'bg-gray-500/20 text-gray-400'
+          }`}>
           {value}
         </span>
       ),
     },
     {
-      key: 'preconditions',
-      label: 'Preconditions',
-      render: (value: string[]) => (
-        <span className="text-gray-300 text-xs font-mono">{value.join(', ')}</span>
-      ),
-    },
-    {
-      key: 'outputType',
-      label: 'Output Type',
+      key: 'subsystem' as any,
+      label: 'Subsystem',
       render: (value) => (
-        <span className={`px-2 py-1 rounded text-xs font-mono ${
-          value === 'JSON' ? 'bg-terminal-accent/20 text-terminal-accent' :
-          value === 'TEXT' ? 'bg-terminal-amber/20 text-terminal-amber' :
-          value === 'FILE' ? 'bg-terminal-blue/20 text-terminal-blue' :
-          'bg-terminal-purple/20 text-terminal-purple'
-        }`}>
+        <span className="text-gray-300 text-xs font-mono">{value}</span>
+      ),
+    },
+    {
+      key: 'operation' as any,
+      label: 'Operation',
+      render: (value) => (
+        <span className={`px-2 py-1 rounded text-xs font-mono ${value === 'READ' ? 'bg-terminal-accent/20 text-terminal-accent' :
+          value === 'EXECUTE' ? 'bg-terminal-amber/20 text-terminal-amber' :
+            value === 'WRITE' ? 'bg-red-500/20 text-red-400' :
+              'bg-gray-500/20 text-gray-400'
+          }`}>
           {value}
         </span>
       ),
     },
     {
-      key: 'outputFile',
-      label: 'Output File',
-      render: (value, item) => {
-        if (!value) return <span className="text-gray-500">—</span>;
-        
-        const isViewable = item.outputType === 'JSON' || item.outputType === 'TEXT';
-        
-        return (
-          <div className="flex items-center space-x-2">
-            <span className="text-gray-300 text-xs font-mono">{value}</span>
-            {isViewable ? (
-              <button
-                onClick={() => handleViewOutput(value)}
-                className="p-1 hover:bg-terminal-accent/10 rounded transition-colors"
-                title="View output"
-              >
-                <EyeIcon className="w-4 h-4 text-terminal-accent" />
-              </button>
-            ) : (
-              <button
-                onClick={() => handleDownloadOutput(value)}
-                className="p-1 hover:bg-terminal-blue/10 rounded transition-colors"
-                title="Download output"
-              >
-                <ArrowDownTrayIcon className="w-4 h-4 text-terminal-blue" />
-              </button>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      key: 'description',
-      label: 'Description',
+      key: 'ibm_artifact' as any,
+      label: 'IBM Artifact',
       render: (value) => (
         <span className="text-gray-400 text-sm">{value}</span>
+      ),
+    },
+    {
+      key: 'execution_cost' as any,
+      label: 'Cost',
+      render: (value) => (
+        <span className={`px-2 py-1 rounded text-xs font-mono ${value === 'HIGH' ? 'bg-red-500/20 text-red-400' :
+          value === 'MEDIUM' ? 'bg-amber-500/20 text-amber-400' :
+            'bg-green-500/20 text-green-400'
+          }`}>
+          {value}
+        </span>
+      ),
+    },
+    {
+      key: 'confidence_level' as any,
+      label: 'Confidence',
+      render: (value) => (
+        <span className="text-gray-300 text-xs font-mono">
+          {typeof value === 'number' ? `${(value * 100).toFixed(0)}%` : value}
+        </span>
       ),
     },
   ];

@@ -1,0 +1,23 @@
+[
+  {
+    "intent_name": "list_datasets",
+    "zowe_command": "zowe files list data-set",
+    "required_parameters": ["dataset_pattern"],
+    "optional_parameters": [],
+    "description": "Lists datasets matching a pattern"
+  },
+  {
+    "intent_name": "submit_job",
+    "zowe_command": "zowe jobs submit",
+    "required_parameters": ["job_card"],
+    "optional_parameters": ["jcl_path"],
+    "description": "Submits a job to JES"
+  },
+  {
+    "intent_name": "list_jobs",
+    "zowe_command": "zowe jobs list",
+    "required_parameters": [],
+    "optional_parameters": ["status"],
+    "description": "Lists recent jobs"
+  }
+]

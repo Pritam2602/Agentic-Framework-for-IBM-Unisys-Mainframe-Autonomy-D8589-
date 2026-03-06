@@ -1,6 +1,6 @@
 import sqlite3
 
-conn = sqlite3.connect("zowe_capability_catalog.db")
+conn = sqlite3.connect("database/zowe_catalog.db")
 
 cursor = conn.cursor()
 
@@ -467,6 +467,156 @@ cursor.executemany("""
 """, workflow_preconditions)
 
 conn.commit()
+
+# ============================================================================
+# INTENT-AGENT CATALOG (zowe_capability_catalog)
+# Used by the IntentAgent pipeline for intent classification and command mapping
+# ============================================================================
+
+# Drop old bad data if present
+cursor.execute("DROP TABLE IF EXISTS catalog_fts")
+cursor.execute("DROP TABLE IF EXISTS zowe_capability_catalog")
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS zowe_capability_catalog (
+        command_id          TEXT PRIMARY KEY,
+        intent_type         TEXT NOT NULL,
+        plugin_namespace    TEXT NOT NULL,
+        command_template    TEXT NOT NULL,
+        description         TEXT NOT NULL,
+        keywords            TEXT NOT NULL,
+        required_params     TEXT NOT NULL DEFAULT '[]',
+        optional_params     TEXT NOT NULL DEFAULT '[]',
+        risk_level          TEXT NOT NULL DEFAULT 'LOW'
+                            CHECK(risk_level IN ('LOW','MEDIUM','HIGH','CRITICAL')),
+        environment_gate    TEXT NOT NULL DEFAULT 'ALL'
+                            CHECK(environment_gate IN ('ALL','PROD_RESTRICTED','DEV_ONLY')),
+        active              INTEGER NOT NULL DEFAULT 1
+    )
+""")
+
+# 30 intent-agent catalog entries with proper command IDs and intent types
+intent_catalog_data = [
+    ('CMD_JOB_SUBMIT_DS', 'JOB_SUBMIT', 'zowe-cli', 'zowe jobs submit ds "{{primaryIdentifier}}" --wfo', 'Submit a batch job from a partitioned dataset member or sequential JCL dataset', 'submit,run,execute,kick off,launch,start,job,jcl,batch,pds,member', '["primaryIdentifier"]', '["environment","subsystem"]', 'MEDIUM', 'ALL', 1),
+    ('CMD_JOB_SUBMIT_LOCAL', 'JOB_SUBMIT', 'zowe-cli', 'zowe jobs submit lf "{{localFile}}" --wfo', 'Submit a batch job from a local JCL file on the workstation', 'submit,run,execute,job,local,file,jcl,upload and run', '["localFile"]', '["environment"]', 'MEDIUM', 'ALL', 1),
+    ('CMD_JOB_CANCEL', 'JOB_CANCEL', 'zowe-cli', 'zowe jobs cancel job "{{primaryIdentifier}}"', 'Cancel a running or waiting batch job by job name or job ID', 'cancel,stop,abort,kill,terminate,halt,job', '["primaryIdentifier"]', '["subsystem"]', 'HIGH', 'ALL', 1),
+    ('CMD_JOB_STATUS_SINGLE', 'JOB_STATUS', 'zowe-cli', 'zowe jobs view job-status-by-jobid "{{primaryIdentifier}}"', 'Retrieve the execution status of a single job by job name or job ID', 'status,check,is it running,what happened,view,job,single,specific', '["primaryIdentifier"]', '["owner","subsystem"]', 'LOW', 'ALL', 1),
+    ('CMD_JOB_LIST_BY_PREFIX', 'JOB_LIST', 'zowe-cli', 'zowe jobs list jobs --prefix "{{primaryIdentifier}}" --owner "{{owner}}"', 'List multiple batch jobs matching a name prefix pattern, filterable by owner and status', 'list,show,find,search,all jobs,prefix,batch,queue,jes,multiple,jobs', '["primaryIdentifier"]', '["owner","status","maxCount","subsystem"]', 'LOW', 'ALL', 1),
+    ('CMD_JOB_LIST_BY_OWNER', 'JOB_LIST', 'zowe-cli', 'zowe jobs list jobs --owner "{{owner}}"', 'List all jobs submitted by a specific TSO user ID or service account', 'list,show,jobs,owner,user,submitted by,service account,tso', '["owner"]', '["status","maxCount"]', 'LOW', 'ALL', 1),
+    ('CMD_JOB_OUTPUT_RETRIEVE', 'JOB_OUTPUT_RETRIEVE', 'zowe-cli', 'zowe jobs view all-spool-content "{{primaryIdentifier}}"', 'Retrieve all spool output, JESMSGLG, JESJCL, and JESYSMSG for a completed job', 'output,spool,log,jesmsglg,jesjcl,jesysmsg,messages,results,rc,return code,retrieve,get output', '["primaryIdentifier"]', '["owner","ddName"]', 'LOW', 'ALL', 1),
+    ('CMD_JOB_OUTPUT_DOWNLOAD', 'JOB_OUTPUT_RETRIEVE', 'zowe-cli', 'zowe jobs download output "{{primaryIdentifier}}" --directory "{{outputDir}}"', 'Download all spool files from a job to a local directory', 'download,save,export,output,spool,job,local,directory', '["primaryIdentifier"]', '["outputDir","owner"]', 'LOW', 'ALL', 1),
+    ('CMD_DS_ALLOCATE_SEQ', 'DATASET_ALLOCATE', 'zowe-cli', 'zowe files create data-set-sequential "{{primaryIdentifier}}" --size "{{primarySpace}}{{spaceUnit}}"', 'Allocate a new sequential (PS) dataset on the mainframe', 'allocate,create,define,new,sequential,ps,dataset,file,mainframe', '["primaryIdentifier"]', '["primarySpace","spaceUnit","recordFormat","recordLength","blockSize"]', 'MEDIUM', 'ALL', 1),
+    ('CMD_DS_ALLOCATE_PDS', 'DATASET_ALLOCATE', 'zowe-cli', 'zowe files create data-set-partitioned "{{primaryIdentifier}}" --size "{{primarySpace}}{{spaceUnit}}"', 'Allocate a new partitioned dataset (PDS or PDSE) on the mainframe', 'allocate,create,define,pds,pdse,partitioned,library,dataset,members', '["primaryIdentifier"]', '["primarySpace","spaceUnit","dirBlocks","recordFormat","recordLength"]', 'MEDIUM', 'ALL', 1),
+    ('CMD_DS_ALLOCATE_VSAM', 'DATASET_ALLOCATE', 'zowe-cli', 'zowe files create data-set-vsam "{{primaryIdentifier}}" --data-set-organization {{vsamType}}', 'Allocate a new VSAM dataset (KSDS, ESDS, RRDS) on the mainframe', 'allocate,create,define,vsam,ksds,esds,rrds,cluster,dataset', '["primaryIdentifier","vsamType"]', '["primarySpace","spaceUnit","keyLength","keyOffset"]', 'MEDIUM', 'ALL', 1),
+    ('CMD_DS_DELETE', 'DATASET_DELETE', 'zowe-cli', 'zowe files delete data-set "{{primaryIdentifier}}" --for-sure', 'Delete and uncatalog a sequential, PDS, or VSAM dataset from the mainframe', 'delete,scratch,uncatalog,remove,destroy,drop,dataset,file,purge', '["primaryIdentifier"]', '["environment"]', 'CRITICAL', 'PROD_RESTRICTED', 1),
+    ('CMD_DS_DELETE_MEMBER', 'DATASET_DELETE', 'zowe-cli', 'zowe files delete data-set "{{primaryIdentifier}}({{memberName}})" --for-sure', 'Delete a specific member from a partitioned dataset', 'delete,remove,scratch,member,pds,library,jcl', '["primaryIdentifier","memberName"]', '[]', 'HIGH', 'ALL', 1),
+    ('CMD_DS_LIST_HLQ', 'DATASET_LIST', 'zowe-cli', 'zowe files list ds "{{qualifier}}.*"', 'List all datasets under a high-level qualifier or dataset name pattern', 'list,show,browse,find,datasets,hlq,qualifier,pattern,prefix,all datasets', '["qualifier"]', '["maxLength"]', 'LOW', 'ALL', 1),
+    ('CMD_DS_LIST_MEMBERS', 'DATASET_LIST', 'zowe-cli', 'zowe files list am "{{primaryIdentifier}}"', 'List all members within a partitioned dataset or PDS library', 'list,show,members,pds,library,contents,jcl,members of', '["primaryIdentifier"]', '[]', 'LOW', 'ALL', 1),
+    ('CMD_DS_DOWNLOAD', 'DATASET_DOWNLOAD', 'zowe-cli', 'zowe files download ds "{{primaryIdentifier}}" --file "{{localFile}}"', 'Download a sequential dataset or PDS member to a local file', 'download,export,get,retrieve,pull,copy to local,dataset,file', '["primaryIdentifier"]', '["localFile","encoding"]', 'LOW', 'ALL', 1),
+    ('CMD_DS_UPLOAD', 'DATASET_UPLOAD', 'zowe-cli', 'zowe files upload file-to-data-set "{{localFile}}" "{{primaryIdentifier}}"', 'Upload a local file to a mainframe sequential dataset or PDS member', 'upload,import,put,send,copy to mainframe,deploy,push,dataset', '["localFile","primaryIdentifier"]', '["encoding","memberName"]', 'MEDIUM', 'ALL', 1),
+    ('CMD_DS_COPY', 'DATASET_COPY', 'zowe-cli', 'zowe files copy data-set "{{primaryIdentifier}}" "{{targetDataset}}"', 'Copy a sequential dataset or PDS to another dataset name', 'copy,duplicate,clone,replicate,dataset,from,to', '["primaryIdentifier","targetDataset"]', '["replace","memberName"]', 'MEDIUM', 'ALL', 1),
+    ('CMD_DS_VIEW_MEMBER', 'DATASET_LIST', 'zowe-cli', 'zowe files view ds "{{primaryIdentifier}}({{memberName}})"', 'Display the contents of a PDS member or sequential dataset inline', 'view,browse,read,display,show contents,member,pds,parmlib,jcl', '["primaryIdentifier"]', '["memberName","encoding"]', 'LOW', 'ALL', 1),
+    ('CMD_DS_GDG_LIST', 'DATASET_LIST', 'zowe-cli', 'zowe files list ds "{{primaryIdentifier}}.*"', 'List all generation datasets under a GDG base name', 'gdg,generation,generation data group,generations,list,base,datasets', '["primaryIdentifier"]', '[]', 'LOW', 'ALL', 1),
+    ('CMD_DB2_EXPLAIN', 'DB2_QUERY_EXPLAIN', 'zowe-db2-plugin', 'zowe db2 execute sql --query "EXPLAIN ALL SET QUERYNO={{queryNo}} FOR {{sqlStatement}}" --subsystem {{subsystem}}', 'Explain the access path and optimizer plan for a DB2 SQL query', 'explain,access path,query plan,optimizer,db2,sql,performance,index,tablespace', '["subsystem","sqlStatement"]', '["queryNo","environment"]', 'LOW', 'ALL', 1),
+    ('CMD_DB2_BIND_PLAN', 'DB2_BIND', 'zowe-db2-plugin', 'zowe db2 execute sql --query "BIND PLAN({{planName}}) PKLIST({{packageList}}) ISOLATION({{isolation}})" --subsystem {{subsystem}}', 'Bind or rebind a DB2 application plan on a specified subsystem', 'bind,rebind,plan,package,db2,application,isolation,cs,rr,ur', '["planName","subsystem"]', '["packageList","isolation","owner","qualifier"]', 'HIGH', 'PROD_RESTRICTED', 1),
+    ('CMD_DB2_BIND_PACKAGE', 'DB2_BIND', 'zowe-db2-plugin', 'zowe db2 execute sql --query "BIND PACKAGE({{collection}}/{{packageName}}) MEMBER({{dbrmName}}) ISOLATION({{isolation}})" --subsystem {{subsystem}}', 'Bind a DBRM into a DB2 package within a collection', 'bind,package,dbrm,collection,db2,member,program,isolation', '["packageName","dbrmName","subsystem","collection"]', '["isolation","planName"]', 'HIGH', 'PROD_RESTRICTED', 1),
+    ('CMD_DB2_RUNSTATS', 'DB2_RUNSTATS', 'zowe-db2-plugin', 'zowe db2 execute sql --query "RUNSTATS TABLESPACE {{tablespace}} TABLE ALL INDEX ALL" --subsystem {{subsystem}}', 'Run DB2 RUNSTATS utility to update catalog statistics for a tablespace', 'runstats,statistics,catalog stats,tablespace,db2,table,index,optimizer', '["tablespace","subsystem"]', '["tableList","shrlevel","environment"]', 'MEDIUM', 'ALL', 1),
+    ('CMD_DB2_QUERY_CATALOG', 'DB2_QUERY_EXPLAIN', 'zowe-db2-plugin', 'zowe db2 execute sql --query "{{sqlStatement}}" --subsystem {{subsystem}}', 'Execute a read-only SQL query against DB2 catalog tables or application tables', 'catalog,statistics,sysibm,systables,syscolumns,show,query,select,db2,information', '["sqlStatement","subsystem"]', '["maxRows","environment"]', 'LOW', 'ALL', 1),
+    ('CMD_USS_LIST', 'USS_FILE_LIST', 'zowe-cli', 'zowe files list uss "{{primaryIdentifier}}"', 'List files and directories in a Unix System Services (USS) path', 'list,show,uss,unix,files,directory,path,ls,z/os unix', '["primaryIdentifier"]', '["maxLength","group"]', 'LOW', 'ALL', 1),
+    ('CMD_USS_READ', 'USS_FILE_READ', 'zowe-cli', 'zowe files view uss-file "{{primaryIdentifier}}"', 'Display the contents of a USS file on z/OS Unix System Services', 'read,view,cat,display,show,uss,unix,file,contents,z/os unix', '["primaryIdentifier"]', '["encoding"]', 'LOW', 'ALL', 1),
+    ('CMD_USS_WRITE', 'USS_FILE_WRITE', 'zowe-cli', 'zowe files upload file-to-uss "{{localFile}}" "{{primaryIdentifier}}"', 'Upload a local file to a USS path on z/OS Unix System Services', 'write,upload,put,send,uss,unix,file,deploy,z/os unix', '["localFile","primaryIdentifier"]', '["encoding","permissions"]', 'MEDIUM', 'ALL', 1),
+    ('CMD_CONFIG_PROFILE_LIST', 'CONFIG_PROFILE_LIST', 'zowe-cli', 'zowe config list', 'List all configured Zowe profiles and connection configurations', 'config,profiles,list,show,connections,mainframe,credentials,settings', '[]', '[]', 'LOW', 'ALL', 1),
+    ('CMD_CONFIG_PROFILE_SET', 'CONFIG_PROFILE_SET', 'zowe-cli', 'zowe config set "{{configKey}}" "{{configValue}}"', 'Set or update a Zowe configuration property or default profile', 'set,configure,update,profile,default,connection,host,port,credentials', '["configKey","configValue"]', '[]', 'MEDIUM', 'ALL', 1),
+]
+
+cursor.executemany("""
+    INSERT OR REPLACE INTO zowe_capability_catalog
+    (command_id, intent_type, plugin_namespace, command_template, description,
+     keywords, required_params, optional_params, risk_level, environment_gate, active)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+""", intent_catalog_data)
+
+# FTS5 full-text search index for fast keyword matching
+# Drop all FTS shadow tables first to avoid malformed DB
+for suffix in ['', '_data', '_idx', '_docsize', '_config', '_content']:
+    cursor.execute(f"DROP TABLE IF EXISTS catalog_fts{suffix}")
+
+cursor.execute("""
+    CREATE VIRTUAL TABLE catalog_fts USING fts5(
+        command_id,
+        description,
+        keywords,
+        content='zowe_capability_catalog',
+        content_rowid='rowid'
+    )
+""")
+
+# Populate FTS index (table is freshly created, no need to DELETE first)
+cursor.execute("""
+    INSERT INTO catalog_fts(rowid, command_id, description, keywords)
+    SELECT rowid, command_id, description, keywords FROM zowe_capability_catalog
+""")
+
+# ============================================================================
+# AGENT RUNS TELEMETRY TABLE
+# Records every IntentAgent pipeline execution for observability
+# ============================================================================
+
+cursor.execute("DROP TABLE IF EXISTS agent_runs")
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS agent_runs (
+        run_id              TEXT PRIMARY KEY,
+        created_at          TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+        prompt_hash         TEXT NOT NULL,
+        prompt_length_chars INTEGER NOT NULL,
+        model_used          TEXT NOT NULL,
+        model_provider      TEXT NOT NULL,
+        model_temperature   REAL NOT NULL DEFAULT 0.0,
+        latency_ms_total    INTEGER NOT NULL DEFAULT 0,
+        latency_ms_llm      INTEGER,
+        latency_ms_catalog  INTEGER,
+        token_count_input   INTEGER,
+        token_count_output  INTEGER,
+        retry_count         INTEGER NOT NULL DEFAULT 0,
+        intent_type         TEXT NOT NULL,
+        selected_command_id TEXT,
+        confidence          REAL NOT NULL DEFAULT 0.0,
+        candidate_count     INTEGER NOT NULL DEFAULT 0,
+        status              TEXT NOT NULL DEFAULT 'SUCCESS'
+                            CHECK(status IN ('SUCCESS','UNKNOWN','SCHEMA_FAILURE',
+                                             'CATALOG_UNAVAILABLE','HALLUCINATION_DETECTED')),
+        requires_review     INTEGER NOT NULL DEFAULT 0,
+        mcp_dispatched_at   TEXT,
+        mcp_decision        TEXT,
+        estimated_cost_usd  REAL,
+        error_code          TEXT,
+        error_message       TEXT,
+        session_id          TEXT,
+        operator_id_hash    TEXT,
+        raw_output          TEXT,
+        alternative_candidates TEXT
+    )
+""")
+
+# ============================================================================
+# CATALOG METADATA TABLE
+# ============================================================================
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS catalog_meta (
+        key   TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    )
+""")
+
+cursor.execute("""
+    INSERT OR REPLACE INTO catalog_meta (key, value) VALUES ('schema_version', '2.0.0')
+""")
+cursor.execute("""
+    INSERT OR REPLACE INTO catalog_meta (key, value) VALUES ('last_updated', datetime('now'))
+""")
+
+conn.commit()
 conn.close()
 
-print("Zowe Catalog created successfully.")
+print("Zowe Catalog created successfully (with intent-agent catalog + FTS + telemetry).")

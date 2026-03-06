@@ -1,7 +1,7 @@
 """
-Catalog Repository - Data access layer
+Catalog Repository - Data access layer (UPDATED FOR CONSOLIDATED DATABASE)
 
-Commands  SQLite (zowe_capability_catalog.db)
+Commands  SQLite (zowe_catalog.db - consolidated)
 Jobs / Workflows / Datasets  simulation_data folder
 """
 
@@ -14,8 +14,8 @@ import csv
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-# Database is outside app/
-DB_PATH = BASE_DIR / "database" / "zowe_capability_catalog.db"
+# Database is outside app/ - NOW USING CONSOLIDATED DATABASE
+DB_PATH = BASE_DIR / "database" / "zowe_catalog.db"
 
 # simulation_data is inside app/
 APP_DIR = BASE_DIR / "app"
@@ -44,89 +44,49 @@ class CatalogRepository:
         return conn
 
     # =========================================================
-    # COMMANDS (From SQLite)
+    # COMMANDS (From SQLite - CONSOLIDATED SCHEMA)
     # =========================================================
 
     def get_all_commands(self) -> List[Dict[str, Any]]:
+        """Load commands from zowe_capability table (46 original catalog entries)"""
         with self.get_connection() as conn:
-            # Get commands with their preconditions
             cursor = conn.execute("""
                 SELECT 
-                    id,
                     zowe_command,
                     category,
                     command_family,
-                    description,
+                    subsystem,
+                    ibm_artifact,
+                    operation,
+                    access_pattern,
                     response_format,
-                    output_file
+                    intended_agent,
+                    constraints,
+                    execution_cost,
+                    confidence_level
                 FROM zowe_capability
-                ORDER BY id
+                ORDER BY command_family, zowe_command
             """)
 
             rows = cursor.fetchall()
-            
-            # Get preconditions map
-            precond_cursor = conn.execute("""
-                SELECT capability_id, precondition
-                FROM zowe_capability_precondition
-            """)
-            
-            preconditions_map: Dict[int, List[str]] = {}
-            for precond_row in precond_cursor.fetchall():
-                capability_id = precond_row["capability_id"]
-                if capability_id not in preconditions_map:
-                    preconditions_map[capability_id] = []
-                preconditions_map[capability_id].append(precond_row["precondition"])
-
             commands = []
-            now = datetime.now()
             
-            for row in rows:
-                capability_id = row["id"]
-                zowe_command = row["zowe_command"]
-                category = row["category"]
-                command_family = row["command_family"]
-                description = row["description"]
-                response_format = row["response_format"]
-                output_file = row["output_file"]
-                
-                # Map response_format to outputType
-                output_type = "JSON" if response_format == "JSON" else "TEXT"
-                
-                # Get preconditions for this command
-                preconditions = preconditions_map.get(capability_id, [])
-                
-                # Map category to type
-                type_mapping = {
-                    "batch": "batch",
-                    "workflow": "workflow",
-                    "metadata": "metadata",
-                    "database": "query",
-                    "query": "query",
-                    "system": "system",
-                    "data": "system",
-                    "tso": "system",
-                    "zosmf": "system",
-                    "ssh": "system",
-                    "console": "system",
-                    "files": "system"
-                }
-                command_type = type_mapping.get(category.lower(), "system")
-                
-                # Create command dict (matching CommandModel schema)
+            for idx, row in enumerate(rows):
                 command = {
-                    "id": str(capability_id),
-                    "name": zowe_command,
-                    "type": command_type,
-                    "family": command_family,
-                    "preconditions": preconditions,
-                    "outputType": output_type,
-                    "outputFile": output_file if output_file else None,
-                    "description": description or "",
-                    "createdAt": now.isoformat(),
-                    "updatedAt": now.isoformat()
+                    "id": f"cmd-{idx+1:03d}",
+                    "zowe_command": row["zowe_command"],
+                    "category": row["category"],
+                    "command_family": row["command_family"],
+                    "subsystem": row["subsystem"],
+                    "ibm_artifact": row["ibm_artifact"],
+                    "operation": row["operation"],
+                    "access_pattern": row["access_pattern"],
+                    "response_format": row["response_format"],
+                    "intended_agent": row["intended_agent"],
+                    "constraints": row["constraints"] or "",
+                    "execution_cost": row["execution_cost"],
+                    "confidence_level": row["confidence_level"],
                 }
-                
                 commands.append(command)
 
             return commands
@@ -240,7 +200,8 @@ class CatalogRepository:
 
             return {
                 "status": "connected",
-                "db_path": str(self.db_path)
+                "db_path": str(self.db_path),
+                "database": "zowe_catalog.db (consolidated)"
             }
         except Exception as e:
             return {
