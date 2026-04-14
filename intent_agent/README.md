@@ -1,203 +1,184 @@
+﻿# Intent Agent - Production Grade Pure Understanding Layer
 
-# IntentAgent
+## Architecture Overview
 
-IntentAgent is an LLM-powered system that converts natural language prompts into structured **Zowe CLI commands** using a capability catalog.
+The Intent Agent is responsible for understanding **WHAT** the user wants, not **HOW** to execute it.
 
-The goal of this project is to evaluate how well Large Language Models (LLMs) can understand enterprise-style prompts and map them to valid structured commands.
+This is pure intent extraction - no Zowe commands, no API calls, no planning.
 
----
+## Modular Structure
 
-## Architecture
-
-The system follows this pipeline:
-
-User Prompt  
-↓  
-IntentAgent  
-↓  
-Capability Catalog (JSON)  
-↓  
-Prompt Grounding  
-↓  
-LLM (Gemini / OpenAI)  
-↓  
-Structured JSON Output  
-↓  
-Evaluation Metrics
-
-The capability catalog provides the list of supported commands and parameters that the LLM must choose from.
-
----
-
-## Features
-
-- Natural language → Zowe CLI command mapping
-- Structured JSON output using **Pydantic**
-- Capability catalog grounding
-- LLM benchmarking support
-- Evaluation metrics including:
-  - Intent match accuracy
-  - JSON validity
-  - Hallucinated command detection
-  - Latency measurement
-
----
-
-## Project Structure
-
+`
 intent_agent/
+ __init__.py          # Package exports
+ schemas.py           # Pydantic data models
+ constants.py         # Mappings and configuration
+ normalizer.py        # Data normalization logic
+ utils.py             # Helper functions (priority, confidence)
+ extractor.py         # Rule-based fallback extraction
+ agent.py             # Main IntentAgent class
+ core.py              # Test runner and demo
+ eval.py              # Evaluation utilities
+ README.md            # This file
+`
 
-core.py  
-Main implementation of the IntentAgent
+## Module Responsibilities
 
-eval.py  
-Evaluation utilities for benchmarking agent performance
+### schemas.py
+Data models for intent output:
+- FilterCriteria: Time ranges and conditions
+- IntentOutput: Complete structured intent
 
-capability_catalog.json  
-Capability catalog containing supported intents and Zowe commands
+### constants.py
+Configuration mappings:
+- ENTITY_MAPPINGS: Entity synonyms
+- ATTRIBUTE_MAPPINGS: Attribute synonyms
+- DEFAULT_ENTITY_ATTRIBUTES: Default fields per entity
+- TASK_KEYWORDS: Task type keywords
+- SYSTEM_KEYWORDS: System identifiers
 
-requirements.txt  
-Python dependencies
+### normalizer.py
+Intent normalization:
+- Entity name normalization
+- Attribute name normalization
+- Date range parsing and normalization
 
-README.md  
-Project documentation
+### utils.py
+Utility functions:
+- infer_priority(): Task-based priority inference
+- compute_confidence(): Confidence score computation
 
----
+### extractor.py
+Fallback extraction when LLM fails:
+- RuleBasedExtractor: Keyword-based intent extraction
+- Task detection from text
+- Entity and attribute extraction
+- System detection with smart fallback logic
 
-## Capability Catalog
+### agent.py
+Core intent agent:
+- IntentAgent: Main class
+- LLM integration
+- JSON parsing and validation
+- Normalization and validation
+- Fallback handling
 
-The capability catalog defines all valid commands the agent can map to.
+### eval.py
+Evaluation framework:
+- Agent evaluation against test cases
+- Metrics collection
+- Results visualization
 
-Example entry:
+## Usage
 
+`python
+from intent_agent import IntentAgent
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+# Initialize model
+model = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
+
+# Create agent
+agent = IntentAgent(model=model)
+
+# Process user input
+intent = agent.run("Show me payroll data for March 2026")
+
+# Access structured output
+print(intent.task)        # "fetch"
+print(intent.entities)    # ["payroll"]
+print(intent.attributes)  # ["employeeId", "netSalary", "employeeName"]
+print(intent.systems)     # ["ibm", "unisys"]
+print(intent.priority)    # "medium"
+print(intent.confidence_score)  # 0.85
+`
+
+## Expected Output Format
+
+`json
 {
-  "intent_name": "list_datasets",
-  "zowe_command": "zowe files list data-set",
-  "required_parameters": ["dataset_pattern"],
-  "optional_parameters": []
-}
-
-The agent uses this catalog to ensure that the generated commands are valid and not hallucinated.
-
----
-
-## Installation
-
-Clone the repository and install dependencies.
-
-git clone <repository_url>
-cd intent_agent
-
-Create a virtual environment:
-
-python -m venv venv
-
-Activate it:
-
-Windows:
-venv\Scripts\activate
-
-Mac/Linux:
-source venv/bin/activate
-
-Install dependencies:
-
-pip install -r requirements.txt
-
----
-
-## Environment Setup
-
-Create a `.env` file in the project root.
-
-Example:
-
-OPENAI_API_KEY=your_openai_key
-GOOGLE_API_KEY=your_gemini_key
-
-The agent will automatically load these keys using `python-dotenv`.
-
----
-
-## Running the Agent
-
-From the project root:
-
-python -m intent_agent.core
-
-The script will:
-1. Initialize supported LLM providers
-2. Run evaluation prompts
-3. Print evaluation metrics
-4. Show a sample prediction
-
----
-
-## Example Prompt
-
-Show me all datasets starting with SYS
-
-Example Output:
-
-{
-  "intent": "list_datasets",
-  "zowe_command": "zowe files list data-set",
-  "parameters": {
-    "dataset_pattern": "SYS*"
+  "task": "fetch",
+  "entities": ["payroll"],
+  "attributes": ["employeeId", "netSalary", "employeeName"],
+  "filters": {
+    "time_range": {
+      "start": "2026-03-01",
+      "end": "2026-03-31"
+    },
+    "conditions": []
   },
-  "missing_fields": [],
-  "confidence": 1.0
+  "systems": ["ibm", "unisys"],
+  "priority": "medium",
+  "confidence_score": 0.85
 }
+`
 
----
+## Key Features
 
-## Evaluation Metrics
+### Fix 1: Entity Default Attributes
+If user doesn't specify attributes, they're populated from entity defaults:
+- payroll -> [employeeId, netSalary, employeeName]
+- customer -> [customerId, customerName, accountId]
+- transaction -> [transactionId, transactionAmount, transactionDate]
 
-The evaluation system measures:
+### Fix 2: Smart System Detection
+Instead of defaulting to both systems:
+- If mentions API/REST/HTTP -> Unisys
+- If mentions datasets/JCL/Zowe -> IBM
+- Default -> IBM (mainframe-first)
 
-intent_match  
-Whether predicted intent matches ground truth
+### Fix 3: Priority Logic
+Based on task type:
+- compare/analyze -> high
+- fetch/reconcile/transform -> medium
+- others -> low
 
-json_valid  
-Whether the model returned valid structured JSON
+### Fix 4: Strict Schema Enforcement
+Required fields validation:
+- task (non-empty)
+- entities (non-empty list)
+- systems (non-empty list)
+- attributes enforced as list
 
-hallucinated_command  
-Whether the command exists in the catalog
+### Fix 5: Confidence Scoring
+Based on:
+- Presence of entities (+0.15)
+- Presence of attributes (+0.15)
+- Presence of filters (+0.1)
+- Presence of systems (+0.1)
+- Task clarity (adjustment -0.2 if ambiguous)
+- Fallback penalty (x0.8)
 
-latency  
-Time taken for model response
+## Integration Points
 
-Example output:
+### Input from Users
+Natural language queries about data
 
-model   prompt                         intent_match json_valid hallucinated latency
-gemini  Show me all datasets...        True        True       False        0.82s
-gemini  Submit a job with job card...  True        True       False        0.91s
+### Output to Context Resolution Agent
+Structured intent JSON containing:
+- What task to perform
+- What entities are involved
+- What attributes are needed
+- What systems might have the data
 
----
+The Context Resolution Agent uses this to determine WHERE to find the data.
 
-## Supported Models
+## Testing
 
-The system currently supports:
+Run demo:
+`ash
+python -m intent_agent.core
+`
 
-- Google Gemini
-- OpenAI GPT models
+Run evaluation:
+`ash
+python eval_demo.py
+`
 
-Additional local models can be integrated.
+## Design Principles
 
----
-
-## Future Improvements
-
-Possible enhancements include:
-
-- Retrieval-based command selection using embeddings
-- Vector search over capability catalog
-- SQL-backed capability catalog
-- Multi-agent intent validation
-- Advanced benchmarking across multiple LLMs
-
----
-
-## License
-
-This project is intended for research and educational purposes.
+1. Separation of Concerns: Each module has a single responsibility
+2. Modularity: Easy to test and extend
+3. Production-Ready: Proper error handling and fallbacks
+4. Normalized Output: All data standardized before output
+5. No Side Effects: Pure functions where possible
