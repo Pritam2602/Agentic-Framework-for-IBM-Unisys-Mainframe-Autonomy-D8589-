@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
 import { Layout, LoadingSpinner } from '../components/common';
 import { sendUserQuery } from '../services/api';
 import { ChatMessage } from '../types';
@@ -7,6 +7,32 @@ import {
   MicrophoneIcon,
   CodeBracketIcon 
 } from '@heroicons/react/24/outline';
+import {
+  PipelineVisualization,
+  IntentPanel,
+  ContextPanel,
+  PlannerPanel,
+  ExecutionResultPanel
+} from '../components/pipeline';
+import { extractIntent, executeAgentPipeline } from '../services/agentPipeline';
+
+// Pipeline state types
+interface StageState {
+  status: 'pending' | 'processing' | 'completed' | 'error';
+  data?: any;
+  error?: string;
+  duration?: number;
+}
+
+interface PipelineState {
+  stages: {
+    intent: StageState;
+    context: StageState;
+    planner: StageState;
+    execution: StageState;
+  };
+}
+
 
 export default function ExecutionPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -14,6 +40,18 @@ export default function ExecutionPage() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Pipeline visualization state
+  const [pipelineState, setPipelineState] = useState<PipelineState>({
+    stages: {
+      intent: { status: 'pending' },
+      context: { status: 'pending' },
+      planner: { status: 'pending' },
+      execution: { status: 'pending' }
+    }
+  });
+
+  const [showPipelineView, setShowPipelineView] = useState(true);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

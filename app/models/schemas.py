@@ -1,4 +1,4 @@
-"""
+﻿"""
 Pydantic models for API request/response validation
 """
 from typing import List, Optional, Dict, Any, Literal
@@ -36,15 +36,18 @@ class AgentQueryRequest(BaseModel):
 
 class CommandModel(BaseModel):
     id: str
-    name: str
-    type: Literal["batch", "workflow", "metadata", "query", "system"]
-    family: Literal["JOB", "WORKFLOW", "DATASET", "SYSTEM"]
-    preconditions: List[str]
-    outputType: Literal["JSON", "TEXT", "FILE", "STREAM"]
-    outputFile: Optional[str] = None
-    description: str
-    createdAt: datetime
-    updatedAt: datetime
+    zowe_command: str
+    category: str
+    command_family: str
+    subsystem: str
+    ibm_artifact: str
+    operation: str
+    access_pattern: Optional[str] = None
+    response_format: Optional[str] = None
+    intended_agent: Optional[str] = None
+    constraints: Optional[str] = None
+    execution_cost: str
+    confidence_level: Optional[float] = None
 
 
 class JobModel(BaseModel):
