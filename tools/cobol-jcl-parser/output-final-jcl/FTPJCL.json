@@ -1,0 +1,12 @@
+{
+  "job_name": "FTPJCLS",
+  "steps": [
+    {
+      "step_name": "STEP1",
+      "program": "FTP",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

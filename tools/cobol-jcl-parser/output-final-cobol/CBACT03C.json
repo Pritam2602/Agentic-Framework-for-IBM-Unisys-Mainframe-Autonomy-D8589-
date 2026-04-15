@@ -1,0 +1,53 @@
+{
+  "program_id": "CBACT03C",
+  "source_file": "CBACT03C.cbl",
+  "description": "Author: AWS.",
+  "copybooks": ["CVACT03Y"],
+  "paragraphs": ["1000-XREFFILE-GET-NEXT", "0000-XREFFILE-OPEN", "9000-XREFFILE-CLOSE", "9999-ABEND-PROGRAM", "9910-DISPLAY-IO-STATUS"],
+  "calls": [
+    {"program": "CEE3ABD", "type": "static"}
+  ],
+  "cics_operations": [],
+  "variables": [
+    {"name": "CARD-XREF-RECORD", "level": 1, "pic": "", "usage": ""},
+    {"name": "XREF-CARD-NUM", "level": 5, "pic": "X(16)", "usage": ""},
+    {"name": "XREF-CUST-ID", "level": 5, "pic": "9(09)", "usage": ""},
+    {"name": "XREF-ACCT-ID", "level": 5, "pic": "9(11)", "usage": ""},
+    {"name": "", "level": 5, "pic": "X(14)", "usage": ""},
+    {"name": "XREFFILE-STATUS", "level": 1, "pic": "", "usage": ""},
+    {"name": "XREFFILE-STAT1", "level": 5, "pic": "X", "usage": ""},
+    {"name": "XREFFILE-STAT2", "level": 5, "pic": "X", "usage": ""},
+    {"name": "IO-STATUS", "level": 1, "pic": "", "usage": ""},
+    {"name": "IO-STAT1", "level": 5, "pic": "X", "usage": ""},
+    {"name": "IO-STAT2", "level": 5, "pic": "X", "usage": ""},
+    {"name": "TWO-BYTES-BINARY", "level": 1, "pic": "9(4)", "usage": "BINARY"},
+    {"name": "TWO-BYTES-ALPHA", "level": 1, "pic": "", "usage": ""},
+    {"name": "TWO-BYTES-LEFT", "level": 5, "pic": "X", "usage": ""},
+    {"name": "TWO-BYTES-RIGHT", "level": 5, "pic": "X", "usage": ""},
+    {"name": "IO-STATUS-04", "level": 1, "pic": "", "usage": ""},
+    {"name": "IO-STATUS-0401", "level": 5, "pic": "9", "usage": ""},
+    {"name": "IO-STATUS-0403", "level": 5, "pic": "999", "usage": ""},
+    {"name": "APPL-RESULT", "level": 1, "pic": "S9(9)", "usage": "COMP"},
+    {"name": "APPL-AOK", "level": 88, "pic": "", "usage": ""},
+    {"name": "APPL-EOF", "level": 88, "pic": "", "usage": ""},
+    {"name": "END-OF-FILE", "level": 1, "pic": "X(01)", "usage": ""},
+    {"name": "ABCODE", "level": 1, "pic": "S9(9)", "usage": "BINARY"},
+    {"name": "TIMING", "level": 1, "pic": "S9(9)", "usage": "BINARY"},
+    {"name": "FD-XREFFILE-REC", "level": 1, "pic": "", "usage": ""},
+    {"name": "FD-XREF-CARD-NUM", "level": 5, "pic": "X(16)", "usage": ""},
+    {"name": "FD-XREF-DATA", "level": 5, "pic": "X(34)", "usage": ""}
+  ],
+  "files": [
+    {"file_name": "XREFFILE-FILE", "mode": "input"}
+  ],
+  "io_operations": {
+    "reads": ["XREFFILE-FILE"],
+    "writes": []
+  },
+  "summary": {
+    "type": "batch",
+    "inputs": ["XREFFILE-FILE"],
+    "outputs": [],
+    "purpose": "Reads 1 file(s)"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "entity": "transaction",
+  "description": "Financial transaction records from Unisys MCP transaction processing",
+  "source_system": "unisys_eportal",
+  "fields": [
+    {"name": "transactionId", "type": "string", "description": "Unique transaction identifier", "primary_key": true},
+    {"name": "accountId", "type": "string", "description": "Associated account identifier"},
+    {"name": "transactionAmount", "type": "number", "description": "Transaction amount in USD"},
+    {"name": "transactionDate", "type": "string", "description": "Transaction date in YYYY-MM-DD format"},
+    {"name": "transactionType", "type": "string", "description": "Transaction type: credit or debit"},
+    {"name": "description", "type": "string", "description": "Transaction description / memo"},
+    {"name": "status", "type": "string", "description": "Transaction status: completed, pending, failed"},
+    {"name": "currency", "type": "string", "description": "Currency code (ISO 4217)"}
+  ],
+  "filterable_fields": ["accountId", "transactionType", "transactionDate", "status"],
+  "record_count": 15
+}

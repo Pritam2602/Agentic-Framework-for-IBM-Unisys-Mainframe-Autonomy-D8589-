@@ -1,0 +1,12 @@
+{
+  "job_name": "OPENFIL",
+  "steps": [
+    {
+      "step_name": "OPCIFIL",
+      "program": "SDSF",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

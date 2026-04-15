@@ -1,0 +1,51 @@
+{
+  "job_name": "CUSTFILE",
+  "steps": [
+    {
+      "step_name": "CLCIFIL",
+      "program": "SDSF",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP05",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP10",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP15",
+      "program": "IDCAMS",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.CUSTDATA.PS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.CUSTDATA.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "OPCIFIL",
+      "program": "SDSF",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(java:*)",
+      "Bash(mvn --version)",
+      "Bash(choco:*)",
+      "Bash(conda:*)",
+      "Bash(xargs grep:*)",
+      "Bash(gh api:*)",
+      "Bash(grep -i '\\\\.cpy$')",
+      "Bash(curl -sL https://raw.githubusercontent.com/aws-samples/aws-mainframe-modernization-carddemo/main/app/cpy-bms/COACTUP.cpy -o carddemo/cpy/COACTUP.cpy)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(curl -sL https://raw.githubusercontent.com/aws-samples/aws-mainframe-modernization-carddemo/main/app/cpy-bms/COACTUP.CPY -o carddemo/cpy/COACTUP.CPY)",
+      "Bash(curl -sL https://raw.githubusercontent.com/aws-samples/aws-mainframe-modernization-carddemo/main/app/cpy-bms/COSGN00.CPY -o carddemo/cpy/COSGN00.CPY)",
+      "Bash(curl -sL https://raw.githubusercontent.com/aws-samples/aws-mainframe-modernization-carddemo/main/app/cpy-bms/COTRN01.CPY -o carddemo/cpy/COTRN01.CPY)",
+      "Bash(chmod +x:*)",
+      "Bash(ls:*)",
+      "Bash(bash run.sh test-cobol/minimal-test.cbl --output-dir output-oneclick)",
+      "Bash(bash run.sh carddemo/cbl carddemo/cpy --output-dir output-oneclick2)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/aws-samples/aws-mainframe-modernization-carddemo/main/app/jcl/POSTTRAN.jcl\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/aws-samples/aws-mainframe-modernization-carddemo/main/app/jcl/CREASTMT.JCL\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/aws-samples/aws-mainframe-modernization-carddemo/main/samples/jcl/BATCMP.jcl\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/aws-samples/aws-mainframe-modernization-carddemo/main/app/jcl/WAITSTEP.jcl\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/aws-samples/aws-mainframe-modernization-carddemo/main/app/jcl/COMBTRAN.jcl\")",
+      "Bash(python:*)"
+    ]
+  }
+}

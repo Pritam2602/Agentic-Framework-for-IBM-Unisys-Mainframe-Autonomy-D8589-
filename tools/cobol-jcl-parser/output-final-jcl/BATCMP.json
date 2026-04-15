@@ -1,0 +1,12 @@
+{
+  "job_name": "CNJBATMP",
+  "steps": [
+    {
+      "step_name": "BATCMP",
+      "program": "BUILDBAT",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

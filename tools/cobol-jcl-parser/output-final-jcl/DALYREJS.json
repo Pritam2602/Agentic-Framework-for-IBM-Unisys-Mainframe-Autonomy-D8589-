@@ -1,0 +1,12 @@
+{
+  "job_name": "DALYREJS",
+  "steps": [
+    {
+      "step_name": "STEP05",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

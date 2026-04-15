@@ -1,0 +1,12 @@
+{
+  "job_name": "REPTFILE",
+  "steps": [
+    {
+      "step_name": "STEP05",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

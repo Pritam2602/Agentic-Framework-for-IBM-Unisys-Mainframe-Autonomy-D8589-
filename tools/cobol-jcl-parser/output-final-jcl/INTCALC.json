@@ -1,0 +1,48 @@
+{
+  "job_name": "INTCALC",
+  "steps": [
+    {
+      "step_name": "STEP15",
+      "program": "CBACT04C",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.LOADLIB",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.TCATBALF.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.CARDXREF.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.CARDXREF.VSAM.AIX.PATH",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.ACCTDATA.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.DISCGRP.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.SYSTRAN(+1)",
+          "type": "output",
+          "disp": "(NEW,CATLG,DELETE)"
+        }
+      ],
+      "parm": "'",
+      "cond": ""
+    }
+  ]
+}

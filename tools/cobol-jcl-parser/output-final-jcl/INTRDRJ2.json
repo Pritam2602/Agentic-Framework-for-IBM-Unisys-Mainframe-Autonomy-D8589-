@@ -1,0 +1,23 @@
+{
+  "job_name": "INTRDRJ2",
+  "steps": [
+    {
+      "step_name": "IDCAMS",
+      "program": "IDCAMS",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDEMO.FTP.TEST.BKUP",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDEMO.FTP.TEST.BKUP.INTRDR",
+          "type": "input",
+          "disp": "SHR"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

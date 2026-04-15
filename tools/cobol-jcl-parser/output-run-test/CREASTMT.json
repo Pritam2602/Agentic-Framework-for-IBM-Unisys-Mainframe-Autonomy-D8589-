@@ -1,0 +1,109 @@
+{
+  "job_name": "CREASTMT",
+  "steps": [
+    {
+      "step_name": "DELDEF01",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP010",
+      "program": "SORT",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRXFL.SEQ",
+          "type": "output",
+          "disp": "(NEW,CATLG,DELETE)"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP020",
+      "program": "IDCAMS",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRXFL.SEQ",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRXFL.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        }
+      ],
+      "parm": "",
+      "cond": "(0,NE)"
+    },
+    {
+      "step_name": "STEP030",
+      "program": "IEFBR14",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.STATEMNT.HTML",
+          "type": "temp",
+          "disp": "(MOD,DELETE,DELETE)"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.STATEMNT.PS",
+          "type": "temp",
+          "disp": "(MOD,DELETE,DELETE)"
+        }
+      ],
+      "parm": "",
+      "cond": "(0,NE)"
+    },
+    {
+      "step_name": "STEP040",
+      "program": "CBSTM03A",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.LOADLIB",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRXFL.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.CARDXREF.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.ACCTDATA.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.CUSTDATA.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.STATEMNT.PS",
+          "type": "output",
+          "disp": "(NEW,CATLG,DELETE)"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.STATEMNT.HTML",
+          "type": "output",
+          "disp": "(NEW,CATLG,DELETE)"
+        }
+      ],
+      "parm": "",
+      "cond": "(0,NE)"
+    }
+  ]
+}

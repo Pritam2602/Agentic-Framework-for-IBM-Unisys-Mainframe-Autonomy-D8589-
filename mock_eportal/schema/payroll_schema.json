@@ -1,0 +1,18 @@
+{
+  "entity": "payroll",
+  "description": "Employee payroll data from Unisys MCP COBOL backend",
+  "source_system": "unisys_eportal",
+  "fields": [
+    {"name": "employeeId", "type": "integer", "description": "Unique employee identifier", "primary_key": true},
+    {"name": "employeeName", "type": "string", "description": "Full name of the employee"},
+    {"name": "department", "type": "string", "description": "Department the employee belongs to"},
+    {"name": "netSalary", "type": "number", "description": "Net salary after deductions"},
+    {"name": "grossSalary", "type": "number", "description": "Gross salary before deductions"},
+    {"name": "deductions", "type": "number", "description": "Total deductions (tax, insurance, etc.)"},
+    {"name": "payPeriod", "type": "string", "description": "Pay period in YYYY-MM format"},
+    {"name": "position", "type": "string", "description": "Job title / position"},
+    {"name": "hireDate", "type": "string", "description": "Date of hire in YYYY-MM-DD format"}
+  ],
+  "filterable_fields": ["employeeId", "department", "payPeriod"],
+  "record_count": 12
+}

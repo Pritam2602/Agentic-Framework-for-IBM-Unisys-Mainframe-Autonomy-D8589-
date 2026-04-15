@@ -1,0 +1,152 @@
+[
+  {
+    "transactionId": "TXN-20260301-001",
+    "accountId": "ACC-10001",
+    "transactionAmount": 15000.00,
+    "transactionDate": "2026-03-01",
+    "transactionType": "credit",
+    "description": "Wire transfer from partner",
+    "status": "completed",
+    "currency": "USD"
+  },
+  {
+    "transactionId": "TXN-20260302-002",
+    "accountId": "ACC-10002",
+    "transactionAmount": 2500.00,
+    "transactionDate": "2026-03-02",
+    "transactionType": "debit",
+    "description": "Monthly rent payment",
+    "status": "completed",
+    "currency": "USD"
+  },
+  {
+    "transactionId": "TXN-20260303-003",
+    "accountId": "ACC-10003",
+    "transactionAmount": 87500.00,
+    "transactionDate": "2026-03-03",
+    "transactionType": "credit",
+    "description": "Invoice payment - Project Alpha",
+    "status": "completed",
+    "currency": "USD"
+  },
+  {
+    "transactionId": "TXN-20260305-004",
+    "accountId": "ACC-10001",
+    "transactionAmount": 3200.00,
+    "transactionDate": "2026-03-05",
+    "transactionType": "debit",
+    "description": "Vendor payment - Office supplies",
+    "status": "completed",
+    "currency": "USD"
+  },
+  {
+    "transactionId": "TXN-20260307-005",
+    "accountId": "ACC-10004",
+    "transactionAmount": 750.00,
+    "transactionDate": "2026-03-07",
+    "transactionType": "debit",
+    "description": "Utility bill payment",
+    "status": "completed",
+    "currency": "USD"
+  },
+  {
+    "transactionId": "TXN-20260308-006",
+    "accountId": "ACC-10005",
+    "transactionAmount": 45000.00,
+    "transactionDate": "2026-03-08",
+    "transactionType": "credit",
+    "description": "Quarterly revenue deposit",
+    "status": "pending",
+    "currency": "USD"
+  },
+  {
+    "transactionId": "TXN-20260310-007",
+    "accountId": "ACC-10002",
+    "transactionAmount": 5200.00,
+    "transactionDate": "2026-03-10",
+    "transactionType": "credit",
+    "description": "Salary deposit",
+    "status": "completed",
+    "currency": "USD"
+  },
+  {
+    "transactionId": "TXN-20260312-008",
+    "accountId": "ACC-10006",
+    "transactionAmount": 1800.00,
+    "transactionDate": "2026-03-12",
+    "transactionType": "debit",
+    "description": "Insurance premium",
+    "status": "completed",
+    "currency": "USD"
+  },
+  {
+    "transactionId": "TXN-20260314-009",
+    "accountId": "ACC-10007",
+    "transactionAmount": 250000.00,
+    "transactionDate": "2026-03-14",
+    "transactionType": "credit",
+    "description": "Loan disbursement",
+    "status": "completed",
+    "currency": "USD"
+  },
+  {
+    "transactionId": "TXN-20260315-010",
+    "accountId": "ACC-10003",
+    "transactionAmount": 12000.00,
+    "transactionDate": "2026-03-15",
+    "transactionType": "debit",
+    "description": "Payroll processing",
+    "status": "completed",
+    "currency": "USD"
+  },
+  {
+    "transactionId": "TXN-20260318-011",
+    "accountId": "ACC-10008",
+    "transactionAmount": 500.00,
+    "transactionDate": "2026-03-18",
+    "transactionType": "debit",
+    "description": "ATM withdrawal",
+    "status": "completed",
+    "currency": "USD"
+  },
+  {
+    "transactionId": "TXN-20260320-012",
+    "accountId": "ACC-10009",
+    "transactionAmount": 67000.00,
+    "transactionDate": "2026-03-20",
+    "transactionType": "credit",
+    "description": "Client payment - Contract B",
+    "status": "completed",
+    "currency": "USD"
+  },
+  {
+    "transactionId": "TXN-20260322-013",
+    "accountId": "ACC-10010",
+    "transactionAmount": 3500.00,
+    "transactionDate": "2026-03-22",
+    "transactionType": "credit",
+    "description": "Freelance income",
+    "status": "completed",
+    "currency": "USD"
+  },
+  {
+    "transactionId": "TXN-20260325-014",
+    "accountId": "ACC-10001",
+    "transactionAmount": 8900.00,
+    "transactionDate": "2026-03-25",
+    "transactionType": "debit",
+    "description": "Equipment purchase",
+    "status": "completed",
+    "currency": "USD"
+  },
+  {
+    "transactionId": "TXN-20260328-015",
+    "accountId": "ACC-10004",
+    "transactionAmount": 4100.00,
+    "transactionDate": "2026-03-28",
+    "transactionType": "credit",
+    "description": "Tax refund",
+    "status": "pending",
+    "currency": "USD"
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "job_name": "READXREF",
+  "steps": [
+    {
+      "step_name": "STEP05",
+      "program": "CBACT03C",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.LOADLIB",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.CARDXREF.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

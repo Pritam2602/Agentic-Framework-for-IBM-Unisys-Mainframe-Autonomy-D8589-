@@ -1,0 +1,19 @@
+{
+  "job_name": "CBLDBMS",
+  "steps": [
+    {
+      "step_name": "STEP1",
+      "program": "BUILDBMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "SDSF1",
+      "program": "SDSF",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

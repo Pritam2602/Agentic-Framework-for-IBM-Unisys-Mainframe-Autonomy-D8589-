@@ -1,0 +1,46 @@
+{
+  "job_name": "COMBTRAN",
+  "steps": [
+    {
+      "step_name": "STEP05R",
+      "program": "SORT",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANSACT.BKUP(0)",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.SYSTRAN(0)",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANSACT.COMBINED(+1)",
+          "type": "output",
+          "disp": "(NEW,CATLG,DELETE)"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP10",
+      "program": "IDCAMS",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANSACT.COMBINED(+1)",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

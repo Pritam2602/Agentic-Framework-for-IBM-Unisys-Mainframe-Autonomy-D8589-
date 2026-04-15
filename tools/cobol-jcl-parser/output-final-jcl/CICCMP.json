@@ -1,0 +1,19 @@
+{
+  "job_name": "CICCMP",
+  "steps": [
+    {
+      "step_name": "CICSCMP",
+      "program": "BUILDONL",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "NEWCOPY",
+      "program": "SDSF",
+      "datasets": [],
+      "parm": "",
+      "cond": "(4,LT)"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "job_name": "SORTTEST",
+  "steps": [
+    {
+      "step_name": "STEP05R",
+      "program": "SORT",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANSACT.BKUP(0)",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANSACT.DALY(+1)",
+          "type": "output",
+          "disp": "(NEW,CATLG,DELETE)"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

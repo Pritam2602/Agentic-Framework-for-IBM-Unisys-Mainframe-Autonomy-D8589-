@@ -1,0 +1,12 @@
+{
+  "job_name": "RACFCMDS",
+  "steps": [
+    {
+      "step_name": "TSOBAT",
+      "program": "IKJEFT01",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

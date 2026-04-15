@@ -1,0 +1,23 @@
+{
+  "job_name": "CBADMCDJ",
+  "steps": [
+    {
+      "step_name": "STEP1",
+      "program": "DFHCSDUP",
+      "datasets": [
+        {
+          "dsn": "OEM.CICSTS.V05R06M0.CICS.SDFHLOAD",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "OEM.CICSTS.DFHCSD",
+          "type": "input",
+          "disp": "SHR"
+        }
+      ],
+      "parm": "'",
+      "cond": ""
+    }
+  ]
+}

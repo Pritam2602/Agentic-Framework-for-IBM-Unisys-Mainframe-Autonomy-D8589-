@@ -1,0 +1,58 @@
+{
+  "job_name": "XREFFILE",
+  "steps": [
+    {
+      "step_name": "STEP05",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP10",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP15",
+      "program": "IDCAMS",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.CARDXREF.PS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.CARDXREF.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP20",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP25",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP30",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

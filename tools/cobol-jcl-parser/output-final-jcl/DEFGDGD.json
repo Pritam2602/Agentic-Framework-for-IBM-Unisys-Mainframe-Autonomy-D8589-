@@ -1,0 +1,80 @@
+{
+  "job_name": "DEFGDGD",
+  "steps": [
+    {
+      "step_name": "STEP10",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP20",
+      "program": "IEBGENER",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANTYPE.PS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANTYPE.BKUP(+1)",
+          "type": "output",
+          "disp": "(NEW,CATLG)"
+        }
+      ],
+      "parm": "",
+      "cond": "(0,NE)"
+    },
+    {
+      "step_name": "STEP30",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": "(0,NE)"
+    },
+    {
+      "step_name": "STEP40",
+      "program": "IEBGENER",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANCATG.PS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANCATG.PS.BKUP(+1)",
+          "type": "output",
+          "disp": "(NEW,CATLG)"
+        }
+      ],
+      "parm": "",
+      "cond": "(0,NE)"
+    },
+    {
+      "step_name": "STEP50",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP60",
+      "program": "IEBGENER",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.DISCGRP.PS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.DISCGRP.BKUP(+1)",
+          "type": "output",
+          "disp": "(NEW,CATLG)"
+        }
+      ],
+      "parm": "",
+      "cond": "(0,NE)"
+    }
+  ]
+}

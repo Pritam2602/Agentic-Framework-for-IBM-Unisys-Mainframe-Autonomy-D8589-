@@ -1,0 +1,18 @@
+{
+  "entity": "customer",
+  "description": "Customer records from Unisys MCP DMSII database",
+  "source_system": "unisys_eportal",
+  "fields": [
+    {"name": "customerId", "type": "string", "description": "Unique customer identifier", "primary_key": true},
+    {"name": "customerName", "type": "string", "description": "Customer or company name"},
+    {"name": "accountId", "type": "string", "description": "Associated account identifier"},
+    {"name": "email", "type": "string", "description": "Contact email address"},
+    {"name": "phone", "type": "string", "description": "Contact phone number"},
+    {"name": "status", "type": "string", "description": "Account status: active, inactive, suspended"},
+    {"name": "customerType", "type": "string", "description": "Customer type: individual or corporate"},
+    {"name": "registrationDate", "type": "string", "description": "Registration date in YYYY-MM-DD format"},
+    {"name": "creditLimit", "type": "number", "description": "Approved credit limit"}
+  ],
+  "filterable_fields": ["customerId", "status", "customerType"],
+  "record_count": 10
+}

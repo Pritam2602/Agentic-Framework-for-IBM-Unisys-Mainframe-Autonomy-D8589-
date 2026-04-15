@@ -1,0 +1,48 @@
+{
+  "job_name": "POSTTRAN",
+  "steps": [
+    {
+      "step_name": "STEP15",
+      "program": "CBTRN02C",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.LOADLIB",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.DALYTRAN.PS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.CARDXREF.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.DALYREJS(+1)",
+          "type": "output",
+          "disp": "(NEW,CATLG,DELETE)"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.ACCTDATA.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.TCATBALF.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

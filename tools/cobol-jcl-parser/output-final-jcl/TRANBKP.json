@@ -1,0 +1,37 @@
+{
+  "job_name": "TRANBKP",
+  "steps": [
+    {
+      "step_name": "STEP05R",
+      "program": "REPROC",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANSACT.BKUP(+1)",
+          "type": "output",
+          "disp": "(NEW,CATLG,DELETE)"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP05",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP10",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": "(4,LT)"
+    }
+  ]
+}

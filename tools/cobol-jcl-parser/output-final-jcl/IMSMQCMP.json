@@ -1,0 +1,183 @@
+{
+  "job_name": "IMSMQCMP",
+  "steps": [
+    {
+      "step_name": "TRN",
+      "program": "DFHECP1$",
+      "datasets": [
+        {
+          "dsn": "&CICSHLQ..CICS.SDFHLOAD",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "&HLQ..COBOL.SRC(IMSMQPGM)",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "&&SYSCIN",
+          "type": "temp",
+          "disp": "(,PASS)"
+        }
+      ],
+      "parm": "'",
+      "cond": ""
+    },
+    {
+      "step_name": "COBOL",
+      "program": "IGYCRCTL",
+      "datasets": [
+        {
+          "dsn": "IGY.SIGYCOMP.V63",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "CEE.SCEERUN",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "CEE.SCEERUN2",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "&&LOADSET",
+          "type": "temp",
+          "disp": "(MOD,PASS)"
+        },
+        {
+          "dsn": "CEE.SCEESAMP",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "&CICSHLQ..CICS.SDFHCOB",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "&MQHLQ..SCSQCOBC",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "&HLQ..COBCOPY",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "&&SYSCIN",
+          "type": "temp",
+          "disp": "(OLD,DELETE)"
+        }
+      ],
+      "parm": "'",
+      "cond": "(4,LT)"
+    },
+    {
+      "step_name": "COPYIMS",
+      "program": "IEBGENER",
+      "datasets": [
+        {
+          "dsn": "&&COPYIMS",
+          "type": "temp",
+          "disp": "(NEW,PASS)"
+        }
+      ],
+      "parm": "",
+      "cond": "(4,LT)"
+    },
+    {
+      "step_name": "COPYLINK",
+      "program": "IEBGENER",
+      "datasets": [
+        {
+          "dsn": "&&COPYLINK",
+          "type": "temp",
+          "disp": "(NEW,PASS)"
+        }
+      ],
+      "parm": "",
+      "cond": "(4,LT)"
+    },
+    {
+      "step_name": "COPYMQ",
+      "program": "IEBGENER",
+      "datasets": [
+        {
+          "dsn": "&&COPYMQ",
+          "type": "temp",
+          "disp": "(NEW,PASS)"
+        }
+      ],
+      "parm": "",
+      "cond": "(4,LT)"
+    },
+    {
+      "step_name": "LKED",
+      "program": "IEWL",
+      "datasets": [
+        {
+          "dsn": "&MQHLQ..SCSQLOAD",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "SYS1.LINKLIB",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "CEE.SCEELKED",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "&CICSHLQ..CICS.SDFHLOAD",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "&IMSHLQ..SDFSRESL",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "&MQHLQ..SCSQLOAD",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "&&COPYLINK",
+          "type": "temp",
+          "disp": "(OLD,DELETE)"
+        },
+        {
+          "dsn": "&&COPYMQ",
+          "type": "temp",
+          "disp": "(OLD,DELETE)"
+        },
+        {
+          "dsn": "&&LOADSET",
+          "type": "temp",
+          "disp": "(OLD,DELETE)"
+        },
+        {
+          "dsn": "&&COPYIMS",
+          "type": "temp",
+          "disp": "(OLD,DELETE)"
+        },
+        {
+          "dsn": "&HLQ..CICSLOAD(IMSMQPGM)",
+          "type": "input",
+          "disp": "SHR"
+        }
+      ],
+      "parm": "'",
+      "cond": "(4,LT)"
+    }
+  ]
+}

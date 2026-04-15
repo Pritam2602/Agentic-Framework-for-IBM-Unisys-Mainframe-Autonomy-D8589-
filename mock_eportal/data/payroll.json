@@ -1,0 +1,134 @@
+[
+  {
+    "employeeId": 101,
+    "employeeName": "Alice Johnson",
+    "department": "Engineering",
+    "netSalary": 5200.00,
+    "grossSalary": 6800.00,
+    "deductions": 1600.00,
+    "payPeriod": "2026-03",
+    "position": "Senior Developer",
+    "hireDate": "2019-06-15"
+  },
+  {
+    "employeeId": 102,
+    "employeeName": "Bob Martinez",
+    "department": "Finance",
+    "netSalary": 7100.00,
+    "grossSalary": 9200.00,
+    "deductions": 2100.00,
+    "payPeriod": "2026-03",
+    "position": "Financial Analyst",
+    "hireDate": "2020-01-10"
+  },
+  {
+    "employeeId": 103,
+    "employeeName": "Carol Chen",
+    "department": "Engineering",
+    "netSalary": 6300.00,
+    "grossSalary": 8100.00,
+    "deductions": 1800.00,
+    "payPeriod": "2026-03",
+    "position": "DevOps Engineer",
+    "hireDate": "2021-03-22"
+  },
+  {
+    "employeeId": 104,
+    "employeeName": "David Kim",
+    "department": "HR",
+    "netSalary": 4800.00,
+    "grossSalary": 6200.00,
+    "deductions": 1400.00,
+    "payPeriod": "2026-03",
+    "position": "HR Manager",
+    "hireDate": "2018-09-01"
+  },
+  {
+    "employeeId": 105,
+    "employeeName": "Eva Patel",
+    "department": "Engineering",
+    "netSalary": 8500.00,
+    "grossSalary": 11000.00,
+    "deductions": 2500.00,
+    "payPeriod": "2026-03",
+    "position": "Tech Lead",
+    "hireDate": "2017-02-14"
+  },
+  {
+    "employeeId": 106,
+    "employeeName": "Frank Wilson",
+    "department": "Operations",
+    "netSalary": 4500.00,
+    "grossSalary": 5800.00,
+    "deductions": 1300.00,
+    "payPeriod": "2026-03",
+    "position": "Operations Analyst",
+    "hireDate": "2022-07-19"
+  },
+  {
+    "employeeId": 107,
+    "employeeName": "Grace Lee",
+    "department": "Finance",
+    "netSalary": 9200.00,
+    "grossSalary": 12000.00,
+    "deductions": 2800.00,
+    "payPeriod": "2026-03",
+    "position": "CFO",
+    "hireDate": "2015-11-30"
+  },
+  {
+    "employeeId": 108,
+    "employeeName": "Henry Nguyen",
+    "department": "Engineering",
+    "netSalary": 5800.00,
+    "grossSalary": 7500.00,
+    "deductions": 1700.00,
+    "payPeriod": "2026-03",
+    "position": "Backend Developer",
+    "hireDate": "2023-01-09"
+  },
+  {
+    "employeeId": 109,
+    "employeeName": "Iris Thompson",
+    "department": "Operations",
+    "netSalary": 5100.00,
+    "grossSalary": 6600.00,
+    "deductions": 1500.00,
+    "payPeriod": "2026-03",
+    "position": "Project Manager",
+    "hireDate": "2020-08-25"
+  },
+  {
+    "employeeId": 110,
+    "employeeName": "James Brown",
+    "department": "HR",
+    "netSalary": 4200.00,
+    "grossSalary": 5400.00,
+    "deductions": 1200.00,
+    "payPeriod": "2026-03",
+    "position": "Recruiter",
+    "hireDate": "2024-04-12"
+  },
+  {
+    "employeeId": 111,
+    "employeeName": "Karen Davis",
+    "department": "Engineering",
+    "netSalary": 7800.00,
+    "grossSalary": 10100.00,
+    "deductions": 2300.00,
+    "payPeriod": "2026-03",
+    "position": "Principal Engineer",
+    "hireDate": "2016-05-20"
+  },
+  {
+    "employeeId": 112,
+    "employeeName": "Leo Garcia",
+    "department": "Finance",
+    "netSalary": 5500.00,
+    "grossSalary": 7100.00,
+    "deductions": 1600.00,
+    "payPeriod": "2026-03",
+    "position": "Accountant",
+    "hireDate": "2021-10-03"
+  }
+]

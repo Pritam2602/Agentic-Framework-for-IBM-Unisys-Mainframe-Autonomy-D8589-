@@ -1,0 +1,12 @@
+{
+  "job_name": "CIDBCMP",
+  "steps": [
+    {
+      "step_name": "CICSCMP",
+      "program": "BLDCIDB2",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "job_name": "TXT2PDF1",
+  "steps": [
+    {
+      "step_name": "TXT2PDF",
+      "program": "IKJEFT1B",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.LBD.TXT2PDF.LOAD",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.LBD.TXT2PDF.EXEC",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.STATEMNT.PS",
+          "type": "input",
+          "disp": "SHR"
+        }
+      ],
+      "parm": "('')",
+      "cond": "(0,NE)"
+    }
+  ]
+}

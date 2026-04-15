@@ -1,0 +1,56 @@
+{
+  "job_name": "DUSRSECJ",
+  "steps": [
+    {
+      "step_name": "PREDEL",
+      "program": "IEFBR14",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.USRSEC.PS",
+          "type": "temp",
+          "disp": "(MOD,DELETE,DELETE)"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP01",
+      "program": "IEBGENER",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.USRSEC.PS",
+          "type": "output",
+          "disp": "(NEW,CATLG,DELETE)"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP02",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP03",
+      "program": "IDCAMS",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.USRSEC.PS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.USRSEC.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

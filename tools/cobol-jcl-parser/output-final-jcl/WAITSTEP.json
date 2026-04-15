@@ -1,0 +1,18 @@
+{
+  "job_name": "WAITSTEP",
+  "steps": [
+    {
+      "step_name": "WAIT",
+      "program": "COBSWAIT",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.LOADLIB",
+          "type": "input",
+          "disp": "SHR"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

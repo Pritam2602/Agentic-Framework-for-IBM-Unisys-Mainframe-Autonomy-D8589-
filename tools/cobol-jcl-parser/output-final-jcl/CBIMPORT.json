@@ -1,0 +1,48 @@
+{
+  "job_name": "CBIMPORT",
+  "steps": [
+    {
+      "step_name": "STEP01",
+      "program": "CBIMPORT",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.LOADLIB",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.EXPORT.DATA",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.CUSTDATA.IMPORT",
+          "type": "output",
+          "disp": "(NEW,CATLG,DELETE)"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.ACCTDATA.IMPORT",
+          "type": "output",
+          "disp": "(NEW,CATLG,DELETE)"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.CARDXREF.IMPORT",
+          "type": "output",
+          "disp": "(NEW,CATLG,DELETE)"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANSACT.IMPORT",
+          "type": "output",
+          "disp": "(NEW,CATLG,DELETE)"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.IMPORT.ERRORS",
+          "type": "output",
+          "disp": "(NEW,CATLG,DELETE)"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

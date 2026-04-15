@@ -1,12 +1,14 @@
-﻿"""
-COMMUNICATOR - Mainframe Agent Platform
+"""
+COMMUNICATOR - Data Federation Agent Platform
 FastAPI backend application
+
+Architecture:
+  Intent Agent (WHAT) → Context Resolution Agent (WHERE) → Planner Agent (HOW)
 """
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-import asyncio
 from pathlib import Path
 
 # Import new modular Intent Agent
@@ -15,18 +17,24 @@ from intent_agent import IntentAgent
 from app.catalog.catalog_service import CatalogService
 from app.models.schemas import *
 
-# Import Intent API router
+# Import API routers
 from app.api.intent import router as intent_router
 from app.api.catalog import router as catalog_router
+from app.api.agent import router as agent_router
+from app.api.context import router as context_router
+from app.api.pipeline import router as pipeline_router
 
 # -------------------------------------------------------------------
 # FastAPI App
 # -------------------------------------------------------------------
 
 app = FastAPI(
-    title="COMMUNICATOR",
-    description="AI-driven Mainframe Agent Platform",
-    version="1.0.0"
+    title="COMMUNICATOR - Data Federation Platform",
+    description=(
+        "AI-driven Data Federation Platform integrating IBM Mainframe "
+        "and Unisys MCP systems through an agentic architecture."
+    ),
+    version="2.0.0"
 )
 
 # -------------------------------------------------------------------
@@ -67,15 +75,15 @@ except Exception as e:
 # Initialize IntentAgent with new modular structure
 intent_agent = IntentAgent(model=model)
 
-# Store last execution trace
-last_execution_trace = []
-
 # -------------------------------------------------------------------
 # Include API Routers
 # -------------------------------------------------------------------
 
 app.include_router(intent_router)
 app.include_router(catalog_router)
+app.include_router(agent_router)
+app.include_router(context_router)
+app.include_router(pipeline_router)
 
 # -------------------------------------------------------------------
 # Root / Health
@@ -84,9 +92,23 @@ app.include_router(catalog_router)
 @app.get("/")
 async def root():
     return {
-        "service": "COMMUNICATOR",
-        "version": "1.0.0",
-        "status": "online"
+        "service": "COMMUNICATOR - Data Federation Platform",
+        "version": "2.0.0",
+        "status": "online",
+        "architecture": {
+            "intent_agent": "active",
+            "context_resolution_agent": "active",
+            "planner_agent": "planned",
+            "execution_agents": "planned",
+        },
+        "endpoints": {
+            "intent": "/api/intent/extract",
+            "context": "/api/context/resolve",
+            "pipeline": "/api/pipeline/run",
+            "agent": "/api/agent/execute",
+            "catalog": "/api/catalog/commands",
+            "docs": "/docs",
+        }
     }
 
 
@@ -94,14 +116,14 @@ async def root():
 async def health():
     return {
         "status": "healthy",
-        "intent-agent": "ready",
-        "llm-model": "enabled" if model else "disabled"
+        "intent_agent": "ready",
+        "context_resolution_agent": "ready",
+        "llm_model": "enabled" if model else "disabled"
     }
 
 
-
 # -------------------------------------------------------------------
-# Catalog Endpoints
+# Catalog Endpoints (kept for backward compatibility)
 # -------------------------------------------------------------------
 
 @app.get("/api/catalog/commands")
@@ -120,5 +142,3 @@ async def get_jobs():
     except Exception as e:
         print("Catalog error:", e)
         return []
-
-

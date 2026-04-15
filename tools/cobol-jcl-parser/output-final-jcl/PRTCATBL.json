@@ -1,0 +1,54 @@
+{
+  "job_name": "PRTCATBL",
+  "steps": [
+    {
+      "step_name": "DELDEF",
+      "program": "IEFBR14",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.TCATBALF.REPT",
+          "type": "output",
+          "disp": "(MOD,DELETE)"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP05R",
+      "program": "REPROC",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.TCATBALF.VSAM.KSDS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.TCATBALF.BKUP(+1)",
+          "type": "output",
+          "disp": "(NEW,CATLG,DELETE)"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP10R",
+      "program": "SORT",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.TCATBALF.BKUP(+1)",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.TCATBALF.REPT",
+          "type": "output",
+          "disp": "(NEW,CATLG,DELETE)"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

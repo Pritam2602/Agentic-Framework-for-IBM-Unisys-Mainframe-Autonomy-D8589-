@@ -1,0 +1,37 @@
+{
+  "job_name": "TRANTYPE",
+  "steps": [
+    {
+      "step_name": "STEP05",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP10",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP15",
+      "program": "IDCAMS",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANTYPE.PS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANTYPE.VSAM.KSDS",
+          "type": "input",
+          "disp": "OLD"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

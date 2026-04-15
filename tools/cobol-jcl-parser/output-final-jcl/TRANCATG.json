@@ -1,0 +1,37 @@
+{
+  "job_name": "TRANCATG",
+  "steps": [
+    {
+      "step_name": "STEP05",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP10",
+      "program": "IDCAMS",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    },
+    {
+      "step_name": "STEP15",
+      "program": "IDCAMS",
+      "datasets": [
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANCATG.PS",
+          "type": "input",
+          "disp": "SHR"
+        },
+        {
+          "dsn": "AWS.M2.CARDDEMO.TRANCATG.VSAM.KSDS",
+          "type": "input",
+          "disp": "OLD"
+        }
+      ],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}

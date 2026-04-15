@@ -1,0 +1,12 @@
+{
+  "job_name": "CLOSEFIL",
+  "steps": [
+    {
+      "step_name": "CLCIFIL",
+      "program": "SDSF",
+      "datasets": [],
+      "parm": "",
+      "cond": ""
+    }
+  ]
+}
