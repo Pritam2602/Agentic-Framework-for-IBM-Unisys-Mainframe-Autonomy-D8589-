@@ -1,0 +1,84 @@
+﻿{
+    "description":  "Credit/Debit card entity from AWS CardDemo",
+    "source_system":  "unisys_eportal",
+    "relationship":  "1:1 to Customer, 1:1 to Account",
+    "carddemo_mapping":  {
+                             "cardStatus":  "CARD STATUS",
+                             "cardNumber":  "CARD NUMBER",
+                             "cardType":  "CARD TYPE",
+                             "expiryDate":  "EXPIRY DATE"
+                         },
+    "fields":  [
+                   {
+                       "primary_key":  true,
+                       "description":  "Card number (PAN)",
+                       "name":  "cardNumber",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Foreign key to Customer",
+                       "name":  "customerId",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Foreign key to Account",
+                       "name":  "accountNumber",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Card status (ACTIVE/EXPIRED/BLOCKED/CANCELLED)",
+                       "name":  "cardStatus",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Card type (CREDIT/DEBIT)",
+                       "name":  "cardType",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Card expiry date (YYYY-MM-DD)",
+                       "name":  "expiryDate",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Name of cardholder",
+                       "name":  "cardholderName",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Card issue date (YYYY-MM-DD)",
+                       "name":  "issuedDate",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Card transaction limit",
+                       "name":  "cardLimit",
+                       "type":  "number"
+                   },
+                   {
+                       "description":  "Daily withdrawal/transaction limit",
+                       "name":  "dailyLimit",
+                       "type":  "number"
+                   },
+                   {
+                       "description":  "Last transaction date",
+                       "name":  "lastUsedDate",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "PIN protection enabled flag",
+                       "name":  "pin_enabled",
+                       "type":  "boolean"
+                   }
+               ],
+    "filterable_fields":  [
+                              "cardNumber",
+                              "customerId",
+                              "accountNumber",
+                              "cardStatus",
+                              "cardType"
+                          ],
+    "entity":  "card",
+    "record_count":  10,
+    "mapped_to":  "IBM CardDemo Card"
+}

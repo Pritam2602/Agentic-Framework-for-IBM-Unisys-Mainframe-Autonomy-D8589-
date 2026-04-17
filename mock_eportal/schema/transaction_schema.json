@@ -1,17 +1,69 @@
-{
-  "entity": "transaction",
-  "description": "Financial transaction records from Unisys MCP transaction processing",
-  "source_system": "unisys_eportal",
-  "fields": [
-    {"name": "transactionId", "type": "string", "description": "Unique transaction identifier", "primary_key": true},
-    {"name": "accountId", "type": "string", "description": "Associated account identifier"},
-    {"name": "transactionAmount", "type": "number", "description": "Transaction amount in USD"},
-    {"name": "transactionDate", "type": "string", "description": "Transaction date in YYYY-MM-DD format"},
-    {"name": "transactionType", "type": "string", "description": "Transaction type: credit or debit"},
-    {"name": "description", "type": "string", "description": "Transaction description / memo"},
-    {"name": "status", "type": "string", "description": "Transaction status: completed, pending, failed"},
-    {"name": "currency", "type": "string", "description": "Currency code (ISO 4217)"}
-  ],
-  "filterable_fields": ["accountId", "transactionType", "transactionDate", "status"],
-  "record_count": 15
+﻿{
+    "description":  "Financial transaction entity from AWS CardDemo",
+    "source_system":  "unisys_eportal",
+    "relationship":  "Many to Account",
+    "carddemo_mapping":  {
+                             "transactionId":  "TRANSACTION ID",
+                             "transactionAmount":  "TRANSACTION AMOUNT",
+                             "accountNumber":  "ACCOUNT NUMBER",
+                             "transactionType":  "TRANSACTION TYPE",
+                             "transactionDate":  "TRANSACTION DATE"
+                         },
+    "fields":  [
+                   {
+                       "primary_key":  true,
+                       "description":  "Unique transaction identifier",
+                       "name":  "transactionId",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Foreign key to Account",
+                       "name":  "accountNumber",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Transaction amount",
+                       "name":  "transactionAmount",
+                       "type":  "number"
+                   },
+                   {
+                       "description":  "Transaction date (YYYY-MM-DD)",
+                       "name":  "transactionDate",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Transaction type (CREDIT/DEBIT/TRANSFER/PAYMENT)",
+                       "name":  "transactionType",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Transaction description",
+                       "name":  "transactionDescription",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Transaction status (POSTED/PENDING/DECLINED)",
+                       "name":  "transactionStatus",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Currency code (USD, EUR, etc.)",
+                       "name":  "currency",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Reference tracker (batch reference, check number, etc.)",
+                       "name":  "referenceNumber",
+                       "type":  "string"
+                   }
+               ],
+    "filterable_fields":  [
+                              "accountNumber",
+                              "transactionDate",
+                              "transactionType",
+                              "transactionStatus"
+                          ],
+    "entity":  "transaction",
+    "record_count":  15,
+    "mapped_to":  "IBM CardDemo Transaction"
 }

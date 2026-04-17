@@ -1,18 +1,81 @@
-{
-  "entity": "customer",
-  "description": "Customer records from Unisys MCP DMSII database",
-  "source_system": "unisys_eportal",
-  "fields": [
-    {"name": "customerId", "type": "string", "description": "Unique customer identifier", "primary_key": true},
-    {"name": "customerName", "type": "string", "description": "Customer or company name"},
-    {"name": "accountId", "type": "string", "description": "Associated account identifier"},
-    {"name": "email", "type": "string", "description": "Contact email address"},
-    {"name": "phone", "type": "string", "description": "Contact phone number"},
-    {"name": "status", "type": "string", "description": "Account status: active, inactive, suspended"},
-    {"name": "customerType", "type": "string", "description": "Customer type: individual or corporate"},
-    {"name": "registrationDate", "type": "string", "description": "Registration date in YYYY-MM-DD format"},
-    {"name": "creditLimit", "type": "number", "description": "Approved credit limit"}
-  ],
-  "filterable_fields": ["customerId", "status", "customerType"],
-  "record_count": 10
+﻿{
+    "description":  "Customer/Account holder entity from AWS CardDemo",
+    "source_system":  "unisys_eportal",
+    "relationship":  "1:1 to Account, 1:1 to Card, 1:* to Transaction",
+    "carddemo_mapping":  {
+                             "status":  "CUSTOMER STATUS",
+                             "customerId":  "CUSTOMER ID",
+                             "customerName":  "CUSTOMER NAME"
+                         },
+    "fields":  [
+                   {
+                       "primary_key":  true,
+                       "description":  "Unique customer identifier",
+                       "name":  "customerId",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Customer name or company name",
+                       "name":  "customerName",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Primary email address",
+                       "name":  "email",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Primary phone number",
+                       "name":  "phone",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Customer status (ACTIVE/INACTIVE/SUSPENDED)",
+                       "name":  "status",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Customer type (INDIVIDUAL/CORPORATE)",
+                       "name":  "customerType",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Customer onboarding date (YYYY-MM-DD)",
+                       "name":  "customerOpenDate",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Primary address",
+                       "name":  "address",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Industry (for corporate customers)",
+                       "name":  "industry",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Date of birth (for individual customers)",
+                       "name":  "dateOfBirth",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "How customer registered (ONLINE_APPLICATION/MOBILE_APP/etc)",
+                       "name":  "registrationMethod",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "KYC verification status",
+                       "name":  "kyc_status",
+                       "type":  "string"
+                   }
+               ],
+    "filterable_fields":  [
+                              "customerId",
+                              "status",
+                              "customerType"
+                          ],
+    "entity":  "customer",
+    "record_count":  10,
+    "mapped_to":  "IBM CardDemo Customer"
 }

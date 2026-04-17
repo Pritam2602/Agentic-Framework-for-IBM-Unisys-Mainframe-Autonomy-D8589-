@@ -1,10 +1,12 @@
 """
 transaction_service.py - Transaction data access service (simulating MCP processing)
+Updated for CardDemo alignment with accountNumber field.
 """
 
-import json
-from typing import List, Dict, Any, Optional
 from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+from mock_eportal.utils import load_json_file
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
@@ -20,34 +22,36 @@ class TransactionService:
         """Load transaction records from JSON"""
         data_file = DATA_DIR / "transaction.json"
         if data_file.exists():
-            with open(data_file, "r", encoding="utf-8") as f:
-                self._data = json.load(f)
+            self._data = load_json_file(data_file)
 
     def get_all(self) -> List[Dict[str, Any]]:
         """Return all transaction records"""
         return self._data
 
-    def get_by_account(self, account_id: str) -> List[Dict[str, Any]]:
-        """Filter transactions by account ID"""
-        return [
-            r for r in self._data
-            if r["accountId"] == account_id
-        ]
+    def get_by_account_number(self, account_number: str) -> List[Dict[str, Any]]:
+        """Filter transactions by account number"""
+        return [r for r in self._data if r["accountNumber"] == account_number]
 
-    def get_by_date_range(
-        self, start: str, end: str
-    ) -> List[Dict[str, Any]]:
+    def get_by_account(self, account_id: str) -> List[Dict[str, Any]]:
+        """Deprecated alias retained for compatibility."""
+        return self.get_by_account_number(account_id)
+
+    def get_by_date_range(self, start: str, end: str) -> List[Dict[str, Any]]:
         """Filter transactions by date range (YYYY-MM-DD)"""
-        return [
-            r for r in self._data
-            if start <= r["transactionDate"] <= end
-        ]
+        return [r for r in self._data if start <= r["transactionDate"] <= end]
 
     def get_by_type(self, txn_type: str) -> List[Dict[str, Any]]:
-        """Filter by transaction type (credit/debit)"""
+        """Filter by transaction type (CREDIT/DEBIT/TRANSFER/PAYMENT)"""
         return [
-            r for r in self._data
-            if r["transactionType"].lower() == txn_type.lower()
+            r for r in self._data if r["transactionType"].upper() == txn_type.upper()
+        ]
+
+    def get_by_status(self, status: str) -> List[Dict[str, Any]]:
+        """Filter by transaction status (POSTED/PENDING/DECLINED)"""
+        return [
+            r
+            for r in self._data
+            if r["transactionStatus"].upper() == status.upper()
         ]
 
     def get_by_id(self, transaction_id: str) -> Optional[Dict[str, Any]]:

@@ -2,9 +2,10 @@
 customer_service.py - Customer data access service (simulating DMSII backend)
 """
 
-import json
-from typing import List, Dict, Any, Optional
 from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+from mock_eportal.utils import load_json_file
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
@@ -20,8 +21,7 @@ class CustomerService:
         """Load customer records from JSON (simulates DMSII FIND)"""
         data_file = DATA_DIR / "customer.json"
         if data_file.exists():
-            with open(data_file, "r", encoding="utf-8") as f:
-                self._data = json.load(f)
+            self._data = load_json_file(data_file)
 
     def get_all(self) -> List[Dict[str, Any]]:
         """Return all customer records"""
@@ -36,15 +36,13 @@ class CustomerService:
 
     def get_by_status(self, status: str) -> List[Dict[str, Any]]:
         """Filter customers by status"""
-        return [
-            r for r in self._data
-            if r["status"].lower() == status.lower()
-        ]
+        return [r for r in self._data if r["status"].lower() == status.lower()]
 
     def get_by_type(self, customer_type: str) -> List[Dict[str, Any]]:
         """Filter customers by type (individual/corporate)"""
         return [
-            r for r in self._data
+            r
+            for r in self._data
             if r["customerType"].lower() == customer_type.lower()
         ]
 

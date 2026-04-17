@@ -1,0 +1,83 @@
+﻿{
+    "description":  "Financial account entity from AWS CardDemo",
+    "source_system":  "unisys_eportal",
+    "relationship":  "1:1 to Customer, 1:1 to Card, 1:* to Transaction",
+    "carddemo_mapping":  {
+                             "accountNumber":  "ACCOUNT ID",
+                             "accountStatus":  "ACCOUNT STATUS",
+                             "interestRate":  "INTEREST RATE (for batch interest calculations)",
+                             "accountBalance":  "ACCOUNT BALANCE"
+                         },
+    "fields":  [
+                   {
+                       "primary_key":  true,
+                       "description":  "Unique account identifier",
+                       "name":  "accountNumber",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Foreign key to Customer",
+                       "name":  "customerId",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Account type (CREDIT/SAVINGS/CHECKING)",
+                       "name":  "accountType",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Current account balance",
+                       "name":  "accountBalance",
+                       "type":  "number"
+                   },
+                   {
+                       "description":  "Currency code (USD, EUR, etc.)",
+                       "name":  "currency",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Account opening date (YYYY-MM-DD)",
+                       "name":  "accountOpenDate",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Account status (ACTIVE/INACTIVE/SUSPENDED/CLOSED)",
+                       "name":  "accountStatus",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Applied interest rate (annual %)",
+                       "name":  "interestRate",
+                       "type":  "number"
+                   },
+                   {
+                       "description":  "Credit limit for credit accounts",
+                       "name":  "creditLimit",
+                       "type":  "number"
+                   },
+                   {
+                       "description":  "Available credit balance",
+                       "name":  "availableCredit",
+                       "type":  "number"
+                   },
+                   {
+                       "description":  "Last statement generation date",
+                       "name":  "lastStatementDate",
+                       "type":  "string"
+                   },
+                   {
+                       "description":  "Next payment due date",
+                       "name":  "nextPaymentDueDate",
+                       "type":  "string"
+                   }
+               ],
+    "filterable_fields":  [
+                              "accountNumber",
+                              "customerId",
+                              "accountStatus",
+                              "accountType"
+                          ],
+    "entity":  "account",
+    "record_count":  10,
+    "mapped_to":  "IBM CardDemo Account"
+}
