@@ -2,9 +2,10 @@
 app/api/intent.py - Intent Agent API endpoint
 """
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
+from intent_agent.config import build_llm_model
 
 router = APIRouter(prefix="/api/intent", tags=["intent"])
 
@@ -22,6 +23,10 @@ class IntentResponse(BaseModel):
     attributes: list
     filters: dict
     systems: list
+    metric: Optional[str] = None
+    aggregation: Optional[str] = None
+    output_mode: str
+    requires_federation: bool
     priority: str
     confidence_score: float
 
@@ -53,15 +58,7 @@ async def extract_intent(request: IntentRequest):
         
         # Initialize agent
         if request.enable_llm:
-            try:
-                from langchain_google_genai import ChatGoogleGenerativeAI
-                model = ChatGoogleGenerativeAI(
-                    model="gemini-2.0-flash",
-                    temperature=0
-                )
-            except Exception as e:
-                print(f"LLM failed, using fallback: {e}")
-                model = None
+            model = build_llm_model()
         else:
             model = None
         
@@ -77,6 +74,10 @@ async def extract_intent(request: IntentRequest):
             attributes=intent.attributes,
             filters=intent.filters.model_dump(),
             systems=intent.systems,
+            metric=intent.metric,
+            aggregation=intent.aggregation,
+            output_mode=intent.output_mode,
+            requires_federation=intent.requires_federation,
             priority=intent.priority,
             confidence_score=intent.confidence_score
         )

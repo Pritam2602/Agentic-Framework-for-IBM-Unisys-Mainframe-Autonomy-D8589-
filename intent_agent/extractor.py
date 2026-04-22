@@ -1,11 +1,22 @@
-﻿"""
+"""
 extractor.py - Rule-based fallback intent extraction
+
+CRITICAL RULES:
+1. ENTITY vs FILTER: Entities are objects, identifiers are FILTERS
+2. SYSTEM OWNERSHIP: Respect entity-system mapping
+3. ENTITY PRIORITY: shopping > transaction > account > customer
 """
 
-from typing import List
-from .constants import ENTITY_MAPPINGS, ATTRIBUTE_MAPPINGS, TASK_KEYWORDS, SYSTEM_KEYWORDS
+from typing import List, Dict, Any
+from .constants import (
+    ENTITY_MAPPINGS, 
+    ATTRIBUTE_MAPPINGS, 
+    TASK_KEYWORDS, 
+    SYSTEM_KEYWORDS,
+    ENTITY_SYSTEM_MAPPING,
+    ENTITY_PRIORITY
+)
 from .normalizer import IntentNormalizer
-from .utils import infer_priority, compute_confidence
 
 
 class RuleBasedExtractor:
@@ -23,17 +34,26 @@ class RuleBasedExtractor:
                 return task
         return "fetch"  # default
     
-    @staticmethod
-    def extract_entities(text: str) -> List[str]:
-        """Extract entity mentions"""
+    def extract_entities(self, text: str) -> List[str]:
+        """
+        Extract entity mentions (BUSINESS OBJECTS ONLY)
+        
+        CRITICAL: Identifiers like "customer" are FILTERS, not entities
+        Only extract shopping, transaction, account as entities
+        """
         text_lower = text.lower()
         entities = []
-        for entity in ENTITY_MAPPINGS.keys():
-            if entity in text_lower:
-                normalized = ENTITY_MAPPINGS[entity]
+        
+        for entity_key in ENTITY_MAPPINGS.keys():
+            if entity_key in text_lower:
+                normalized = ENTITY_MAPPINGS[entity_key]
                 if normalized not in entities:
                     entities.append(normalized)
-        return entities if entities else ["payroll"]  # default
+        
+        # Apply CRITICAL RULE 3: Entity Priority
+        entities = self.normalizer.apply_entity_priority(entities)
+        
+        return entities if entities else ["shopping"]  # default to shopping
     
     @staticmethod
     def extract_attributes(text: str) -> List[str]:
@@ -47,29 +67,50 @@ class RuleBasedExtractor:
                     attributes.append(normalized)
         return attributes
     
-    @staticmethod
-    def extract_systems(text: str) -> List[str]:
+    def extract_systems(self, text: str, entities: List[str]) -> List[str]:
         """
-        Improved system detection logic
-        Smart inference instead of loose defaults
+        Extract systems based on:
+        1. Explicit system mentions (IBM, Unisys keywords)
+        2. Entity-to-system mapping (CRITICAL RULE 2)
+        
+        System Ownership:
+        - shopping -> Unisys
+        - transaction -> IBM
+        - account -> IBM
+        - customer -> IBM
         """
         text_lower = text.lower()
-        systems = []
+        systems = set()
         
+        # First: Check explicit system mentions
         for system, keywords in SYSTEM_KEYWORDS.items():
             if any(kw in text_lower for kw in keywords):
-                systems.append(system)
+                systems.add(system)
         
-        # Smart fallback - avoid loose defaults
+        # Second: Map entities to systems (CRITICAL RULE 2)
+        for entity in entities:
+            if entity in ENTITY_SYSTEM_MAPPING:
+                systems.add(ENTITY_SYSTEM_MAPPING[entity])
+        
+        # Default: If no entities match and no explicit mention, use IBM
         if not systems:
-            # If mentions API/REST/HTTP then Unisys
-            if any(kw in text_lower for kw in ["api", "rest", "http", "service"]):
-                return ["unisys"]
-            # If mentions datasets/JCL/Zowe then IBM
-            elif any(kw in text_lower for kw in ["dataset", "jcl", "zowe", "job"]):
-                return ["ibm"]
-            # Default to IBM (mainframe-first architecture)
-            else:
-                return ["ibm"]
+            systems.add("ibm")
         
-        return systems
+        return list(systems)
+    
+    def extract_filters(self, text: str) -> List[Dict[str, Any]]:
+        """
+        Extract filter conditions as structured {field, value} pairs
+        
+        CRITICAL RULE 1: Filters contain identifiers and conditions
+        NOT entity names
+        """
+        return self.normalizer.extract_filters(text)
+
+    def extract_metric(self, text: str) -> str | None:
+        """Extract requested business metric if present."""
+        return self.normalizer.extract_metric(text)
+
+    def extract_aggregation(self, text: str) -> str | None:
+        """Extract requested aggregation function if present."""
+        return self.normalizer.extract_aggregation(text)

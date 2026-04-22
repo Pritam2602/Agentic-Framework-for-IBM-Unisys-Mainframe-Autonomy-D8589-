@@ -5,6 +5,7 @@ app/api/context.py - Context Resolution Agent API endpoint
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
+from pathlib import Path
 
 router = APIRouter(prefix="/api/context", tags=["context"])
 
@@ -69,22 +70,24 @@ async def resolve_context(request: ContextRequest):
 @router.get("/health")
 async def context_health():
     """Health check for context resolution service"""
-    from context_resolution_agent import ContextResolutionAgent
-    from ibm_parsers import CobolParser, JclParser, ZoweCatalogResolver
+    from context_resolution_agent.ibm_resolver import COBOL_OUTPUT_DIR, JCL_OUTPUT_DIR
+    from context_resolution_agent.unisys_resolver import UnisysContextResolver
+    from app.repository.catalog_repository import DB_PATH
 
-    cobol = CobolParser()
-    jcl = JclParser()
-    zowe = ZoweCatalogResolver()
+    unisys_resolver = UnisysContextResolver()
+    cobol_programs = len(list(COBOL_OUTPUT_DIR.glob("*.json"))) if COBOL_OUTPUT_DIR.exists() else 0
+    jcl_jobs = len(list(JCL_OUTPUT_DIR.glob("*.json"))) if JCL_OUTPUT_DIR.exists() else 0
+    zowe_catalog_available = Path(DB_PATH).exists()
 
     return {
         "status": "healthy",
         "service": "context-resolution-agent",
         "ibm": {
-            "cobol_programs": len(cobol.parse_catalog()),
-            "jcl_jobs": len(jcl.parse_catalog()),
-            "zowe_catalog": zowe.is_available(),
+            "cobol_programs": cobol_programs,
+            "jcl_jobs": jcl_jobs,
+            "zowe_catalog": zowe_catalog_available,
         },
         "unisys": {
-            "eportal_available": ContextResolutionAgent().unisys_resolver.is_eportal_available()
+            "eportal_available": unisys_resolver.is_eportal_available()
         }
     }

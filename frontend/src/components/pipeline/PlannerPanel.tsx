@@ -1,107 +1,110 @@
-﻿import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
+import type { ContextData, IntentData } from "@/store/useAppStore";
 
 export interface ExecutionStep {
   step: number;
-  system: 'ibm' | 'unisys';
-  action: string;
-  command?: string;
-  api?: string;
-  parameters?: Record<string, any>;
-  description?: string;
+  label: string;
+  detail: string;
+  system?: "ibm" | "unisys" | "federation";
 }
 
 export interface PlanData {
   totalSteps: number;
   steps: ExecutionStep[];
-  estimatedDuration?: number;
 }
 
 interface Props {
-  plan: PlanData | null;
-  loading?: boolean;
+  intent: IntentData | null;
+  context: ContextData | null;
+  nextStage: string | null;
 }
 
-export const PlannerPanel: React.FC<Props> = ({ plan, loading }) => {
-  if (!plan && !loading) return null;
+const buildPlanPreview = (intent: IntentData | null, context: ContextData | null): PlanData | null => {
+  if (!intent || !context) {
+    return null;
+  }
 
-  const getSystemColor = (system: string) => {
-    return system === 'ibm' ? 'bg-red-900 text-red-300' : 'bg-blue-900 text-blue-300';
+  const steps: ExecutionStep[] = [];
+
+  if (context.unisys?.api) {
+    steps.push({
+      step: steps.length + 1,
+      label: "Call Unisys API",
+      detail: `Query ${context.unisys.api} with extracted filters for ${intent.entities.join(", ")}.`,
+      system: "unisys",
+    });
+  }
+
+  if (context.ibm?.program || context.ibm?.dataset) {
+    steps.push({
+      step: steps.length + 1,
+      label: "Plan IBM access",
+      detail: `Use the Zowe command catalog to plan access for ${context.ibm.dataset ?? context.ibm.program ?? "mainframe assets"}.`,
+      system: "ibm",
+    });
+  }
+
+  steps.push({
+    step: steps.length + 1,
+    label: "Assemble business response",
+    detail: "Normalize system outputs into a planner-ready federation payload.",
+    system: "federation",
+  });
+
+  return {
+    totalSteps: steps.length,
+    steps,
   };
+};
+
+const badgeClass = (system?: ExecutionStep["system"]) => {
+  if (system === "ibm") {
+    return "border-red-500/30 bg-red-500/10 text-red-200";
+  }
+  if (system === "unisys") {
+    return "border-cyan-500/30 bg-cyan-500/10 text-cyan-200";
+  }
+  return "border-violet-500/30 bg-violet-500/10 text-violet-200";
+};
+
+export const PlannerPanel = ({ intent, context, nextStage }: Props) => {
+  const plan = buildPlanPreview(intent, context);
 
   return (
-    <Card className='w-full bg-slate-900 border-slate-700'>
-      <CardHeader>
-        <CardTitle className='text-orange-400'>Execution Plan</CardTitle>
-        <p className='text-xs text-slate-400 mt-1'>How will the task be executed?</p>
-      </CardHeader>
-      <CardContent className='space-y-4'>
-        {loading ? (
-          <div className='text-slate-400'>Planning execution...</div>
-        ) : plan ? (
-          <>
-            <div className='flex items-center justify-between p-2 bg-slate-800 rounded'>
-              <span className='text-xs font-semibold text-slate-400'>Total Steps</span>
-              <span className='text-lg font-mono text-orange-400'>{plan.totalSteps}</span>
-            </div>
+    <section className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6">
+      <div className="pb-4">
+        <h2 className="text-base font-semibold text-orange-300">Planner Preview</h2>
+      </div>
+      <div className="space-y-5">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+          <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Next Stage</p>
+          <p className="mt-2 text-lg font-semibold text-slate-100">{nextStage ?? "Planner not assigned"}</p>
+          <p className="mt-2 text-sm text-slate-400">
+            The backend has not produced a full planner artifact yet, so this panel shows the execution design that would be passed downstream.
+          </p>
+        </div>
 
-            {plan.estimatedDuration && (
-              <div className='flex items-center justify-between p-2 bg-slate-800 rounded'>
-                <span className='text-xs font-semibold text-slate-400'>Est. Duration</span>
-                <span className='text-sm font-mono text-slate-300'>{plan.estimatedDuration}ms</span>
-              </div>
-            )}
-
-            <div className='space-y-3'>
-              {plan.steps.map((step, idx) => (
-                <div key={idx} className='border-l-4 border-orange-500 pl-4 py-2'>
-                  <div className='flex items-center gap-2 mb-2'>
-                    <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-900 text-orange-300 font-semibold text-xs'>
-                      {step.step}
-                    </span>
-                    <Badge className={getSystemColor(step.system)}>
-                      {step.system.toUpperCase()}
-                    </Badge>
+        {plan ? (
+          <div className="space-y-3">
+            {plan.steps.map((step) => (
+              <div key={step.step} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-100">
+                      Step {step.step}: {step.label}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-400">{step.detail}</p>
                   </div>
-                  
-                  <p className='text-slate-300 font-semibold text-sm mb-1'>{step.action}</p>
-                  
-                  {step.description && (
-                    <p className='text-xs text-slate-400 mb-2'>{step.description}</p>
-                  )}
-
-                  {step.command && (
-                    <div className='bg-slate-800 p-2 rounded mb-2'>
-                      <code className='text-xs text-cyan-300 font-mono'>{step.command}</code>
-                    </div>
-                  )}
-
-                  {step.api && (
-                    <div className='bg-slate-800 p-2 rounded mb-2'>
-                      <code className='text-xs text-green-300 font-mono'>{step.api}</code>
-                    </div>
-                  )}
-
-                  {step.parameters && Object.keys(step.parameters).length > 0 && (
-                    <div className='bg-slate-800 p-2 rounded'>
-                      <pre className='text-xs text-slate-300 font-mono overflow-x-auto'>
-                        {JSON.stringify(step.parameters, null, 2)}
-                      </pre>
-                    </div>
-                  )}
+                  <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${badgeClass(step.system)}`}>
+                    {(step.system ?? "federation").toUpperCase()}
+                  </span>
                 </div>
-              ))}
-            </div>
-
-            <div className='bg-slate-800 p-2 rounded'>
-              <pre className='text-xs text-cyan-300 font-mono overflow-x-auto'>
-                {JSON.stringify(plan, null, 2)}
-              </pre>
-            </div>
-          </>
-        ) : null}
-      </CardContent>
-    </Card>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-400">Run the pipeline to generate a planner handoff preview.</p>
+        )}
+      </div>
+    </section>
   );
 };

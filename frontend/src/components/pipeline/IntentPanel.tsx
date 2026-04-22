@@ -1,105 +1,114 @@
-﻿import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
-
-export interface IntentData {
-  task: string;
-  entities: string[];
-  attributes: string[];
-  filters?: {
-    time_range?: {
-      start: string;
-      end: string;
-    };
-    conditions?: string[];
-  };
-  systems: string[];
-  priority: string;
-  confidence_score: number;
-}
+import type { IntentData } from "@/store/useAppStore";
 
 interface Props {
   intent: IntentData | null;
   loading?: boolean;
 }
 
-export const IntentPanel: React.FC<Props> = ({ intent, loading }) => {
-  if (!intent && !loading) return null;
+const percent = (value: number) => `${Math.round(value * 100)}%`;
+
+export const IntentPanel = ({ intent, loading = false }: Props) => {
+  if (!intent && !loading) {
+    return null;
+  }
 
   return (
-    <Card className='w-full bg-slate-900 border-slate-700'>
-      <CardHeader>
-        <CardTitle className='text-amber-400'>Intent Extraction</CardTitle>
-      </CardHeader>
-      <CardContent className='space-y-4'>
+    <section className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6">
+      <div className="pb-4">
+        <h2 className="text-base font-semibold text-amber-300">Intent Analysis</h2>
+      </div>
+      <div className="space-y-6">
         {loading ? (
-          <div className='text-slate-400'>Processing intent...</div>
+          <p className="text-sm text-slate-400">Extracting task, entities, and filters...</p>
         ) : intent ? (
           <>
-            <div className='space-y-2'>
-              <label className='text-xs font-semibold text-slate-400'>Task</label>
-              <Badge className='bg-amber-900 text-amber-300'>{intent.task}</Badge>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Task</p>
+                <p className="mt-2 text-lg font-semibold text-slate-100">{intent.task}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Priority</p>
+                <p className="mt-2 text-lg font-semibold capitalize text-slate-100">{intent.priority}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Confidence</p>
+                <p className="mt-2 text-lg font-semibold text-emerald-300">{percent(intent.confidence_score)}</p>
+              </div>
             </div>
 
-            <div className='space-y-2'>
-              <label className='text-xs font-semibold text-slate-400'>Entities</label>
-              <div className='flex flex-wrap gap-2'>
-                {intent.entities.map(e => (
-                  <Badge key={e} className='bg-blue-900 text-blue-300'>{e}</Badge>
+            <div className="space-y-3">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Entities</p>
+              <div className="flex flex-wrap gap-2">
+                {intent.entities.map((entity) => (
+                  <span key={entity} className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-200">
+                    {entity}
+                  </span>
                 ))}
               </div>
             </div>
 
-            <div className='space-y-2'>
-              <label className='text-xs font-semibold text-slate-400'>Attributes</label>
-              <div className='flex flex-wrap gap-2'>
-                {intent.attributes.map(a => (
-                  <Badge key={a} className='bg-cyan-900 text-cyan-300'>{a}</Badge>
+            <div className="space-y-3">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Attributes</p>
+              <div className="flex flex-wrap gap-2">
+                {intent.attributes.map((attribute) => (
+                  <span key={attribute} className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-200">
+                    {attribute}
+                  </span>
                 ))}
               </div>
             </div>
 
-            <div className='space-y-2'>
-              <label className='text-xs font-semibold text-slate-400'>Systems</label>
-              <div className='flex flex-wrap gap-2'>
-                {intent.systems.map(s => (
-                  <Badge key={s} className='bg-green-900 text-green-300'>{s.toUpperCase()}</Badge>
+            <div className="space-y-3">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Systems</p>
+              <div className="flex flex-wrap gap-2">
+                {intent.systems.map((system) => (
+                  <span key={system} className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200">
+                    {system.toUpperCase()}
+                  </span>
                 ))}
               </div>
             </div>
 
-            <div className='grid grid-cols-2 gap-4'>
-              <div>
-                <label className='text-xs font-semibold text-slate-400'>Priority</label>
-                <p className='text-slate-300 font-mono'>{intent.priority}</p>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Time Range</p>
+                <p className="mt-2 text-sm text-slate-200">
+                  {intent.filters.time_range
+                    ? `${intent.filters.time_range.start} to ${intent.filters.time_range.end}`
+                    : "No explicit range extracted"}
+                </p>
               </div>
-              <div>
-                <label className='text-xs font-semibold text-slate-400'>Confidence</label>
-                <div className='w-full bg-slate-700 rounded h-2 overflow-hidden'>
-                  <div 
-                    className='bg-gradient-to-r from-green-500 to-cyan-500 h-full transition-all'
-                    style={{ width: \\%\ }}
-                  ></div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Filter Conditions</p>
+                <div className="mt-2 space-y-2">
+                  {intent.filters.conditions.length > 0 ? (
+                    intent.filters.conditions.map((condition) => (
+                      <div
+                        key={`${condition.field}-${String(condition.value)}`}
+                        className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm"
+                      >
+                        <span className="text-slate-400">{condition.field}</span>
+                        <span className="font-mono text-cyan-200">{String(condition.value)}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-400">No explicit filter conditions extracted.</p>
+                  )}
                 </div>
-                <p className='text-xs text-slate-400 mt-1'>{(intent.confidence_score * 100).toFixed(1)}%</p>
               </div>
             </div>
 
-            {intent.filters?.time_range && (
-              <div className='space-y-2'>
-                <label className='text-xs font-semibold text-slate-400'>Time Range</label>
-                <p className='text-slate-300 font-mono text-xs'>{intent.filters.time_range.start} to {intent.filters.time_range.end}</p>
-              </div>
-            )}
-
-            <div className='bg-slate-800 p-2 rounded'>
-              <pre className='text-xs text-cyan-300 font-mono overflow-x-auto'>
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Raw Intent JSON</p>
+              <pre className="mt-3 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-xs leading-6 text-slate-200">
                 {JSON.stringify(intent, null, 2)}
               </pre>
             </div>
           </>
         ) : null}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 };

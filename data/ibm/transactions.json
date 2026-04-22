@@ -1,0 +1,51 @@
+[
+    {
+        "transactionId": "TXN-20260310-101-001",
+        "customerId": 101,
+        "amount": 2000.0,
+        "date": "2026-03-10",
+        "transactionType": "DEBIT"
+    },
+    {
+        "transactionId": "TXN-20260311-101-002",
+        "customerId": 101,
+        "amount": 1500.0,
+        "date": "2026-03-11",
+        "transactionType": "DEBIT"
+    },
+    {
+        "transactionId": "TXN-20260312-101-003",
+        "customerId": 101,
+        "amount": 3200.0,
+        "date": "2026-03-12",
+        "transactionType": "DEBIT"
+    },
+    {
+        "transactionId": "TXN-20260310-102-001",
+        "customerId": 102,
+        "amount": 850.0,
+        "date": "2026-03-10",
+        "transactionType": "DEBIT"
+    },
+    {
+        "transactionId": "TXN-20260313-102-002",
+        "customerId": 102,
+        "amount": 640.0,
+        "date": "2026-03-13",
+        "transactionType": "DEBIT"
+    },
+    {
+        "transactionId": "TXN-20260315-103-001",
+        "customerId": 103,
+        "amount": 9000.0,
+        "date": "2026-03-15",
+        "transactionType": "DEBIT"
+    },
+    {
+        "transactionId": "TXN-20260317-103-002",
+        "customerId": 103,
+        "amount": 4200.0,
+        "date": "2026-03-17",
+        "transactionType": "DEBIT"
+    }
+]

@@ -26,6 +26,7 @@ from app.models.schemas import (
 
 # NEW: Import the correct agents
 from intent_agent import IntentAgent
+from intent_agent.config import build_llm_model
 from context_resolution_agent import ContextResolutionAgent
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])
@@ -37,15 +38,7 @@ router = APIRouter(prefix="/api/agent", tags=["agent"])
 
 def _get_intent_agent() -> IntentAgent:
     """Initialize the Intent Agent with LLM model"""
-    try:
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        model = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
-            temperature=0
-        )
-    except Exception as e:
-        print(f"[Agent API] LLM init failed, using fallback: {e}")
-        model = None
+    model = build_llm_model()
     return IntentAgent(model=model)
 
 
@@ -94,6 +87,7 @@ async def execute_agent_query(request: AgentQueryRequest):
             message=(
                 f"Intent resolved: task={intent.task}, "
                 f"entities={intent.entities}, systems={intent.systems}, "
+                f"metric={intent.metric}, aggregation={intent.aggregation}, "
                 f"confidence={intent.confidence_score:.2f}"
             ),
             metadata=intent_dict
@@ -145,6 +139,9 @@ async def execute_agent_query(request: AgentQueryRequest):
         natural_response = (
             f"Understood your request: '{request.query}'\n"
             f"Task: {intent.task} | Entities: {', '.join(intent.entities)}\n"
+            f"Output: {intent.output_mode}"
+            f"{f' | Metric: {intent.metric}' if intent.metric else ''}"
+            f"{f' | Aggregation: {intent.aggregation}' if intent.aggregation else ''}\n"
             f"Data locations resolved: {system_summary}\n"
             f"Confidence: intent={intent.confidence_score:.0%}, "
             f"context={context.resolution_confidence:.0%}\n"

@@ -1,16 +1,4 @@
-"""
-Mock ePortal - Unisys MCP Simulation Server
-
-A realistic FastAPI simulation of a Unisys ePortal system exposing:
-- REST APIs for data access (/api/unisys/*)
-- Schema discovery endpoints (/schema/*)
-- MCP tool discovery (/mcp/tools)
-- Federation metadata (/api/unisys/federation-metadata)
-
-Aligned with AWS CardDemo (Customer, Account, Card, Transaction entities)
-
-Run: uvicorn mock_eportal.app:app --port 8001 --reload
-"""
+"""Unisys ePortal shopping-data provider for the federation demo."""
 
 from pathlib import Path
 import sys
@@ -29,12 +17,11 @@ from mock_eportal.routers import api_router, mcp_router, schema_router
 # ================================================================
 
 app = FastAPI(
-    title="Unisys ePortal Simulation (CardDemo Aligned)",
+    title="Unisys ePortal Shopping Provider",
     description=(
-        "Mock ePortal simulating Unisys MCP mainframe systems. "
-        "Provides REST APIs, schema discovery, and MCP tool manifests "
-        "for the Data Federation Platform. "
-        "ALIGNED WITH AWS CardDemo entities: Customer, Account, Card, Transaction"
+        "Unisys ePortal exposes generated shopping behavior derived from "
+        "IBM CardDemo transaction data. It provides data only; federation "
+        "and spend aggregation belong outside ePortal."
     ),
     version="1.0.0",
     docs_url="/docs",
@@ -72,17 +59,18 @@ async def root():
         "service": "Unisys ePortal Simulation",
         "version": "1.0.0",
         "platform": "Unisys MCP",
-        "federation_standard": "AWS CardDemo",
+        "role": "data_provider",
         "status": "online",
-        "entities": ["customer", "account", "card", "transaction"],
+        "entities": ["shopping"],
         "endpoints": {
-            "data": "/api/unisys/{customer,account,card,transaction}",
-            "schema": "/schema/{customer,account,card,transaction}",
+            "data": "/api/unisys/shopping",
+            "schema": "/schema/shopping",
             "mcp": "/mcp/tools",
             "federation-metadata": "/api/unisys/federation-metadata",
             "docs": "/docs",
         },
-        "relationship_model": "1:1:1 between Customer, Account, Card; 1:* to Transaction",
+        "maps_to": "IBM transactions",
+        "join_key": "customerId",
         "documentation": "See /docs or /redoc for full API documentation",
     }
 
@@ -93,13 +81,10 @@ async def health():
         "status": "healthy",
         "service": "eportal-simulation",
         "platform": "Unisys MCP",
-        "federation_standard": "AWS CardDemo",
+        "role": "shopping-data-provider",
         "data_loaded": True,
         "entities_available": {
-            "customer": "Represents account holders",
-            "account": "Represents financial accounts (1:1 with Customer)",
-            "card": "Represents credit/debit cards (1:1 with Account)",
-            "transaction": "Represents account transactions (1:* with Account)",
+            "shopping": "Generated Unisys behavioral data for card shopping events",
         },
     }
 

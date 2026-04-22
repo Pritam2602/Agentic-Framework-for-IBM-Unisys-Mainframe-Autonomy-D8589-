@@ -1,0 +1,14 @@
+[
+    {
+        "accountNumber": "ACC-10001",
+        "customerId": 101
+    },
+    {
+        "accountNumber": "ACC-10002",
+        "customerId": 102
+    },
+    {
+        "accountNumber": "ACC-10003",
+        "customerId": 103
+    }
+]

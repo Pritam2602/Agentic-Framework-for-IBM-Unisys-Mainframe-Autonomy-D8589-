@@ -27,5 +27,22 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": [
+    "src/main.tsx",
+    "src/App.tsx",
+    "src/lib/**/*.ts",
+    "src/components/common/**/*.tsx",
+    "src/components/pipeline/PipelineVisualization.tsx",
+    "src/components/pipeline/IntentPanel.tsx",
+    "src/components/pipeline/ContextPanel.tsx",
+    "src/components/pipeline/PlannerPanel.tsx",
+    "src/components/pipeline/ReasoningPanel.tsx",
+    "src/components/pipeline/index.ts",
+    "src/pages/ExecutionPage.tsx",
+    "src/services/api.ts",
+    "src/services/agentPipeline.ts",
+    "src/store/**/*.ts",
+    "src/types/index.ts",
+    "src/vite-env.d.ts"
+  ]
 }

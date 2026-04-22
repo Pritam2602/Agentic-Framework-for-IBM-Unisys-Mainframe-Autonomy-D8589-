@@ -91,6 +91,41 @@ class CatalogRepository:
 
             return commands
 
+    def get_commands_by_family(self, families: List[str]) -> List[Dict[str, Any]]:
+        """Load commands filtered by command_family."""
+        if not families:
+            return []
+
+        placeholders = ", ".join("?" for _ in families)
+        with self.get_connection() as conn:
+            cursor = conn.execute(
+                f"""
+                SELECT
+                    zowe_command,
+                    category,
+                    command_family,
+                    subsystem,
+                    ibm_artifact,
+                    artifact_granularity,
+                    data_scope,
+                    operation,
+                    access_pattern,
+                    response_format,
+                    intended_agent,
+                    constraints,
+                    execution_cost,
+                    confidence_level,
+                    description,
+                    output_file
+                FROM zowe_capability
+                WHERE command_family IN ({placeholders})
+                ORDER BY command_family, zowe_command
+                """,
+                families,
+            )
+
+            return [dict(row) for row in cursor.fetchall()]
+
     # =========================================================
     # JOBS (From simulation_data/jobs)
     # =========================================================

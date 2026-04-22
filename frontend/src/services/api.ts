@@ -15,6 +15,7 @@ import {
   AgentExecution,
   AgentConfig,
 } from '../types';
+import type { PipelineResponse } from '@/store/useAppStore';
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -135,11 +136,48 @@ export const sendUserQuery = async (text: string): Promise<ChatMessage> => {
   return chatMessage;
 };
 
+export const runPipeline = async (query: string, enableLlm = true): Promise<PipelineResponse> => {
+  const response = await fetch(`${API_BASE_URL}/api/pipeline/run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_query: query,
+      enable_llm: enableLlm,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(errorBody || 'Failed to run pipeline');
+  }
+
+  return response.json();
+};
+
+export const fetchPipelineHealth = async (): Promise<{ status: string }> => {
+  const response = await fetch(`${API_BASE_URL}/api/pipeline/health`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch pipeline health');
+  }
+  return response.json();
+};
+
+export const fetchContextHealth = async (): Promise<{
+  status: string;
+  unisys?: { eportal_available?: boolean };
+}> => {
+  const response = await fetch(`${API_BASE_URL}/api/context/health`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch context health');
+  }
+  return response.json();
+};
+
 /**
  * Execute a specific command
  * Backend: POST /api/commands/execute (Not yet implemented)
  */
-export const executeCommand = async (commandId: string, params?: Record<string, any>): Promise<any> => {
+export const executeCommand = async (_commandId: string, _params?: Record<string, any>): Promise<any> => {
   // TODO: Implement when backend endpoint is ready
   throw new Error('Not implemented');
 };
@@ -148,7 +186,7 @@ export const executeCommand = async (commandId: string, params?: Record<string, 
  * Get canonical output for a command
  * Backend: GET /api/commands/{id}/output (Not yet implemented)
  */
-export const getCanonicalOutput = async (commandId: string): Promise<any> => {
+export const getCanonicalOutput = async (_commandId: string): Promise<any> => {
   // TODO: Implement when backend endpoint is ready
   throw new Error('Not implemented');
 };
@@ -171,7 +209,7 @@ export const getIBMAgentStatus = async (): Promise<AgentStatus> => {
  * Send task to IBM agent
  * Backend: POST /api/agents/ibm/tasks (Not yet implemented)
  */
-export const sendTaskToIBMAgent = async (task: string, params?: Record<string, any>): Promise<AgentExecution> => {
+export const sendTaskToIBMAgent = async (_task: string, _params?: Record<string, any>): Promise<AgentExecution> => {
   // TODO: Implement when backend endpoint is ready
   throw new Error('Not implemented');
 };
@@ -213,7 +251,7 @@ export const getUnisysAgentStatus = async (): Promise<AgentStatus> => {
  * Send task to Unisys agent
  * Backend: POST /api/agents/unisys/tasks (Not yet implemented)
  */
-export const sendTaskToUnisysAgent = async (task: string, params?: Record<string, any>): Promise<AgentExecution> => {
+export const sendTaskToUnisysAgent = async (_task: string, _params?: Record<string, any>): Promise<AgentExecution> => {
   // TODO: Implement when backend endpoint is ready
   throw new Error('Not implemented');
 };

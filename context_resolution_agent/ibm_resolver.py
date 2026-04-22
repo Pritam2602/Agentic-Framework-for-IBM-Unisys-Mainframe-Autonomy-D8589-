@@ -77,7 +77,7 @@ class IBMContextResolver:
         Resolve IBM context for an entity.
 
         Args:
-            entity: Entity name (e.g., "transaction", "account", "customer", "payroll")
+            entity: Entity name (e.g., "transaction", "account", "customer", "shopping")
             attributes: Optional list of specific attributes needed
 
         Returns:
@@ -94,6 +94,7 @@ class IBMContextResolver:
 
         primary = programs[0]
         program_id = primary.get("program_id", "")
+        job_hint = self._find_jobs_for_entity(entity)
 
         # Step 2: Find JCL jobs that execute this program
         jcl_jobs = self._find_jobs_for_program(program_id)
@@ -104,6 +105,23 @@ class IBMContextResolver:
             job = jcl_jobs[0]
             jcl_job_name = job.get("job_name", "")
             jcl_steps = job.get("steps", [])
+
+        if job_hint and self._is_transaction_like(entity):
+            hinted_program = self._extract_program_from_job(job_hint)
+            if hinted_program:
+                summary = primary.get("summary", {})
+                primary = {
+                    **primary,
+                    "program_id": hinted_program,
+                    "summary": {
+                        **summary,
+                        "type": "batch/JCL-resolved",
+                        "purpose": "Resolved from JCL transaction datasets and steps",
+                    },
+                }
+                program_id = hinted_program
+            jcl_job_name = job_hint.get("job_name", "")
+            jcl_steps = job_hint.get("steps", [])
 
         # Step 3: Collect all datasets
         all_datasets = []
@@ -120,7 +138,7 @@ class IBMContextResolver:
             if fname and fname not in all_datasets:
                 all_datasets.append(fname)
 
-        primary_dataset = all_datasets[0] if all_datasets else None
+        primary_dataset = self._select_primary_dataset(entity, all_datasets)
 
         # Step 4: Extract variables
         variables = primary.get("variables", [])
@@ -143,7 +161,7 @@ class IBMContextResolver:
             all_datasets=all_datasets,
             jcl_job=jcl_job_name,
             jcl_steps=jcl_steps,
-            zowe_commands=[],  # Zowe commands resolved by planner, not here
+            zowe_commands=[],
             variables=variables[:20],  # Limit to first 20 for readability
             io_operations=io_operations,
         )
@@ -156,16 +174,16 @@ class IBMContextResolver:
         - "transaction" → programs with TRANSACT/TRAN in files/variables
         - "account" → programs with ACCT/ACCOUNT in files/variables
         - "customer" → programs with CUST in files/variables
-        - "payroll" / "statement" → CBSTM03A (statement generation)
         """
         entity_lower = entity.lower()
 
         # Direct mapping for known CardDemo entities
         ENTITY_KEYWORDS = {
             "transaction": ["TRANSACT", "TRAN", "TRX", "TRXFL"],
+            "shopping": ["TRANSACT", "TRAN", "TRX", "TRXFL"],
+            "shopping_data": ["TRANSACT", "TRAN", "TRX", "TRXFL"],
             "account": ["ACCT", "ACCOUNT", "ACCTDATA", "ACCTFILE"],
             "customer": ["CUST", "CUSTDATA", "CUSTFILE"],
-            "payroll": ["STATEMNT", "STATEMENT", "STMT"],
             "card": ["CARD", "CARDXREF", "CARDFILE"],
         }
 
@@ -198,12 +216,23 @@ class IBMContextResolver:
 
             # Check summary
             summary = data.get("summary", {})
+            summary_type = str(summary.get("type", "")).lower()
             for inp in summary.get("inputs", []):
                 if any(kw in inp.upper() for kw in keywords):
                     score += 2
             for out in summary.get("outputs", []):
                 if any(kw in out.upper() for kw in keywords):
                     score += 2
+
+            # Prefer programs that actually touch datasets over generic online screens
+            if summary_type.startswith("batch"):
+                score += 3
+            if data.get("files"):
+                score += 2
+            if data.get("io_operations", {}).get("reads"):
+                score += 2
+            if data.get("io_operations", {}).get("writes"):
+                score += 1
 
             if score > 0:
                 matches.append((score, data))
@@ -221,6 +250,79 @@ class IBMContextResolver:
                     jobs.append(job_data)
                     break
         return jobs
+
+    def _find_jobs_for_entity(self, entity: str) -> Optional[Dict[str, Any]]:
+        """Find the best JCL job for an entity based on datasets and step programs."""
+        entity_lower = entity.lower()
+        keywords = {
+            "transaction": ["TRANSACT", "TRX", "DALYTRAN", "SYSTRAN", "TRANREPT", "POSTTRAN"],
+            "shopping": ["TRANSACT", "TRX", "DALYTRAN", "SYSTRAN", "TRANREPT", "POSTTRAN"],
+            "shopping_data": ["TRANSACT", "TRX", "DALYTRAN", "SYSTRAN", "TRANREPT", "POSTTRAN"],
+            "account": ["ACCTDATA", "ACCT", "READACCT"],
+            "customer": ["CUSTDATA", "CUST"],
+        }.get(entity_lower, [entity_lower.upper()])
+
+        best_match = None
+        best_score = 0
+
+        for job_data in self._jcl_cache.values():
+            score = 0
+            job_name = str(job_data.get("job_name", "")).upper()
+
+            if any(keyword in job_name for keyword in keywords):
+                score += 4
+
+            for step in job_data.get("steps", []):
+                program = str(step.get("program", "")).upper()
+                if any(keyword in program for keyword in keywords):
+                    score += 5
+
+                for dataset in step.get("datasets", []):
+                    dsn = str(dataset.get("dsn", "")).upper()
+                    if any(keyword in dsn for keyword in keywords):
+                        score += 6
+                    if self._is_transaction_like(entity) and "TRANSACT.VSAM.KSDS" in dsn:
+                        score += 8
+
+            if score > best_score:
+                best_score = score
+                best_match = job_data
+
+        return best_match
+
+    @staticmethod
+    def _extract_program_from_job(job_data: Dict[str, Any]) -> Optional[str]:
+        """Pick the first non-utility step program from a JCL job."""
+        utility_programs = {"IDCAMS", "IEFBR14", "SORT", "REPROC", "SDSF", "IEBGENER"}
+        for step in job_data.get("steps", []):
+            program = str(step.get("program", "")).upper()
+            if program and program not in utility_programs:
+                return program
+        for step in job_data.get("steps", []):
+            program = str(step.get("program", "")).upper()
+            if program:
+                return program
+        return None
+
+    @staticmethod
+    def _is_transaction_like(entity: str) -> bool:
+        return entity.lower() in {"transaction", "shopping", "shopping_data"}
+
+    def _select_primary_dataset(self, entity: str, datasets: List[str]) -> Optional[str]:
+        """Prefer the most semantically relevant dataset for the resolved entity."""
+        if not datasets:
+            return None
+
+        if self._is_transaction_like(entity):
+            for dataset in datasets:
+                if "TRANSACT" in dataset.upper():
+                    return dataset
+
+        for dataset in datasets:
+            if "VSAM.KSDS" in dataset.upper():
+                return dataset
+
+        return datasets[0]
 
     def get_all_programs(self) -> List[str]:
         """Get all loaded COBOL program IDs"""

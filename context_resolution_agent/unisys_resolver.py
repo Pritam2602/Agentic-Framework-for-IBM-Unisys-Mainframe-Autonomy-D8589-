@@ -35,7 +35,7 @@ class UnisysContextResolver:
         Resolve Unisys context for an entity.
 
         Args:
-            entity: Entity name (e.g., "payroll", "customer", "transaction")
+            entity: Entity name (e.g., "shopping")
             attributes: Optional list of specific attributes needed
 
         Returns:
@@ -56,18 +56,19 @@ class UnisysContextResolver:
         fields = tool.get("output_fields", [])
         if schema_info:
             # Merge schema fields if available
-            schema_fields = [
-                f["name"] for f in schema_info.get("fields", [])
-            ]
+            schema_fields = self._normalize_schema_fields(schema_info.get("fields", []))
             # Use schema fields as they're more authoritative
             if schema_fields:
                 fields = schema_fields
+
+        raw_params = tool.get("parameter_schema", tool.get("params", []))
+        params = self._normalize_params(raw_params)
 
         context = UnisysContext(
             api=tool.get("endpoint"),
             fields=fields,
             tool_name=tool.get("name"),
-            params=tool.get("params", []),
+            params=params,
             schema_endpoint=tool.get("schema_endpoint"),
             entity=entity,
         )
@@ -135,42 +136,66 @@ class UnisysContextResolver:
         Maps entities to expected API endpoints.
         """
         FALLBACK_MAP = {
-            "payroll": {
-                "name": "get_payroll",
-                "endpoint": "/api/unisys/payroll",
+            "shopping": {
+                "name": "get_shopping_data",
+                "endpoint": "/api/unisys/shopping",
                 "params": [
-                    {"name": "employeeId", "type": "integer", "required": False},
-                    {"name": "department", "type": "string", "required": False}
+                    {"name": "customerId", "type": "integer", "required": False},
+                    {"name": "date", "type": "string", "required": False}
                 ],
-                "output_fields": ["employeeId", "employeeName", "department", "netSalary", "grossSalary"],
-                "entity": "payroll",
-                "schema_endpoint": "/schema/payroll",
-            },
-            "customer": {
-                "name": "get_customer",
-                "endpoint": "/api/unisys/customer",
-                "params": [
-                    {"name": "customerId", "type": "string", "required": False}
-                ],
-                "output_fields": ["customerId", "customerName", "accountId", "email", "status"],
-                "entity": "customer",
-                "schema_endpoint": "/schema/customer",
-            },
-            "transaction": {
-                "name": "get_transaction",
-                "endpoint": "/api/unisys/transaction",
-                "params": [
-                    {"name": "accountId", "type": "string", "required": False},
-                    {"name": "startDate", "type": "string", "required": False},
-                    {"name": "endDate", "type": "string", "required": False}
-                ],
-                "output_fields": ["transactionId", "accountId", "transactionAmount", "transactionDate"],
-                "entity": "transaction",
-                "schema_endpoint": "/schema/transaction",
+                "output_fields": ["customerId", "merchant", "amount", "date", "category"],
+                "entity": "shopping",
+                "maps_to": "IBM transactions",
+                "schema_endpoint": "/schema/shopping",
             },
         }
 
         return FALLBACK_MAP.get(entity.lower())
+
+    @staticmethod
+    def _normalize_params(params: list) -> list:
+        """Normalize MCP params that may be strings or structured objects."""
+        normalized = []
+        for param in params:
+            if isinstance(param, dict):
+                normalized.append(
+                    {
+                        **param,
+                        "type": UnisysContextResolver._normalize_param_type(
+                            param.get("name"),
+                            param.get("type"),
+                        ),
+                    }
+                )
+            else:
+                normalized.append(
+                    {
+                        "name": str(param),
+                        "type": UnisysContextResolver._normalize_param_type(str(param), "string"),
+                        "required": False,
+                    }
+                )
+        return normalized
+
+    @staticmethod
+    def _normalize_param_type(name: Optional[str], declared_type: Optional[str]) -> str:
+        normalized_name = (name or "").lower()
+        if normalized_name in {"customerid", "employeeid"}:
+            return "integer"
+        return str(declared_type or "string")
+
+    @staticmethod
+    def _normalize_schema_fields(fields: list) -> list:
+        """Normalize schema field payloads that may be strings or structured objects."""
+        normalized = []
+        for field in fields:
+            if isinstance(field, dict):
+                name = field.get("name")
+                if name:
+                    normalized.append(name)
+            elif field:
+                normalized.append(str(field))
+        return normalized
 
     def is_eportal_available(self) -> bool:
         """Check if ePortal is reachable"""

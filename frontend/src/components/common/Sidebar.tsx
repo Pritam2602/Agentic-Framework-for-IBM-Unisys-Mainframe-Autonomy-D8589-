@@ -1,79 +1,79 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink } from "react-router-dom";
 import {
-  RectangleStackIcon,
-  DocumentMagnifyingGlassIcon,
-  ChatBubbleLeftRightIcon,
+  CircleStackIcon,
+  CommandLineIcon,
   CpuChipIcon,
+  DocumentMagnifyingGlassIcon,
+  Squares2X2Icon,
   ServerStackIcon,
-} from '@heroicons/react/24/outline';
+} from "@heroicons/react/24/outline";
+import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: 'Catalog', href: '/catalog', icon: RectangleStackIcon },
-  { name: 'Reasoning Logs', href: '/reasoning-logs', icon: DocumentMagnifyingGlassIcon },
-  { name: 'Execution Panel', href: '/execution', icon: ChatBubbleLeftRightIcon },
-  { name: 'IBM Agent', href: '/ibm-agent', icon: CpuChipIcon },
-  { name: 'Unisys Agent', href: '/unisys-agent', icon: ServerStackIcon },
+  { name: "Control Center", href: "/execution", icon: Squares2X2Icon },
+  { name: "Intent Console", href: "/execution", icon: CpuChipIcon },
+  { name: "Context Console", href: "/execution", icon: ServerStackIcon },
+  { name: "Trace View", href: "/execution", icon: DocumentMagnifyingGlassIcon },
+  { name: "System Map", href: "/execution", icon: CircleStackIcon },
 ];
 
 export default function Sidebar() {
   return (
-    <div className="fixed left-0 top-0 h-screen w-64 bg-terminal-panel border-r border-terminal-border flex flex-col">
-      {/* Logo/Brand */}
-      <div className="p-6 border-b border-terminal-border">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-terminal-accent to-terminal-blue rounded-lg flex items-center justify-center glow-border">
-            <span className="text-terminal-bg font-bold text-xl font-mono">M</span>
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-slate-800/80 bg-slate-950/90 backdrop-blur lg:flex lg:flex-col">
+      <div className="border-b border-slate-800 px-6 py-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 text-lg font-black text-slate-950">
+            AI
           </div>
           <div>
-            <h1 className="text-lg font-bold text-terminal-accent font-display">
-              MAINFRAME
-            </h1>
-            <p className="text-xs text-gray-400 font-mono">Command Platform</p>
+            <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Enterprise UI</p>
+            <h2 className="mt-1 text-lg font-semibold text-slate-50">Federation Console</h2>
           </div>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 space-y-2 px-4 py-6">
         {navigation.map((item) => (
           <NavLink
             key={item.name}
             to={item.href}
             className={({ isActive }) =>
-              `flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
+              cn(
+                "flex items-start gap-3 rounded-2xl border px-4 py-4 transition-all",
                 isActive
-                  ? 'bg-terminal-accent/10 border border-terminal-accent text-terminal-accent'
-                  : 'hover:bg-terminal-border/50 text-gray-400 hover:text-terminal-accent border border-transparent'
-              }`
+                  ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-100"
+                  : "border-transparent bg-transparent text-slate-400 hover:border-slate-800 hover:bg-slate-900/70 hover:text-slate-100"
+              )
             }
           >
             {({ isActive }) => (
               <>
-                <item.icon
-                  className={`w-5 h-5 ${
-                    isActive ? 'text-terminal-accent' : 'text-gray-400 group-hover:text-terminal-accent'
-                  }`}
-                />
-                <span className="font-medium font-display">{item.name}</span>
+                <item.icon className={cn("mt-0.5 h-5 w-5", isActive ? "text-cyan-300" : "text-slate-500")} />
+                <div>
+                  <p className="text-sm font-semibold">{item.name}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    {item.name === "Control Center"
+                      ? "Run and inspect the AI federation pipeline."
+                      : "Phase 1 keeps these views inside the control center route."}
+                  </p>
+                </div>
               </>
             )}
           </NavLink>
         ))}
       </nav>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-terminal-border">
-        <div className="text-xs text-gray-500 font-mono space-y-1">
-          <div className="flex justify-between">
-            <span>Version:</span>
-            <span className="text-terminal-accent">3.2.1</span>
+      <div className="border-t border-slate-800 px-6 py-5">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+          <div className="flex items-center gap-2 text-sm text-emerald-300">
+            <CommandLineIcon className="h-4 w-4" />
+            System online
           </div>
-          <div className="flex justify-between">
-            <span>Status:</span>
-            <span className="text-terminal-accent status-online">● ONLINE</span>
-          </div>
+          <p className="mt-2 text-xs leading-5 text-slate-400">
+            Intent and context agents are available from the same control surface.
+          </p>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }

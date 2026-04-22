@@ -13,6 +13,7 @@ from pathlib import Path
 
 # Import new modular Intent Agent
 from intent_agent import IntentAgent
+from intent_agent.config import build_llm_model
 
 from app.catalog.catalog_service import CatalogService
 from app.models.schemas import *
@@ -62,15 +63,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 catalog_service = CatalogService()
 
 # Initialize LLM model
-try:
-    from langchain_google_genai import ChatGoogleGenerativeAI
-    model = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
-        temperature=0
-    )
-except Exception as e:
-    print(f"LLM initialization failed: {e}")
-    model = None
+model = build_llm_model()
 
 # Initialize IntentAgent with new modular structure
 intent_agent = IntentAgent(model=model)

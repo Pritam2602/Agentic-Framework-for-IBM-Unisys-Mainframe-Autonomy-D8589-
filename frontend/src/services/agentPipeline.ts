@@ -1,9 +1,11 @@
-﻿/**
- * Agent Pipeline API Service
- * Handles communication with the agentic backend
+/**
+ * Legacy pipeline service wrapper.
+ * Prefer using services/api.ts for the control-center route.
  */
 
-const API_BASE_URL = 'http://localhost:8000';
+import type { PipelineResponse } from "@/store/useAppStore";
+
+const API_BASE_URL = "http://localhost:8000";
 
 export interface IntentRequest {
   user_query: string;
@@ -19,20 +21,21 @@ export interface IntentResponse {
       start: string;
       end: string;
     };
-    conditions?: string[];
+    conditions?: Array<{ field: string; value: string | number | boolean | null }>;
   };
   systems: string[];
+  metric?: string | null;
+  aggregation?: string | null;
+  output_mode: string;
+  requires_federation: boolean;
   priority: string;
   confidence_score: number;
 }
 
-/**
- * Extract intent from user query via Intent Agent
- */
 export const extractIntent = async (query: string): Promise<IntentResponse> => {
-  const response = await fetch(\\/api/intent/extract\, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const response = await fetch(`${API_BASE_URL}/api/intent/extract`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       user_query: query,
       enable_llm: true,
@@ -40,55 +43,51 @@ export const extractIntent = async (query: string): Promise<IntentResponse> => {
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || 'Failed to extract intent');
+    const error = await response.text();
+    throw new Error(error || "Failed to extract intent");
   }
 
   return response.json();
 };
 
-/**
- * Execute full agent pipeline
- * This would call the /api/agent/execute endpoint
- */
-export const executeAgentPipeline = async (query: string) => {
-  const response = await fetch(\\/api/agent/execute\, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query }),
+export const executeAgentPipeline = async (query: string): Promise<PipelineResponse> => {
+  const response = await fetch(`${API_BASE_URL}/api/pipeline/run`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_query: query, enable_llm: true }),
   });
 
   if (!response.ok) {
-    throw new Error('Failed to execute agent pipeline');
+    const error = await response.text();
+    throw new Error(error || "Failed to execute agent pipeline");
   }
 
   return response.json();
 };
 
-/**
- * Stream reasoning logs via Server-Sent Events
- */
-export const streamReasoningLogs = (onMessage: (data: any) => void, onError: (error: Error) => void) => {
+export const streamReasoningLogs = (
+  onMessage: (data: unknown) => void,
+  onError: (error: Error) => void
+) => {
   try {
-    const eventSource = new EventSource(\\/api/agent/reasoning-stream\);
-    
+    const eventSource = new EventSource(`${API_BASE_URL}/api/agent/reasoning-stream`);
+
     eventSource.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data);
-        onMessage(data);
-      } catch (e) {
-        console.error('Failed to parse event data:', e);
+        onMessage(JSON.parse(event.data));
+      } catch (parseError) {
+        onError(parseError instanceof Error ? parseError : new Error("Failed to parse event data"));
       }
     };
 
     eventSource.onerror = () => {
       eventSource.close();
-      onError(new Error('Connection lost'));
+      onError(new Error("Connection lost"));
     };
 
     return () => eventSource.close();
   } catch (error) {
-    onError(error as Error);
+    onError(error instanceof Error ? error : new Error("Failed to stream reasoning logs"));
     return () => {};
   }
 };

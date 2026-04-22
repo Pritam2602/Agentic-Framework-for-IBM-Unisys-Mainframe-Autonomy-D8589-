@@ -1,0 +1,107 @@
+[
+    {
+        "customerId": 101,
+        "merchant": "Amazon",
+        "amount": 1200.0,
+        "date": "2026-03-10",
+        "category": "electronics"
+    },
+    {
+        "customerId": 101,
+        "merchant": "Flipkart",
+        "amount": 600.0,
+        "date": "2026-03-12",
+        "category": "food"
+    },
+    {
+        "customerId": 101,
+        "merchant": "Swiggy",
+        "amount": 1600.0,
+        "date": "2026-03-14",
+        "category": "travel"
+    },
+    {
+        "customerId": 101,
+        "merchant": "Zomato",
+        "amount": 500.0,
+        "date": "2026-03-10",
+        "category": "shopping"
+    },
+    {
+        "customerId": 101,
+        "merchant": "Uber",
+        "amount": 450.0,
+        "date": "2026-03-10",
+        "category": "electronics"
+    },
+    {
+        "customerId": 102,
+        "merchant": "Amazon",
+        "amount": 510.0,
+        "date": "2026-03-10",
+        "category": "electronics"
+    },
+    {
+        "customerId": 102,
+        "merchant": "Flipkart",
+        "amount": 256.0,
+        "date": "2026-03-14",
+        "category": "food"
+    },
+    {
+        "customerId": 102,
+        "merchant": "Swiggy",
+        "amount": 425.0,
+        "date": "2026-03-12",
+        "category": "travel"
+    },
+    {
+        "customerId": 102,
+        "merchant": "Zomato",
+        "amount": 160.0,
+        "date": "2026-03-13",
+        "category": "shopping"
+    },
+    {
+        "customerId": 102,
+        "merchant": "Uber",
+        "amount": 255.0,
+        "date": "2026-03-09",
+        "category": "electronics"
+    },
+    {
+        "customerId": 103,
+        "merchant": "Amazon",
+        "amount": 5400.0,
+        "date": "2026-03-15",
+        "category": "electronics"
+    },
+    {
+        "customerId": 103,
+        "merchant": "Flipkart",
+        "amount": 1680.0,
+        "date": "2026-03-18",
+        "category": "food"
+    },
+    {
+        "customerId": 103,
+        "merchant": "Swiggy",
+        "amount": 4500.0,
+        "date": "2026-03-17",
+        "category": "travel"
+    },
+    {
+        "customerId": 103,
+        "merchant": "Zomato",
+        "amount": 1050.0,
+        "date": "2026-03-17",
+        "category": "shopping"
+    },
+    {
+        "customerId": 103,
+        "merchant": "Uber",
+        "amount": 2700.0,
+        "date": "2026-03-14",
+        "category": "electronics"
+    }
+]

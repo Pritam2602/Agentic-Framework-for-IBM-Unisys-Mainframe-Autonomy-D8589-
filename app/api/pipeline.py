@@ -5,6 +5,7 @@ app/api/pipeline.py - Full Pipeline API (Intent → Context in one call)
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
+from intent_agent.config import build_llm_model
 
 router = APIRouter(prefix="/api/pipeline", tags=["pipeline"])
 
@@ -44,14 +45,7 @@ async def run_pipeline(request: PipelineRequest):
         from intent_agent import IntentAgent
 
         if request.enable_llm:
-            try:
-                from langchain_google_genai import ChatGoogleGenerativeAI
-                model = ChatGoogleGenerativeAI(
-                    model="gemini-2.0-flash",
-                    temperature=0
-                )
-            except Exception:
-                model = None
+            model = build_llm_model()
         else:
             model = None
 
@@ -79,6 +73,10 @@ async def run_pipeline(request: PipelineRequest):
             f"Query: {request.user_query}\n"
             f"Intent: {intent.task} on {', '.join(intent.entities)} "
             f"(confidence: {intent.confidence_score:.0%})\n"
+            f"Output: {intent.output_mode}"
+            f"{f' | Metric: {intent.metric}' if intent.metric else ''}"
+            f"{f' | Aggregation: {intent.aggregation}' if intent.aggregation else ''}"
+            f"{' | Federation required' if intent.requires_federation else ''}\n"
             f"Context: {' | '.join(system_parts) or 'No systems resolved'} "
             f"(confidence: {context.resolution_confidence:.0%})"
         )

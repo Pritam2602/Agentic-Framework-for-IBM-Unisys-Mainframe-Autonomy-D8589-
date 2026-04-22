@@ -41,7 +41,10 @@ class ContextOutput(BaseModel):
     """
     ibm: Optional[IBMContext] = Field(None, description="IBM mainframe context")
     unisys: Optional[UnisysContext] = Field(None, description="Unisys ePortal context")
+    entity_mapping: Dict[str, str] = Field(default_factory=dict, description="Cross-system field mapping for federation")
     entities_resolved: List[str] = Field(default_factory=list, description="Successfully resolved entities")
     systems_checked: List[str] = Field(default_factory=list, description="Systems that were checked")
     resolution_confidence: float = Field(0.0, ge=0.0, le=1.0, description="Overall resolution confidence")
+    is_federation: bool = Field(False, description="Whether more than one system is required")
+    reasoning_summary: Optional[str] = Field(None, description="High-level explanation of the resolved context")
     warnings: List[str] = Field(default_factory=list, description="Resolution warnings")

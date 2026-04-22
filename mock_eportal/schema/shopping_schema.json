@@ -1,0 +1,16 @@
+{
+    "entity": "shopping",
+    "fields": [
+        "customerId",
+        "merchant",
+        "amount",
+        "date",
+        "category"
+    ],
+    "maps_to": "IBM transactions",
+    "join_key": "customerId",
+    "comparable_fields": {
+        "amount": "transactionAmount",
+        "date": "transactionDate"
+    }
+}

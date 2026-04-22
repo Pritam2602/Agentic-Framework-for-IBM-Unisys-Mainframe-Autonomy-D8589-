@@ -33,6 +33,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from .schemas import ContextOutput, IBMContext, UnisysContext
 from .ibm_resolver import IBMContextResolver
 from .unisys_resolver import UnisysContextResolver
+from intent_agent.config import build_llm_model
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,12 @@ For Unisys, identify:
 - Available fields
 - The MCP tool name
 - Supported query parameters
+
+Federation rule:
+- If the user asks for shopping or shopping_data, resolve Unisys to the shopping
+  behavior API and resolve IBM to transaction context. Shopping maps to IBM
+  transactions through customerId, comparable date fields, and comparable
+  numeric amount fields.
 
 Return STRICT JSON with this structure:
 {{
@@ -116,16 +123,14 @@ class ContextResolutionAgent:
     def _init_llm(self):
         """Initialize the LLM model if not provided"""
         if self.model is None:
-            try:
-                from langchain_google_genai import ChatGoogleGenerativeAI
-                self.model = ChatGoogleGenerativeAI(
-                    model="gemini-2.0-flash",
-                    temperature=0
+            self.model = build_llm_model(logger=logger)
+            if self.model is not None:
+                candidates = getattr(self.model, "model_candidates", [])
+                logger.info(
+                    f"[Context Agent] Gemini LLM initialized with fallback chain={candidates}"
                 )
-                logger.info("[Context Agent] Gemini LLM initialized")
-            except Exception as e:
-                logger.warning(f"[Context Agent] LLM init failed: {e}")
-                self.model = None
+            else:
+                logger.warning("[Context Agent] LLM init failed for all configured Gemini models")
 
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", CONTEXT_RESOLUTION_SYSTEM_PROMPT),
@@ -233,7 +238,15 @@ class ContextResolutionAgent:
         unisys_metadata: Optional[Dict[str, Any]],
         systems: List[str],
     ) -> ContextOutput:
-        """Use LLM to reason about the best resolution"""
+        """Use LLM to explain a grounded resolution without replacing it."""
+
+        grounded = self._fallback_resolve(
+            intent_data,
+            ibm_metadata,
+            unisys_metadata,
+            systems,
+            include_warning=False,
+        )
 
         # Build the resolution request for the LLM
         request = {
@@ -245,6 +258,7 @@ class ContextResolutionAgent:
             },
             "ibm_metadata": ibm_metadata,
             "unisys_metadata": unisys_metadata,
+            "grounded_resolution": grounded.model_dump(),
         }
 
         request_text = json.dumps(request, indent=2, default=str)
@@ -252,17 +266,25 @@ class ContextResolutionAgent:
         try:
             chain = self.prompt | self.model
             result = chain.invoke({"resolution_request": request_text})
-            return self._parse_llm_response(result.content, systems, intent_data)
+            return self._parse_llm_response(
+                result.content,
+                systems,
+                intent_data,
+                grounded,
+            )
         except Exception as e:
             logger.error(f"[Context Agent] LLM resolution failed: {e}")
-            return self._fallback_resolve(
-                intent_data, ibm_metadata, unisys_metadata, systems
-            )
+            grounded.warnings.append("LLM unavailable — used grounded resolver output")
+            return grounded
 
     def _parse_llm_response(
-        self, text: str, systems: List[str], intent_data: Dict[str, Any]
+        self,
+        text: str,
+        systems: List[str],
+        intent_data: Dict[str, Any],
+        grounded: ContextOutput,
     ) -> ContextOutput:
-        """Parse LLM response JSON into ContextOutput"""
+        """Parse LLM response JSON and merge only explanatory fields."""
         try:
             json_match = re.search(r"\{[\s\S]*\}", text)
             if not json_match:
@@ -270,61 +292,28 @@ class ContextResolutionAgent:
 
             data = json.loads(json_match.group())
 
-            # Build IBM context
-            ibm_context = None
-            if "ibm" in systems and data.get("ibm"):
-                ibm_data = data["ibm"]
-                ibm_context = IBMContext(
-                    program=ibm_data.get("program"),
-                    program_name=ibm_data.get("program_description", ""),
-                    dataset=ibm_data.get("primary_dataset"),
-                    all_datasets=ibm_data.get("all_datasets", []),
-                    jcl_job=ibm_data.get("jcl_job"),
-                    jcl_steps=[],
-                    zowe_commands=[],
-                    variables=[
-                        {"name": v, "level": 5, "pic": "", "usage": ""}
-                        for v in ibm_data.get("key_variables", [])
-                    ],
-                    io_operations={},
-                )
-
-            # Build Unisys context
-            unisys_context = None
-            if "unisys" in systems and data.get("unisys"):
-                u_data = data["unisys"]
-                unisys_context = UnisysContext(
-                    api=u_data.get("api_endpoint"),
-                    fields=u_data.get("fields", []),
-                    tool_name=u_data.get("tool_name"),
-                    params=[
-                        {"name": p, "type": "string", "required": False}
-                        for p in u_data.get("params", [])
-                    ],
-                    schema_endpoint=f"/schema/{intent_data.get('entities', [''])[0]}",
-                    entity=intent_data.get("entities", [None])[0],
-                )
-
             confidence = data.get("resolution_confidence", 0.7)
             reasoning = data.get("reasoning_summary", "")
 
-            resolved_entities = []
-            if ibm_context and ibm_context.program:
-                resolved_entities.append(
-                    f"ibm:{intent_data.get('entities', [''])[0]}"
-                )
-            if unisys_context and unisys_context.api:
-                resolved_entities.append(
-                    f"unisys:{intent_data.get('entities', [''])[0]}"
-                )
+            warnings = []
+            if reasoning:
+                warnings.append(reasoning)
+            warnings.extend(grounded.warnings)
+            warnings = list(dict.fromkeys(warnings))
 
             return ContextOutput(
-                ibm=ibm_context,
-                unisys=unisys_context,
-                entities_resolved=resolved_entities,
+                ibm=grounded.ibm,
+                unisys=grounded.unisys,
+                entity_mapping=grounded.entity_mapping,
+                entities_resolved=grounded.entities_resolved,
                 systems_checked=systems,
-                resolution_confidence=min(max(confidence, 0.0), 1.0),
-                warnings=[reasoning] if reasoning else [],
+                resolution_confidence=max(
+                    round(min(max(confidence, 0.0), 0.92), 2),
+                    grounded.resolution_confidence,
+                ),
+                is_federation=grounded.is_federation,
+                reasoning_summary=reasoning or grounded.reasoning_summary,
+                warnings=grounded.warnings,
             )
 
         except Exception as e:
@@ -337,6 +326,7 @@ class ContextResolutionAgent:
         ibm_metadata: Optional[Dict[str, Any]],
         unisys_metadata: Optional[Dict[str, Any]],
         systems: List[str],
+        include_warning: bool = True,
     ) -> ContextOutput:
         """Rule-based fallback when LLM is unavailable"""
         entities = intent_data.get("entities", [])
@@ -344,15 +334,16 @@ class ContextResolutionAgent:
 
         ibm_context = None
         unisys_context = None
+        entity_mapping = {}
         resolved = []
-        warnings = ["LLM unavailable — used rule-based fallback resolution"]
+        warnings = ["LLM unavailable — used rule-based fallback resolution"] if include_warning else []
 
         if "ibm" in systems:
             for entity in entities:
                 ctx = self.ibm_resolver.resolve(entity, attributes)
                 if ctx:
                     ibm_context = ctx
-                    resolved.append(f"ibm:{entity}")
+                    resolved.append(f"ibm:{self._resolved_entity_label('ibm', entity)}")
                     break
 
         if "unisys" in systems:
@@ -360,17 +351,24 @@ class ContextResolutionAgent:
                 ctx = self.unisys_resolver.resolve(entity, attributes)
                 if ctx:
                     unisys_context = ctx
-                    resolved.append(f"unisys:{entity}")
+                    resolved.append(f"unisys:{self._resolved_entity_label('unisys', entity)}")
                     break
+
+        is_federation = bool(ibm_context and unisys_context and len(systems) > 1)
+        if is_federation:
+            entity_mapping = self._build_entity_mapping(intent_data)
 
         confidence = self._compute_confidence(ibm_context, unisys_context, systems)
 
         return ContextOutput(
             ibm=ibm_context,
             unisys=unisys_context,
+            entity_mapping=entity_mapping,
             entities_resolved=resolved,
             systems_checked=systems,
             resolution_confidence=confidence,
+            is_federation=is_federation,
+            reasoning_summary=self._build_reasoning_summary(ibm_context, unisys_context, is_federation),
             warnings=warnings,
         )
 
@@ -381,27 +379,57 @@ class ContextResolutionAgent:
         systems: List[str],
     ) -> float:
         """Compute confidence for fallback resolution"""
-        score = 0.3
+        score = 0.35
         requested = len(systems)
         resolved = 0
 
         if "ibm" in systems and ibm_ctx:
             resolved += 1
             if ibm_ctx.program:
-                score += 0.15
+                score += 0.12
             if ibm_ctx.jcl_job:
-                score += 0.1
+                score += 0.08
             if ibm_ctx.dataset:
-                score += 0.1
+                score += 0.08
 
         if "unisys" in systems and unisys_ctx:
             resolved += 1
             if unisys_ctx.api:
-                score += 0.15
+                score += 0.12
             if unisys_ctx.fields:
-                score += 0.1
+                score += 0.07
 
         if requested > 0 and resolved == requested:
             score += 0.1
 
-        return min(max(score, 0.0), 1.0)
+        return round(min(max(score, 0.0), 0.92), 2)
+
+    @staticmethod
+    def _resolved_entity_label(system: str, entity: str) -> str:
+        entity_lower = entity.lower()
+        if system == "ibm" and entity_lower in {"shopping", "shopping_data", "transaction"}:
+            return "transactions"
+        return entity_lower
+
+    @staticmethod
+    def _build_entity_mapping(intent_data: Dict[str, Any]) -> Dict[str, str]:
+        mapping = {"customerId": "customerId", "date": "transactionDate"}
+        mapping["amount"] = "transactionAmount" if intent_data.get("metric") == "total_spend" else "amount"
+        return mapping
+
+    @staticmethod
+    def _build_reasoning_summary(
+        ibm_ctx: Optional[IBMContext],
+        unisys_ctx: Optional[UnisysContext],
+        is_federation: bool,
+    ) -> Optional[str]:
+        if is_federation and ibm_ctx and unisys_ctx:
+            return (
+                "Total spend requires combining IBM transaction data with "
+                "Unisys shopping data using customerId as join key and date alignment"
+            )
+        if ibm_ctx and ibm_ctx.dataset:
+            return f"IBM data lives in {ibm_ctx.dataset}"
+        if unisys_ctx and unisys_ctx.api:
+            return f"Unisys data lives behind {unisys_ctx.api}"
+        return None

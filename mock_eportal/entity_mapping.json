@@ -1,84 +1,19 @@
-﻿{
-    "timestamp":  "2026-04-17",
-    "description":  "Entity mapping to enable semantic federation between systems",
-    "entities":  [
-                     {
-                         "carddemo_name":  "customer",
-                         "field_mapping":  {
-                                               "customerType":  "customerType",
-                                               "customerId":  "customerId",
-                                               "registrationDate":  "customerOpenDate",
-                                               "phone":  "phone",
-                                               "email":  "email",
-                                               "customerName":  "customerName",
-                                               "status":  "status"
-                                           },
-                         "description":  "Represents an account holder/customer",
-                         "unisys_name":  "customer",
-                         "relationship":  "1:1 to Account",
-                         "entity_name":  "Customer"
-                     },
-                     {
-                         "carddemo_name":  "account",
-                         "field_mapping":  {
-                                               "accountStatus":  "status",
-                                               "accountOpenDate":  "openDate",
-                                               "accountBalance":  "balance",
-                                               "interestRate":  "interestRate",
-                                               "customerId":  "customerId",
-                                               "accountType":  "accountType",
-                                               "accountNumber":  "accountNumber",
-                                               "currency":  "currency"
-                                           },
-                         "description":  "Represents a financial account",
-                         "unisys_name":  "account",
-                         "relationship":  "1:1 to Customer, 1:1 to Card, 1:* to Transaction",
-                         "entity_name":  "Account",
-                         "status":  "NEW - Added for CardDemo alignment"
-                     },
-                     {
-                         "carddemo_name":  "card",
-                         "field_mapping":  {
-                                               "cardholderName":  "cardholderName",
-                                               "expiryDate":  "expiryDate",
-                                               "cardType":  "cardType",
-                                               "cardNumber":  "cardNumber",
-                                               "issuedDate":  "issuedDate",
-                                               "customerId":  "customerId",
-                                               "accountNumber":  "accountNumber",
-                                               "cardStatus":  "cardStatus"
-                                           },
-                         "description":  "Represents a credit/debit card",
-                         "unisys_name":  "card",
-                         "relationship":  "1:1 to Customer, 1:1 to Account",
-                         "entity_name":  "Card",
-                         "status":  "NEW - Added for CardDemo alignment"
-                     },
-                     {
-                         "carddemo_name":  "transaction",
-                         "field_mapping":  {
-                                               "transactionAmount":  "transactionAmount",
-                                               "transactionDescription":  "description",
-                                               "transactionType":  "transactionType",
-                                               "transactionId":  "transactionId",
-                                               "currency":  "currency",
-                                               "accountNumber":  "accountNumber",
-                                               "transactionDate":  "transactionDate",
-                                               "transactionStatus":  "status"
-                                           },
-                         "description":  "Represents a financial transaction",
-                         "unisys_name":  "transaction",
-                         "relationship":  "Many to Account",
-                         "entity_name":  "Transaction",
-                         "status":  "UPDATED - Aligned with CardDemo"
-                     },
-                     {
-                         "carddemo_name":  "N/A",
-                         "status":  "DEPRECATED - Not in CardDemo scope",
-                         "entity_name":  "Payroll",
-                         "unisys_name":  "payroll",
-                         "reason":  "CardDemo is credit card / account management; payroll is enterprise HR"
-                     }
-                 ],
-    "federation_alignment":  "Unisys ePortal  AWS CardDemo"
+{
+    "description": "Unisys ePortal exposes only generated shopping behavior data",
+    "entities": [
+        {
+            "entity_name": "Shopping",
+            "unisys_name": "shopping",
+            "maps_to": "IBM transactions",
+            "relationship": "Many shopping records can enrich IBM transaction records",
+            "linking_key": "customerId",
+            "field_mapping": {
+                "customerId": "customerId",
+                "amount": "transactionAmount",
+                "date": "transactionDate",
+                "merchant": "merchant",
+                "category": "category"
+            }
+        }
+    ]
 }
