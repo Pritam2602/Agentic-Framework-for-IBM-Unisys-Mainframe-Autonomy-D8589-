@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-04-22
+
+### Gemini fallback, grounded context resolution, and control-center fixes
+- Added centralized Gemini model construction in `intent_agent/config.py` with ordered model fallback support and shared configuration reuse across backend entrypoints.
+- Updated intent and pipeline LLM initialization paths to fail fast into fallback behavior instead of stalling on repeated Gemini retries.
+- Fixed pipeline degradation behavior so Gemini quota/model failures fall back cleanly instead of surfacing `500` errors.
+- Corrected `/api/context/health` to use the current resolver/catalog layout instead of the removed `ibm_parsers` import.
+- Reworked the context resolution flow so:
+  - IBM resolution is grounded in parsed COBOL/JCL outputs under `tools/cobol-jcl-parser/`
+  - Unisys resolution stays grounded in the mock ePortal MCP/schema endpoints
+  - the LLM is limited to optional explanation rather than overriding source-of-truth context
+- Improved IBM transaction/shopping resolution to prefer transaction-bearing JCL jobs and datasets, producing IBM transaction context such as `CBTRN03C` and `AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS` for federation-style spend queries.
+- Restored architectural separation by removing Zowe command catalog details from Context output after a temporary regression; planner-facing “how to access data” remains downstream.
+- Enhanced Context output for planner handoff with:
+  - system-specific resolved entities such as `ibm:transactions` and `unisys:shopping`
+  - `entity_mapping` for cross-system federation
+  - `is_federation`
+  - `reasoning_summary`
+  - normalized confidence capping and better parameter typing for Unisys `customerId`
+- Fixed Unisys schema/parameter normalization bugs that caused fallback resolution to crash on string-shaped schema payloads.
+- Updated the frontend control-center pipeline panels to expose raw Intent and Context JSON directly in the UI for inspection.
+- Improved frontend context rendering so partial/empty IBM or Unisys sections are no longer mislabeled as fully resolved.
+- Updated planner preview copy to reflect the intended architecture: Context identifies where data lives, Planner decides how to access it.
+
 ## 2026-04-20
 
 ### Intent Agent: CRITICAL RULES Implementation
