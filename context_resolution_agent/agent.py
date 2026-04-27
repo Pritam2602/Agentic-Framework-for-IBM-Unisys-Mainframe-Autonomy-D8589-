@@ -23,6 +23,7 @@ MUST ONLY:
   ✅ Map entities to data sources
 """
 
+import asyncio
 import json
 import logging
 import re
@@ -147,6 +148,25 @@ class ContextResolutionAgent:
         Returns:
             ContextOutput with resolved IBM and Unisys context
         """
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(self.resolve_async(intent))
+        raise RuntimeError(
+            "ContextResolutionAgent.resolve() cannot be used inside a running event "
+            "loop. Use 'await resolve_async(...)' instead."
+        )
+
+    async def resolve_async(self, intent: Union[Dict[str, Any], Any]) -> ContextOutput:
+        """
+        Resolve data context from intent JSON using LLM reasoning from async code.
+
+        Args:
+            intent: Intent output (dict or Pydantic model)
+
+        Returns:
+            ContextOutput with resolved IBM and Unisys context
+        """
         # Handle both dict and Pydantic model input
         if hasattr(intent, "model_dump"):
             intent_data = intent.model_dump()
@@ -167,17 +187,21 @@ class ContextResolutionAgent:
 
         # Gather metadata from both systems
         ibm_metadata = self._gather_ibm_metadata(entities) if "ibm" in systems else None
-        unisys_metadata = self._gather_unisys_metadata(entities) if "unisys" in systems else None
+        unisys_metadata = (
+            await self._gather_unisys_metadata_async(entities)
+            if "unisys" in systems
+            else None
+        )
 
         # Use LLM to reason about the best resolution
         if self.model:
-            return self._llm_resolve(
+            return await self._llm_resolve_async(
                 intent_data, ibm_metadata, unisys_metadata, systems
             )
         else:
             # Fallback to rule-based resolution
             logger.warning("[Context Agent] LLM unavailable, using rule-based fallback")
-            return self._fallback_resolve(
+            return await self._fallback_resolve_async(
                 intent_data, ibm_metadata, unisys_metadata, systems
             )
 
@@ -218,16 +242,35 @@ class ContextResolutionAgent:
 
     def _gather_unisys_metadata(self, entities: List[str]) -> Dict[str, Any]:
         """Gather Unisys metadata for the LLM to reason over"""
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(self._gather_unisys_metadata_async(entities))
+        raise RuntimeError(
+            "ContextResolutionAgent._gather_unisys_metadata() cannot be used inside "
+            "a running event loop. Use 'await _gather_unisys_metadata_async(...)' instead."
+        )
+
+    async def _gather_unisys_metadata_async(self, entities: List[str]) -> Dict[str, Any]:
+        """Gather Unisys metadata for the LLM to reason over."""
         metadata = {"tools": [], "schemas": []}
 
         for entity in entities:
-            tool = self.unisys_resolver._discover_tool(entity)
-            if tool:
-                metadata["tools"].append(tool)
-
-            schema = self.unisys_resolver._get_schema(entity)
-            if schema:
-                metadata["schemas"].append(schema)
+            ctx = await self.unisys_resolver.resolve_async(entity)
+            if ctx:
+                metadata["tools"].append({
+                    "tool_name": ctx.tool_name,
+                    "api": ctx.api,
+                    "entity": ctx.entity,
+                    "params": ctx.params,
+                    "fields": ctx.fields,
+                })
+                if ctx.schema_endpoint:
+                    metadata["schemas"].append({
+                        "entity": ctx.entity,
+                        "schema_uri": ctx.schema_endpoint,
+                        "fields": ctx.fields,
+                    })
 
         return metadata
 
@@ -239,8 +282,29 @@ class ContextResolutionAgent:
         systems: List[str],
     ) -> ContextOutput:
         """Use LLM to explain a grounded resolution without replacing it."""
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(
+                self._llm_resolve_async(
+                    intent_data, ibm_metadata, unisys_metadata, systems
+                )
+            )
+        raise RuntimeError(
+            "ContextResolutionAgent._llm_resolve() cannot be used inside a running "
+            "event loop. Use 'await _llm_resolve_async(...)' instead."
+        )
 
-        grounded = self._fallback_resolve(
+    async def _llm_resolve_async(
+        self,
+        intent_data: Dict[str, Any],
+        ibm_metadata: Optional[Dict[str, Any]],
+        unisys_metadata: Optional[Dict[str, Any]],
+        systems: List[str],
+    ) -> ContextOutput:
+        """Use LLM to explain a grounded resolution without replacing it."""
+
+        grounded = await self._fallback_resolve_async(
             intent_data,
             ibm_metadata,
             unisys_metadata,
@@ -329,6 +393,32 @@ class ContextResolutionAgent:
         include_warning: bool = True,
     ) -> ContextOutput:
         """Rule-based fallback when LLM is unavailable"""
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(
+                self._fallback_resolve_async(
+                    intent_data,
+                    ibm_metadata,
+                    unisys_metadata,
+                    systems,
+                    include_warning=include_warning,
+                )
+            )
+        raise RuntimeError(
+            "ContextResolutionAgent._fallback_resolve() cannot be used inside a "
+            "running event loop. Use 'await _fallback_resolve_async(...)' instead."
+        )
+
+    async def _fallback_resolve_async(
+        self,
+        intent_data: Dict[str, Any],
+        ibm_metadata: Optional[Dict[str, Any]],
+        unisys_metadata: Optional[Dict[str, Any]],
+        systems: List[str],
+        include_warning: bool = True,
+    ) -> ContextOutput:
+        """Rule-based fallback when LLM is unavailable."""
         entities = intent_data.get("entities", [])
         attributes = intent_data.get("attributes", [])
 
@@ -348,7 +438,7 @@ class ContextResolutionAgent:
 
         if "unisys" in systems:
             for entity in entities:
-                ctx = self.unisys_resolver.resolve(entity, attributes)
+                ctx = await self.unisys_resolver.resolve_async(entity, attributes)
                 if ctx:
                     unisys_context = ctx
                     resolved.append(f"unisys:{self._resolved_entity_label('unisys', entity)}")

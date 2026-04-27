@@ -10,6 +10,13 @@ Output:
 
 The generator is deterministic: no random choices are used. Every Unisys
 shopping record is derived from an IBM transaction customerId, date, and amount.
+
+IMPORTANT:
+    The 'amount' field mirrors the IBM transaction amount (possibly scaled).
+    IBM CardDemo transactions already include ALL financial amounts including
+    shopping.  The Unisys ePortal adds *behavioral enrichment* on top —
+    merchant, category, loyalty points, browsing duration, cart status —
+    but the dollar amount is NOT additive to IBM's amount.
 """
 
 from __future__ import annotations
@@ -31,6 +38,15 @@ AMOUNT_FACTORS = [0.60, 0.40, 0.50, 0.25, 0.30, 0.70, 0.45]
 DATE_OFFSETS = [0, 1, 2, 0, -1, 1, -2]
 MIN_ENTRIES_PER_CUSTOMER = 5
 MAX_ENTRIES_PER_CUSTOMER = 15
+
+# Behavioral enrichment — deterministic cycles
+LOYALTY_POINTS_BASE = [120, 85, 200, 50, 95, 150, 60]
+BROWSING_MINUTES = [12, 5, 25, 3, 8, 18, 7]
+CART_STATUSES = ["completed", "completed", "abandoned", "completed", "wishlisted", "completed", "completed"]
+MERCHANT_CATEGORIES = [
+    "electronics_premium", "fashion_apparel", "food_delivery",
+    "groceries", "ride_hailing", "electronics_budget", "dining_out"
+]
 
 
 def load_json(path: Path) -> Any:
@@ -86,6 +102,12 @@ def generate_entries(
             2,
         )
 
+        # Behavioral enrichment fields (deterministic)
+        loyalty = LOYALTY_POINTS_BASE[index % len(LOYALTY_POINTS_BASE)]
+        browsing = BROWSING_MINUTES[index % len(BROWSING_MINUTES)]
+        cart_status = CART_STATUSES[index % len(CART_STATUSES)]
+        merchant_cat = MERCHANT_CATEGORIES[index % len(MERCHANT_CATEGORIES)]
+
         entries.append(
             {
                 "customerId": customer_id,
@@ -93,6 +115,10 @@ def generate_entries(
                 "amount": amount,
                 "date": shopping_date.strftime("%Y-%m-%d"),
                 "category": CATEGORIES[index % len(CATEGORIES)],
+                "loyaltyPoints": loyalty,
+                "browsingSessionMinutes": browsing,
+                "cartStatus": cart_status,
+                "merchantCategory": merchant_cat,
             }
         )
 

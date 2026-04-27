@@ -3,9 +3,15 @@ config.py - Intent Agent configuration
 """
 
 import logging
+import os
 from typing import Optional, Sequence
 
+from dotenv import find_dotenv, load_dotenv
 from langchain_core.runnables import RunnableLambda
+
+# Load environment variables for direct module imports such as
+# `uvicorn app.main:app`, where `run.py` is bypassed.
+load_dotenv(find_dotenv(), override=False)
 
 # Model Configuration
 MODEL_NAME = "gemini-2.5-flash-lite"
@@ -45,6 +51,14 @@ def build_llm_model(
     except Exception as exc:
         if logger:
             logger.warning(f"Gemini client import failed: {exc}")
+        return None
+
+    if not (os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")):
+        if logger:
+            logger.warning(
+                "Gemini API key not found in environment. "
+                "Set GOOGLE_API_KEY or GEMINI_API_KEY."
+            )
         return None
 
     candidates = list(model_candidates or MODEL_CANDIDATES)

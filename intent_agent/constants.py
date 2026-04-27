@@ -17,7 +17,6 @@ ENTITY_MAPPINGS = {
     "category spend": "shopping",
     "card usage": "shopping",
     "purchase": "shopping",
-    "spend": "shopping",
     "transaction": "transaction",
     "transactions": "transaction",
     "transfer": "transaction",

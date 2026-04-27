@@ -76,11 +76,27 @@ class IntentNormalizer:
         """Estimate whether the request likely needs more than one system."""
         if len(systems) > 1 or len(entities) > 1:
             return True
-        if metric == "total_spend" and ("shopping" in entities or "transaction" in entities):
-            return True
         if aggregation and len(systems) > 1:
             return True
         return False
+
+    @staticmethod
+    def needs_behavioral_enrichment(text: str) -> bool:
+        """Detect if the user explicitly wants shopping/behavioral context."""
+        text_lower = text.lower()
+        enrichment_signals = [
+            "shopping",
+            "behavior",
+            "behavioral",
+            "merchant",
+            "category",
+            "loyalty",
+            "browsing",
+            "cart",
+            "eportal",
+            "unisys",
+        ]
+        return any(signal in text_lower for signal in enrichment_signals)
     
     @staticmethod
     def apply_entity_priority(entities: List[str]) -> List[str]:

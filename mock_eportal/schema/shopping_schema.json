@@ -5,12 +5,23 @@
         "merchant",
         "amount",
         "date",
-        "category"
+        "category",
+        "loyaltyPoints",
+        "browsingSessionMinutes",
+        "cartStatus",
+        "merchantCategory"
     ],
     "maps_to": "IBM transactions",
     "join_key": "customerId",
     "comparable_fields": {
         "amount": "transactionAmount",
         "date": "transactionDate"
-    }
+    },
+    "spend_note": "IBM transactionAmount already includes shopping spend. Do NOT sum Unisys amount with IBM amount.",
+    "enrichment_fields": [
+        "loyaltyPoints",
+        "browsingSessionMinutes",
+        "cartStatus",
+        "merchantCategory"
+    ]
 }

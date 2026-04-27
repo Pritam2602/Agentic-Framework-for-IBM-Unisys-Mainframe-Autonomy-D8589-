@@ -1,4 +1,15 @@
-"""Federation logic for IBM transactions + Unisys shopping behavior."""
+"""Federation logic for IBM transactions + Unisys shopping behavior.
+
+IMPORTANT:
+    IBM CardDemo transactions already include ALL financial amounts,
+    including shopping spend.  Unisys ePortal provides *behavioral
+    enrichment* (merchant, category, loyalty, browsing patterns) — its
+    amount field mirrors IBM's and must NOT be added on top.
+
+    total_spend = IBM spend only.
+    Unisys contributes enrichment (category breakdown, merchant insights,
+    loyalty, browsing behavior, cart status).
+"""
 
 from __future__ import annotations
 
@@ -54,9 +65,43 @@ def filter_unisys_shopping(
 def category_analysis(records: list[dict[str, Any]]) -> dict[str, float]:
     totals: dict[str, float] = {}
     for record in records:
-        category = str(record["category"])
+        category = str(record.get("category", "unknown"))
         totals[category] = round(totals.get(category, 0) + float(record["amount"]), 2)
     return totals
+
+
+def loyalty_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Summarise loyalty points from Unisys behavioral data."""
+    total_points = sum(int(r.get("loyaltyPoints", 0)) for r in records)
+    return {
+        "total_loyalty_points": total_points,
+        "avg_loyalty_points": round(total_points / len(records), 1) if records else 0,
+    }
+
+
+def cart_analysis(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Analyse cart statuses from Unisys behavioral data."""
+    statuses: dict[str, int] = {}
+    for record in records:
+        status = str(record.get("cartStatus", "unknown"))
+        statuses[status] = statuses.get(status, 0) + 1
+
+    total = len(records) or 1
+    return {
+        "cart_status_breakdown": statuses,
+        "completion_rate": round(statuses.get("completed", 0) / total * 100, 1),
+        "abandonment_rate": round(statuses.get("abandoned", 0) / total * 100, 1),
+    }
+
+
+def browsing_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Summarise browsing session data from Unisys behavioral data."""
+    minutes = [int(r.get("browsingSessionMinutes", 0)) for r in records]
+    return {
+        "total_browsing_minutes": sum(minutes),
+        "avg_browsing_minutes": round(sum(minutes) / len(minutes), 1) if minutes else 0,
+        "max_browsing_minutes": max(minutes) if minutes else 0,
+    }
 
 
 def behavior_insights(records: list[dict[str, Any]]) -> dict[str, Any]:
@@ -82,6 +127,12 @@ def federate_customer_spend(
     customer_id: int,
     date: Optional[str] = None,
 ) -> dict[str, Any]:
+    """Federate spend data across IBM and Unisys.
+
+    total_spend = IBM spend ONLY.
+    Unisys provides behavioral enrichment (categories, merchants, loyalty,
+    browsing, cart status) but its amounts are NOT additive.
+    """
     ibm_records = filter_ibm_transactions(
         load_json(IBM_TRANSACTIONS),
         customer_id,
@@ -94,24 +145,32 @@ def federate_customer_spend(
     )
 
     ibm_spend = round(sum(transaction_amount(record) for record in ibm_records), 2)
-    unisys_spend = round(sum(float(record["amount"]) for record in unisys_records), 2)
 
     return {
         "customerId": customer_id,
         "date": date,
         "federation": {
-            "ibm_spend": ibm_spend,
-            "unisys_spend": unisys_spend,
-            "combined_spend": round(ibm_spend + unisys_spend, 2),
+            "total_spend": ibm_spend,
+            "ibm_transaction_count": len(ibm_records),
+            "unisys_enrichment_count": len(unisys_records),
+            "note": (
+                "total_spend comes from IBM CardDemo only. "
+                "Unisys amounts mirror IBM — they are NOT added."
+            ),
         },
-        "category_analysis": category_analysis(unisys_records),
-        "behavior_insights": behavior_insights(unisys_records),
+        "behavioral_enrichment": {
+            "category_analysis": category_analysis(unisys_records),
+            "behavior_insights": behavior_insights(unisys_records),
+            "loyalty": loyalty_summary(unisys_records),
+            "browsing": browsing_summary(unisys_records),
+            "cart": cart_analysis(unisys_records),
+        },
         "metadata": {
             "sources_used": ["IBM CardDemo", "Unisys ePortal"],
             "join_key": "customerId",
             "mapping": {
                 "customerId": "customerId",
-                "amount": "transactionAmount",
+                "amount": "transactionAmount (mirror, not additive)",
                 "date": "transactionDate",
             },
         },

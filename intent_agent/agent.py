@@ -56,6 +56,7 @@ CRITICAL RULES:
    - shopping -> Unisys
    - transaction -> IBM
    - account -> IBM
+   - generic total spend -> IBM transactions only
 
 3. ENTITY PRIORITY:
    If multiple entities: shopping > transaction > account
@@ -76,6 +77,9 @@ CRITICAL RULES:
    - "total spend" -> metric=total_spend, aggregation=sum, output_mode=aggregate
    - "average spend" -> metric=average_spend, aggregation=avg, output_mode=aggregate
    - If the user asks for totals, counts, or averages, capture that explicitly
+   - For generic "total spend" requests, use IBM transaction data unless the user
+     explicitly asks for shopping behavior/enrichment (merchant, category, loyalty,
+     browsing, cart, Unisys/ePortal)
 
 Return STRICT JSON ONLY (no markdown, no backticks):
 
@@ -125,18 +129,19 @@ NOTES:
         try:
             chain = self.prompt | self.model
             result = chain.invoke({"user_input": user_prompt})
-            return self._parse_and_normalize(result.content)
+            return self._parse_and_normalize(result.content, user_prompt)
             
         except Exception as e:
             print(f"[FALLBACK] LLM failed: {e}")
             return self._fallback_extract(user_prompt)
     
-    def _parse_and_normalize(self, text: str) -> IntentOutput:
+    def _parse_and_normalize(self, text: str, user_prompt: str | None = None) -> IntentOutput:
         """
         Extract and validate JSON from LLM output.
         Apply all normalizations and rules.
         """
         try:
+            source_text = user_prompt or text
             # Extract JSON
             json_match = re.search(r"\{[\s\S]*\}", text)
             if not json_match:
@@ -182,12 +187,12 @@ NOTES:
             data["priority"] = infer_priority(data.get("task", "fetch"))
 
             # FIX 3A: Metric / Aggregation / Output Mode
-            metric = data.get("metric") or self.normalizer.extract_metric(text)
-            aggregation = data.get("aggregation") or self.normalizer.extract_aggregation(text)
+            metric = data.get("metric") or self.normalizer.extract_metric(source_text)
+            aggregation = data.get("aggregation") or self.normalizer.extract_aggregation(source_text)
             data["metric"] = metric
             data["aggregation"] = aggregation
             data["output_mode"] = self.normalizer.infer_output_mode(
-                text,
+                source_text,
                 data.get("task", "fetch"),
                 aggregation,
             )
@@ -195,6 +200,8 @@ NOTES:
             if aggregation and data.get("task") == "fetch":
                 data["task"] = "analyze"
                 data["priority"] = infer_priority(data["task"])
+
+            self._apply_metric_routing(data, source_text)
 
             data["requires_federation"] = self.normalizer.infer_federation_requirement(
                 data.get("entities", []),
@@ -328,18 +335,6 @@ NOTES:
             aggregation,
         )
 
-        if requires_federation:
-            for system in ("unisys", "ibm"):
-                if system not in systems:
-                    systems.append(system)
-            if metric == "total_spend" and "transaction" not in entities:
-                entities.append("transaction")
-                entities = self.normalizer.apply_entity_priority(entities)
-                for attr in DEFAULT_ENTITY_ATTRIBUTES.get("transaction", []):
-                    if attr not in attributes:
-                        attributes.append(attr)
-
-        # Compute confidence
         fallback_data = {
             "task": task,
             "entities": entities,
@@ -352,6 +347,29 @@ NOTES:
             "requires_federation": requires_federation,
             "priority": priority
         }
+        self._apply_metric_routing(fallback_data, text)
+        entities = fallback_data["entities"]
+        attributes = fallback_data["attributes"]
+        systems = fallback_data["systems"]
+        metric = fallback_data["metric"]
+        aggregation = fallback_data["aggregation"]
+        output_mode = fallback_data["output_mode"]
+        requires_federation = fallback_data["requires_federation"]
+        task = fallback_data["task"]
+        priority = fallback_data["priority"]
+
+        if requires_federation:
+            for system in ("unisys", "ibm"):
+                if system not in systems:
+                    systems.append(system)
+            if metric == "total_spend" and "transaction" not in entities:
+                entities.append("transaction")
+                entities = self.normalizer.apply_entity_priority(entities)
+                for attr in DEFAULT_ENTITY_ATTRIBUTES.get("transaction", []):
+                    if attr not in attributes:
+                        attributes.append(attr)
+
+        # Compute confidence
         confidence = compute_confidence(fallback_data)
         confidence *= 0.8  # penalize fallback
         
@@ -371,3 +389,31 @@ NOTES:
             priority=priority,
             confidence_score=confidence
         )
+
+    def _apply_metric_routing(self, data: dict[str, Any], source_text: str) -> None:
+        """Enforce domain-specific routing for aggregate spend requests."""
+        metric = data.get("metric")
+        if metric != "total_spend":
+            return
+
+        if self.normalizer.needs_behavioral_enrichment(source_text):
+            for entity in ("shopping", "transaction"):
+                if entity not in data["entities"]:
+                    data["entities"].append(entity)
+            for system in ("unisys", "ibm"):
+                if system not in data["systems"]:
+                    data["systems"].append(system)
+            data["entities"] = self.normalizer.apply_entity_priority(data["entities"])
+            data["requires_federation"] = True
+            return
+
+        data["entities"] = [entity for entity in data["entities"] if entity != "shopping"]
+        if "transaction" not in data["entities"]:
+            data["entities"].append("transaction")
+        data["entities"] = self.normalizer.apply_entity_priority(data["entities"])
+        data["systems"] = ["ibm"]
+        data["requires_federation"] = False
+
+        for attr in DEFAULT_ENTITY_ATTRIBUTES.get("transaction", []):
+            if attr not in data["attributes"]:
+                data["attributes"].append(attr)

@@ -4,104 +4,164 @@
         "merchant": "Amazon",
         "amount": 1200.0,
         "date": "2026-03-10",
-        "category": "electronics"
+        "category": "electronics",
+        "loyaltyPoints": 120,
+        "browsingSessionMinutes": 12,
+        "cartStatus": "completed",
+        "merchantCategory": "electronics_premium"
     },
     {
         "customerId": 101,
         "merchant": "Flipkart",
         "amount": 600.0,
         "date": "2026-03-12",
-        "category": "food"
+        "category": "food",
+        "loyaltyPoints": 85,
+        "browsingSessionMinutes": 5,
+        "cartStatus": "completed",
+        "merchantCategory": "fashion_apparel"
     },
     {
         "customerId": 101,
         "merchant": "Swiggy",
         "amount": 1600.0,
         "date": "2026-03-14",
-        "category": "travel"
+        "category": "travel",
+        "loyaltyPoints": 200,
+        "browsingSessionMinutes": 25,
+        "cartStatus": "abandoned",
+        "merchantCategory": "food_delivery"
     },
     {
         "customerId": 101,
         "merchant": "Zomato",
         "amount": 500.0,
         "date": "2026-03-10",
-        "category": "shopping"
+        "category": "shopping",
+        "loyaltyPoints": 50,
+        "browsingSessionMinutes": 3,
+        "cartStatus": "completed",
+        "merchantCategory": "groceries"
     },
     {
         "customerId": 101,
         "merchant": "Uber",
         "amount": 450.0,
         "date": "2026-03-10",
-        "category": "electronics"
+        "category": "electronics",
+        "loyaltyPoints": 95,
+        "browsingSessionMinutes": 8,
+        "cartStatus": "wishlisted",
+        "merchantCategory": "ride_hailing"
     },
     {
         "customerId": 102,
         "merchant": "Amazon",
         "amount": 510.0,
         "date": "2026-03-10",
-        "category": "electronics"
+        "category": "electronics",
+        "loyaltyPoints": 120,
+        "browsingSessionMinutes": 12,
+        "cartStatus": "completed",
+        "merchantCategory": "electronics_premium"
     },
     {
         "customerId": 102,
         "merchant": "Flipkart",
         "amount": 256.0,
         "date": "2026-03-14",
-        "category": "food"
+        "category": "food",
+        "loyaltyPoints": 85,
+        "browsingSessionMinutes": 5,
+        "cartStatus": "completed",
+        "merchantCategory": "fashion_apparel"
     },
     {
         "customerId": 102,
         "merchant": "Swiggy",
         "amount": 425.0,
         "date": "2026-03-12",
-        "category": "travel"
+        "category": "travel",
+        "loyaltyPoints": 200,
+        "browsingSessionMinutes": 25,
+        "cartStatus": "abandoned",
+        "merchantCategory": "food_delivery"
     },
     {
         "customerId": 102,
         "merchant": "Zomato",
         "amount": 160.0,
         "date": "2026-03-13",
-        "category": "shopping"
+        "category": "shopping",
+        "loyaltyPoints": 50,
+        "browsingSessionMinutes": 3,
+        "cartStatus": "completed",
+        "merchantCategory": "groceries"
     },
     {
         "customerId": 102,
         "merchant": "Uber",
         "amount": 255.0,
         "date": "2026-03-09",
-        "category": "electronics"
+        "category": "electronics",
+        "loyaltyPoints": 95,
+        "browsingSessionMinutes": 8,
+        "cartStatus": "wishlisted",
+        "merchantCategory": "ride_hailing"
     },
     {
         "customerId": 103,
         "merchant": "Amazon",
         "amount": 5400.0,
         "date": "2026-03-15",
-        "category": "electronics"
+        "category": "electronics",
+        "loyaltyPoints": 120,
+        "browsingSessionMinutes": 12,
+        "cartStatus": "completed",
+        "merchantCategory": "electronics_premium"
     },
     {
         "customerId": 103,
         "merchant": "Flipkart",
         "amount": 1680.0,
         "date": "2026-03-18",
-        "category": "food"
+        "category": "food",
+        "loyaltyPoints": 85,
+        "browsingSessionMinutes": 5,
+        "cartStatus": "completed",
+        "merchantCategory": "fashion_apparel"
     },
     {
         "customerId": 103,
         "merchant": "Swiggy",
         "amount": 4500.0,
         "date": "2026-03-17",
-        "category": "travel"
+        "category": "travel",
+        "loyaltyPoints": 200,
+        "browsingSessionMinutes": 25,
+        "cartStatus": "abandoned",
+        "merchantCategory": "food_delivery"
     },
     {
         "customerId": 103,
         "merchant": "Zomato",
         "amount": 1050.0,
         "date": "2026-03-17",
-        "category": "shopping"
+        "category": "shopping",
+        "loyaltyPoints": 50,
+        "browsingSessionMinutes": 3,
+        "cartStatus": "completed",
+        "merchantCategory": "groceries"
     },
     {
         "customerId": 103,
         "merchant": "Uber",
         "amount": 2700.0,
         "date": "2026-03-14",
-        "category": "electronics"
+        "category": "electronics",
+        "loyaltyPoints": 95,
+        "browsingSessionMinutes": 8,
+        "cartStatus": "wishlisted",
+        "merchantCategory": "ride_hailing"
     }
 ]

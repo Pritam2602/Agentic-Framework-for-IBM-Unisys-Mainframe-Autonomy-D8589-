@@ -57,7 +57,7 @@ async def run_pipeline(request: PipelineRequest):
         from context_resolution_agent import ContextResolutionAgent
 
         context_agent = ContextResolutionAgent()
-        context = context_agent.resolve(intent_dict)
+        context = await context_agent.resolve_async(intent_dict)
         context_dict = context.model_dump()
 
         # Build summary

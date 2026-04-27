@@ -1,18 +1,23 @@
 {
-    "description": "Unisys ePortal exposes only generated shopping behavior data",
+    "description": "Unisys ePortal provides behavioral enrichment for IBM CardDemo transactions. IBM already holds all financial amounts including shopping — Unisys adds context like merchant details, loyalty, browsing behavior.",
     "entities": [
         {
             "entity_name": "Shopping",
             "unisys_name": "shopping",
             "maps_to": "IBM transactions",
-            "relationship": "Many shopping records can enrich IBM transaction records",
+            "relationship": "Many shopping records enrich IBM transaction records with behavioral context",
             "linking_key": "customerId",
+            "spend_note": "IBM transactionAmount already includes shopping spend. Unisys amount mirrors it — do NOT sum both for total spend.",
             "field_mapping": {
                 "customerId": "customerId",
-                "amount": "transactionAmount",
+                "amount": "transactionAmount (mirror — not additive)",
                 "date": "transactionDate",
-                "merchant": "merchant",
-                "category": "category"
+                "merchant": "merchant (Unisys-only)",
+                "category": "category (Unisys-only)",
+                "loyaltyPoints": "loyaltyPoints (Unisys-only)",
+                "browsingSessionMinutes": "browsingSessionMinutes (Unisys-only)",
+                "cartStatus": "cartStatus (Unisys-only)",
+                "merchantCategory": "merchantCategory (Unisys-only)"
             }
         }
     ]

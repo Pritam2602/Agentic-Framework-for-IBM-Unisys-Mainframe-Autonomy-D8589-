@@ -23,3 +23,5 @@ python-dotenv==1.0.1
 
 numpy>=1.22.4,<2.0.0
 protobuf>=3.19.5,<5
+
+mcp[cli]>=1.0.0

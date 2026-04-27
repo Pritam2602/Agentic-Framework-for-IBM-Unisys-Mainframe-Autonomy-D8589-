@@ -49,7 +49,7 @@ async def resolve_context(request: ContextRequest):
         from context_resolution_agent import ContextResolutionAgent
 
         agent = ContextResolutionAgent()
-        context = agent.resolve(request.model_dump())
+        context = await agent.resolve_async(request.model_dump())
 
         return ContextResponse(
             ibm=context.ibm.model_dump() if context.ibm else None,
@@ -88,6 +88,6 @@ async def context_health():
             "zowe_catalog": zowe_catalog_available,
         },
         "unisys": {
-            "eportal_available": unisys_resolver.is_eportal_available()
+            "eportal_available": await unisys_resolver.is_eportal_available_async()
         }
     }
