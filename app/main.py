@@ -24,8 +24,12 @@ from app.api.catalog import router as catalog_router
 from app.api.agent import router as agent_router
 from app.api.context import router as context_router
 from app.api.pipeline import router as pipeline_router
+<<<<<<< HEAD
 from app.api.execution import router as execution_router
 from app.api.normalization import router as normalization_router
+=======
+from app.api.federation_intelligence import router as federation_router
+>>>>>>> 158c3d12713972d6596e6a2c63f96430ca09beca
 
 # -------------------------------------------------------------------
 # FastAPI App
@@ -85,8 +89,12 @@ app.include_router(catalog_router)
 app.include_router(agent_router)
 app.include_router(context_router)
 app.include_router(pipeline_router)
+<<<<<<< HEAD
 app.include_router(execution_router)
 app.include_router(normalization_router)
+=======
+app.include_router(federation_router)
+>>>>>>> 158c3d12713972d6596e6a2c63f96430ca09beca
 
 # -------------------------------------------------------------------
 # Root / Health
@@ -109,8 +117,13 @@ async def root():
             "intent": "/api/intent/extract",
             "context": "/api/context/resolve",
             "pipeline": "/api/pipeline/run",
+<<<<<<< HEAD
             "execution": "/api/execution/run",
             "normalization": "/api/normalization/run",
+=======
+            "federation": "/api/federation/analyze",
+            "federation_views": "/api/federation/views",
+>>>>>>> 158c3d12713972d6596e6a2c63f96430ca09beca
             "agent": "/api/agent/execute",
             "catalog": "/api/catalog/commands",
             "docs": "/docs",
@@ -124,8 +137,12 @@ async def health():
         "status": "healthy",
         "intent_agent": "ready",
         "context_resolution_agent": "ready",
+<<<<<<< HEAD
         "execution_agent": "ready",
         "normalization_agent": "ready",
+=======
+        "federation_intelligence": "ready",
+>>>>>>> 158c3d12713972d6596e6a2c63f96430ca09beca
         "llm_model": "enabled" if model else "disabled"
     }
 
