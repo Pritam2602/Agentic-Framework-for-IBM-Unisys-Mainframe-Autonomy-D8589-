@@ -1,5 +1,5 @@
 """
-app/api/pipeline.py - Full Pipeline API (Intent → Context in one call)
+app/api/pipeline.py - Full Pipeline API (Intent → Context → Federation Intelligence)
 """
 
 from fastapi import APIRouter, HTTPException
@@ -17,9 +17,10 @@ class PipelineRequest(BaseModel):
 
 
 class PipelineResponse(BaseModel):
-    """Full pipeline response with intent + context"""
+    """Full pipeline response with intent + context + federation intelligence"""
     intent: Dict[str, Any]
     context: Dict[str, Any]
+    federation_intelligence: Optional[Dict[str, Any]] = None
     pipeline_stage: str
     next_stage: str
     summary: str
@@ -60,6 +61,16 @@ async def run_pipeline(request: PipelineRequest):
         context = await context_agent.resolve_async(intent_dict)
         context_dict = context.model_dump()
 
+        # Step 3: Federation Intelligence Layer
+        from federation_intelligence import run_federation_intelligence
+
+        fed_result = run_federation_intelligence(
+            intent=intent_dict,
+            context=context_dict,
+            execute=True,
+        )
+        fed_dict = fed_result.model_dump()
+
         # Build summary
         ibm_summary = ""
         if context.ibm:
@@ -67,7 +78,8 @@ async def run_pipeline(request: PipelineRequest):
         unisys_summary = ""
         if context.unisys:
             unisys_summary = f"Unisys: {context.unisys.api or 'N/A'}"
-        
+
+        top_view_name = fed_result.top_view.name if fed_result.top_view else "N/A"
         system_parts = [s for s in [ibm_summary, unisys_summary] if s]
         summary = (
             f"Query: {request.user_query}\n"
@@ -78,13 +90,17 @@ async def run_pipeline(request: PipelineRequest):
             f"{f' | Aggregation: {intent.aggregation}' if intent.aggregation else ''}"
             f"{' | Federation required' if intent.requires_federation else ''}\n"
             f"Context: {' | '.join(system_parts) or 'No systems resolved'} "
-            f"(confidence: {context.resolution_confidence:.0%})"
+            f"(confidence: {context.resolution_confidence:.0%})\n"
+            f"Federation: {len(fed_result.entity_relationships)} relationships found | "
+            f"Top view: '{top_view_name}' | "
+            f"Confidence: {fed_result.overall_confidence:.0%}"
         )
 
         return PipelineResponse(
             intent=intent_dict,
             context=context_dict,
-            pipeline_stage="context_resolved",
+            federation_intelligence=fed_dict,
+            pipeline_stage="federation_intelligence_complete",
             next_stage="planner_agent",
             summary=summary,
         )
@@ -105,6 +121,7 @@ async def pipeline_health():
         "stages": {
             "intent_agent": "ready",
             "context_resolution_agent": "ready",
+            "federation_intelligence": "ready",
             "planner_agent": "not_implemented",
             "execution_agents": "not_implemented",
         }
