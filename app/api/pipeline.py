@@ -106,6 +106,7 @@ async def pipeline_health():
             "intent_agent": "ready",
             "context_resolution_agent": "ready",
             "planner_agent": "not_implemented",
-            "execution_agents": "not_implemented",
+            "execution_agents": "ready",
+            "normalization_agent": "ready",
         }
     }

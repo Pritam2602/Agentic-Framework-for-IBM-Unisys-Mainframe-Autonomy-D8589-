@@ -10,7 +10,8 @@ class TraceEvent(BaseModel):
     """Single event in agent execution trace"""
     timestamp: datetime
     stage: Literal["intent_parsing", "capability_matching", "command_selection", 
-                   "execution_planning", "execution", "result_collection"]
+                   "execution_planning", "execution", "normalization",
+                   "result_collection"]
     message: str
     metadata: Optional[Dict[str, Any]] = None
 
