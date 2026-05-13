@@ -17,6 +17,12 @@ ENTITY_MAPPINGS = {
     "category spend": "shopping",
     "card usage": "shopping",
     "purchase": "shopping",
+    "inventory": "inventory",
+    "inventory data": "inventory",
+    "stock": "inventory",
+    "stock data": "inventory",
+    "availability": "inventory",
+    "product availability": "inventory",
     "transaction": "transaction",
     "transactions": "transaction",
     "transfer": "transaction",
@@ -53,6 +59,16 @@ ATTRIBUTE_MAPPINGS = {
     "transaction amount": "amount",
     "transaction date": "date",
     "spend amount": "amount",
+    "inventory": "inventory_data",
+    "inventory data": "inventory_data",
+    "stock": "inventory_data",
+    "stock data": "inventory_data",
+    "sku": "inventory_data",
+    "reward": "loyaltyPoints",
+    "rewards": "loyaltyPoints",
+    "reward points": "loyaltyPoints",
+    "loyalty": "loyaltyPoints",
+    "loyalty points": "loyaltyPoints",
 }
 
 # Metric phrases the user may ask for
@@ -76,10 +92,19 @@ DEFAULT_ENTITY_ATTRIBUTES = {
     "transaction": ["transactionId", "transactionAmount", "transactionDate", "merchant", "category"],
     "account": ["accountId", "accountBalance", "accountType", "accountStatus"],
     "shopping": ["customerId", "merchant", "amount", "date", "category"],
+    "inventory": [
+        "sku", "productId", "productName", "merchant", "category",
+        "stockQuantity", "availabilityStatus", "warehouseLocation",
+    ],
 }
 
 # Task type keywords
 TASK_KEYWORDS = {
+    "discover": [
+        "discover", "discovery", "available", "availability", "exists", "exist",
+        "check whether", "check if", "what else", "what other", "capability",
+        "capabilities", "possible", "related data",
+    ],
     "fetch": ["get", "retrieve", "list", "show", "display", "pull", "view", "retrieve"],
     "reconcile": ["reconcile", "match", "compare", "verify", "validate", "check", "align"],
     "analyze": ["analyze", "report", "summary", "stat", "insight", "trend", "pattern"],
@@ -90,16 +115,17 @@ TASK_KEYWORDS = {
 # System ownership - CRITICAL RULE
 SYSTEM_KEYWORDS = {
     "ibm": ["ibm", "mainframe", "z/os", "zos", "zowe", "cobol", "jcl", "dataset", "job", "transaction"],
-    "unisys": ["unisys", "eportal", "portal", "api", "rest", "http", "service", "shopping"],
+    "unisys": ["unisys", "eportal", "portal", "api", "rest", "http", "service", "shopping", "inventory"],
 }
 
 # Entity priority for selection (CRITICAL RULE 3)
 # When multiple entities detected, prefer in this order
-ENTITY_PRIORITY = ["shopping", "transaction", "account", "customer"]
+ENTITY_PRIORITY = ["shopping", "inventory", "transaction", "account", "customer"]
 
 # System ownership by entity (CRITICAL RULE 2)
 ENTITY_SYSTEM_MAPPING = {
     "shopping": "unisys",
+    "inventory": "unisys",
     "transaction": "ibm",
     "account": "ibm",
     "customer": "ibm",

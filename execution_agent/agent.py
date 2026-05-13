@@ -23,6 +23,7 @@ from app.execution.workflow_executor import WorkflowExecutor
 from app.mock_zos import MockZOSSimulator
 from app.models.schemas import TraceEvent
 from intent_agent.config import build_llm_model
+from mock_eportal.services.inventory_service import InventoryService
 from mock_eportal.services.shopping_service import ShoppingService
 
 from .schemas import (
@@ -95,6 +96,7 @@ class ExecutionAgent:
         self.workflow_executor = WorkflowExecutor()
         self.zos_simulator = MockZOSSimulator()
         self.shopping_service = ShoppingService()
+        self.inventory_service = InventoryService()
 
     def run(
         self,
@@ -286,7 +288,7 @@ class ExecutionAgent:
         if explicit in {"ibm", "unisys", "both", "local"}:
             return explicit
         text = " ".join(str(part or "").lower() for part in [command, endpoint, raw_step.get("action")])
-        if "unisys" in text or "eportal" in text or "/api/shopping" in text:
+        if "unisys" in text or "eportal" in text or "/api/shopping" in text or "/api/inventory" in text:
             return "unisys"
         if "zowe" in text or "jcl" in text or "zos" in text or "dataset" in text:
             return "ibm"
@@ -401,6 +403,25 @@ class ExecutionAgent:
 
     def _execute_unisys_api(self, step: ExecutionStep) -> Dict[str, Any]:
         params = step.parameters
+        endpoint = (step.endpoint or "").lower()
+        action = (step.action or "").lower()
+        if "inventory" in endpoint or "inventory" in action:
+            data = self.inventory_service.search(
+                merchant=params.get("merchant"),
+                category=params.get("category"),
+                sku=params.get("sku"),
+                availability_status=params.get("availabilityStatus") or params.get("availability_status"),
+            )
+            return {
+                "status": "completed",
+                "source": "unisys",
+                "entity": "inventory",
+                "endpoint": step.endpoint or "/api/inventory",
+                "count": len(data),
+                "data": data,
+                "note": "Inventory data provides product availability context related to shopping behavior.",
+            }
+
         customer_id = params.get("customerId") or params.get("customer_id")
         date = params.get("date")
 
@@ -416,6 +437,7 @@ class ExecutionAgent:
         return {
             "status": "completed",
             "source": "unisys",
+            "entity": "shopping",
             "endpoint": step.endpoint or "/api/shopping",
             "count": len(data),
             "data": data,

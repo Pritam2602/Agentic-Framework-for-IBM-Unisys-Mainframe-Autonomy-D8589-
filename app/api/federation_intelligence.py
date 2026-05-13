@@ -40,6 +40,7 @@ async def analyze(request: FederationAnalyzeRequest) -> FederationIntelligenceOu
       - Ranked federated business views for this intent
       - Federation execution plan
       - Actual federated data (if execute=True and customerId present)
+      - LLM-generated suggested next explorations
       - Lineage records for every output field
       - Governance metadata
     """

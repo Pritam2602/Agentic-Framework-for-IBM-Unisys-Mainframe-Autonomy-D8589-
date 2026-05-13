@@ -12,7 +12,7 @@ def infer_priority(task: str) -> str:
         return "high"
     elif task == "fetch":
         return "medium"
-    elif task in ["reconcile", "transform"]:
+    elif task in ["reconcile", "transform", "discover"]:
         return "medium"
     return "low"
 

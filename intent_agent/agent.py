@@ -48,12 +48,13 @@ Your ONLY job is to understand WHAT the user wants.
 
 CRITICAL RULES:
 1. ENTITY vs FILTER:
-   - Entities are BUSINESS OBJECTS: shopping, transaction, account
+   - Entities are BUSINESS OBJECTS: shopping, inventory, transaction, account
    - FILTERS are identifiers/conditions: customerId, date range
    - "customer 101" -> entity=shopping, filter with customerId=101
 
 2. SYSTEM OWNERSHIP:
    - shopping -> Unisys
+   - inventory -> Unisys
    - transaction -> IBM
    - account -> IBM
    - generic total spend -> IBM transactions only
@@ -63,6 +64,7 @@ CRITICAL RULES:
 
 4. TASK DETECTION:
    - fetch -> get/show/list
+   - discover -> discover/check whether/check if/what else/available/exists/capabilities/related data
    - compare -> compare/difference
    - analyze -> trends/insights
    - reconcile -> match/merge
@@ -84,8 +86,8 @@ CRITICAL RULES:
 Return STRICT JSON ONLY (no markdown, no backticks):
 
 {{
-  "task": "fetch|reconcile|analyze|compare|transform",
-  "entities": ["shopping", "transaction", "account"],
+  "task": "fetch|discover|reconcile|analyze|compare|transform",
+  "entities": ["shopping", "inventory", "transaction", "account"],
   "attributes": ["customerId", "merchant", "amount", "date", "category"],
   "filters": {{
     "time_range": {{"start": "YYYY-MM-DD", "end": "YYYY-MM-DD"}},
@@ -97,7 +99,7 @@ Return STRICT JSON ONLY (no markdown, no backticks):
   "systems": ["unisys", "ibm"],
   "metric": "total_spend|average_spend|transaction_count|null",
   "aggregation": "sum|avg|count|max|min|null",
-  "output_mode": "records|aggregate|insight",
+  "output_mode": "records|aggregate|insight|capabilities",
   "requires_federation": true,
   "priority": "low|medium|high",
   "confidence_score": 0.0-1.0
@@ -106,6 +108,7 @@ Return STRICT JSON ONLY (no markdown, no backticks):
 NOTES:
 - If entity is shopping, include merchant, amount, date, category in attributes
 - Priority: high for compare/analyze, medium for fetch, low for others
+- If the user asks whether related data exists or what else is possible, use task=discover and output_mode=capabilities
 - If the user asks for "total spend", prefer task=analyze, output_mode=aggregate, metric=total_spend
 - Confidence: high (0.8-1.0) if clear, medium (0.5-0.8) if partial, low (<0.5) if unclear
 - Always return valid JSON
@@ -187,6 +190,10 @@ NOTES:
             data["priority"] = infer_priority(data.get("task", "fetch"))
 
             # FIX 3A: Metric / Aggregation / Output Mode
+            if self.normalizer.is_capability_discovery(source_text):
+                data["task"] = "discover"
+                data["priority"] = infer_priority(data["task"])
+
             metric = data.get("metric") or self.normalizer.extract_metric(source_text)
             aggregation = data.get("aggregation") or self.normalizer.extract_aggregation(source_text)
             data["metric"] = metric
@@ -324,6 +331,9 @@ NOTES:
         time_range = self.normalizer.normalize_date_range(text)
         
         # Priority logic
+        if self.normalizer.is_capability_discovery(text):
+            task = "discover"
+
         if aggregation and task == "fetch":
             task = "analyze"
         priority = infer_priority(task)

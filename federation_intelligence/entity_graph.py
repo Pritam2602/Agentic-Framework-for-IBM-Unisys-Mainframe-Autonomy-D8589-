@@ -16,6 +16,7 @@ SYSTEM_OWNERSHIP: Dict[str, str] = {
     "account": "ibm",
     "customer": "ibm",
     "shopping": "unisys",
+    "inventory": "unisys",
     "merchant": "unisys",
     "loyalty": "unisys",
 }
@@ -59,6 +60,19 @@ RELATIONSHIP_CATALOG: List[Dict[str, Any]] = [
         "reasoning": (
             "Customer records in IBM can be enriched with Unisys shopping behavior "
             "to build a 360° customer profile."
+        ),
+    },
+    {
+        "source_entity": "shopping",
+        "target_entity": "inventory",
+        "source_system": "unisys",
+        "target_system": "unisys",
+        "join_key": "merchantCategory",
+        "relationship_type": "reference",
+        "confidence": 0.85,
+        "reasoning": (
+            "Unisys inventory records provide stock and availability context "
+            "for merchants and categories observed in Unisys shopping behavior."
         ),
     },
 ]

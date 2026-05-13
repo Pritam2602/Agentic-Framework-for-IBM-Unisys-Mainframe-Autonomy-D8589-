@@ -18,35 +18,42 @@ RELATED_CAPABILITY_HINTS: Dict[str, List[Dict[str, Any]]] = {
         {
             "entity": "loyalty",
             "status": "available",
+            "discovery_type": "related_capability",
+            "confidence": 0.86,
+            "source": "shopping.loyaltyPoints",
+            "relationship": "shopping -> loyalty",
             "reason": "Shopping records include loyaltyPoints.",
             "evidence_fields": ["loyaltyPoints"],
         },
         {
             "entity": "cart",
             "status": "available",
+            "discovery_type": "related_capability",
+            "confidence": 0.84,
+            "source": "shopping.cartStatus",
+            "relationship": "shopping -> cart",
             "reason": "Shopping records include cartStatus.",
             "evidence_fields": ["cartStatus"],
         },
         {
             "entity": "browsing",
             "status": "available",
+            "discovery_type": "related_capability",
+            "confidence": 0.82,
+            "source": "shopping.browsingSessionMinutes",
+            "relationship": "shopping -> browsing",
             "reason": "Shopping records include browsingSessionMinutes.",
             "evidence_fields": ["browsingSessionMinutes"],
         },
         {
             "entity": "merchant_category",
             "status": "available",
+            "discovery_type": "exact_match",
+            "confidence": 0.94,
+            "source": "shopping.merchant + shopping.category + shopping.merchantCategory",
+            "relationship": "shopping -> merchant -> category",
             "reason": "Shopping records include merchantCategory and category.",
             "evidence_fields": ["merchantCategory", "category"],
-        },
-        {
-            "entity": "inventory",
-            "status": "not_found",
-            "reason": (
-                "No inventory schema, dataset, stock quantity, SKU, or product availability "
-                "fields are present in the current Unisys mock ePortal data."
-            ),
-            "evidence_fields": [],
         },
     ]
 }
@@ -102,19 +109,77 @@ def discover_capabilities(intent: Dict[str, Any]) -> Dict[str, Any]:
     """Return grounded capability discovery from local schemas and datasets."""
     entities = _available_unisys_entities()
     entity_names = {entity["entity"] for entity in entities}
+    entity_by_name = {entity["entity"]: entity for entity in entities}
     terms = _intent_terms(intent)
 
     related: List[Dict[str, Any]] = []
     if "shopping" in entity_names or "shopping" in terms:
         related.extend(RELATED_CAPABILITY_HINTS["shopping"])
+        inventory_entity = entity_by_name.get("inventory")
+        if inventory_entity:
+            inventory_fields = set(inventory_entity.get("fields", []))
+            has_inventory_specific_fields = bool(
+                inventory_fields & {"sku", "stockQuantity", "availabilityStatus", "warehouseLocation"}
+            )
+            related.append(
+                {
+                    "entity": "inventory",
+                    "status": "available",
+                    "discovery_type": "exact_match" if has_inventory_specific_fields else "inferred",
+                    "confidence": 0.92 if has_inventory_specific_fields else 0.52,
+                    "source": (
+                        "inventory schema + inventory dataset"
+                        if has_inventory_specific_fields
+                        else "shopping merchant/category metadata"
+                    ),
+                    "relationship": "shopping -> merchantCategory -> inventory",
+                    "reason": (
+                        "Inventory schema and dataset expose SKU, stock quantity, availability status, "
+                        "warehouse location, merchant, and category fields."
+                        if has_inventory_specific_fields
+                        else "Potential inventory capability inferred from merchant-category relationships."
+                    ),
+                    "evidence_fields": [
+                        "sku",
+                        "merchant",
+                        "category",
+                        "merchantCategory",
+                        "stockQuantity",
+                        "availabilityStatus",
+                    ],
+                    "record_count": inventory_entity.get("record_count", 0),
+                }
+            )
+        else:
+            related.append(
+                {
+                    "entity": "inventory",
+                    "status": "not_found",
+                    "discovery_type": "inferred",
+                    "confidence": 0.52,
+                    "source": "shopping merchant/category metadata",
+                    "relationship": "shopping -> merchant -> possible inventory",
+                    "reason": (
+                        "Potential inventory-related capability inferred from merchant-category "
+                        "relationships, but no inventory schema or dataset is currently available."
+                    ),
+                    "evidence_fields": [],
+                }
+            )
 
     requested_missing = []
     for term in terms:
-        if term in {"inventory", "stock", "sku", "product_availability"}:
+        if term in {"inventory", "inventory_data", "stock", "stock_data", "sku", "product_availability"}:
+            if "inventory" in entity_names:
+                continue
             requested_missing.append(
                 {
                     "entity": "inventory",
                     "status": "not_found",
+                    "discovery_type": "weak_signal",
+                    "confidence": 0.35,
+                    "source": "user-requested attribute",
+                    "relationship": "requested inventory -> no dataset",
                     "reason": "Inventory was explicitly requested but no current schema/dataset exposes it.",
                 }
             )
@@ -133,6 +198,37 @@ def discover_capabilities(intent: Dict[str, Any]) -> Dict[str, Any]:
         "discovery_notes": [
             "Discovery is grounded in current ePortal schemas and local datasets.",
             "Reward/loyalty questions are supported because loyaltyPoints exists in shopping records.",
-            "Inventory cannot be inferred as available until a schema, endpoint, or dataset is added.",
+            "Discovery confidence distinguishes exact datasets from inferred or weak metadata signals.",
+        ],
+        "discovery_graph": [
+            {"from": "shopping", "to": "merchant", "relationship": "contains merchant behavior"},
+            {"from": "merchant", "to": "merchant_category", "relationship": "classified by merchantCategory"},
+            {"from": "merchant_category", "to": "inventory", "relationship": "maps to stock and availability context"},
+            {"from": "shopping", "to": "loyalty", "relationship": "contains loyaltyPoints"},
+            {"from": "shopping", "to": "cart", "relationship": "contains cartStatus"},
+        ],
+        "capability_recommendations": [
+            {
+                "capability": "merchant_analytics",
+                "discovery_type": "exact_match",
+                "confidence": 0.94,
+                "reason": "Merchant, category, and observed shopping behavior are available.",
+            },
+            {
+                "capability": "reward_optimization",
+                "discovery_type": "related_capability",
+                "confidence": 0.86,
+                "reason": "Shopping data includes loyaltyPoints and can be correlated with IBM spend.",
+            },
+            {
+                "capability": "inventory_availability",
+                "discovery_type": "exact_match" if "inventory" in entity_names else "inferred",
+                "confidence": 0.92 if "inventory" in entity_names else 0.52,
+                "reason": (
+                    "Inventory schema/data are onboarded."
+                    if "inventory" in entity_names
+                    else "Merchant-category metadata suggests a possible inventory relationship."
+                ),
+            },
         ],
     }

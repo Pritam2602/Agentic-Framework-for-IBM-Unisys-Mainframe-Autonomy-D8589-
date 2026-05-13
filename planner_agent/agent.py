@@ -156,23 +156,24 @@ class PlannerAgent:
         if "unisys" in systems:
             unisys_context = context.get("unisys") or {}
             endpoint = unisys_context.get("api") or "/api/shopping"
+            entity = unisys_context.get("entity") or "shopping"
             data_dependencies.append(f"unisys:{endpoint}")
             depends_on = ["fetch-ibm-transactions"] if "ibm" in systems else []
             steps.append(
                 PlannerStep(
-                    step_id="fetch-unisys-shopping",
+                    step_id=f"fetch-unisys-{entity}",
                     order=len(steps) + 1,
                     system="unisys",
                     step_type="unisys_api",
-                    action="fetch shopping enrichment",
+                    action=f"fetch {entity}",
                     endpoint=endpoint,
                     description=(
-                        "Fetch Unisys ePortal shopping behavior records as "
-                        "behavioral enrichment for the resolved request."
+                        f"Fetch Unisys ePortal {entity} records for the "
+                        "resolved request."
                     ),
                     parameters=params,
                     depends_on=depends_on,
-                    expected_output="Unisys shopping enrichment records",
+                    expected_output=f"Unisys {entity} records",
                     risk_level="LOW",
                 )
             )

@@ -16,6 +16,7 @@ from .constants import (
     ENTITY_PRIORITY,
     METRIC_KEYWORDS,
     AGGREGATION_KEYWORDS,
+    ENTITY_SYSTEM_MAPPING,
 )
 
 
@@ -60,11 +61,36 @@ class IntentNormalizer:
     def infer_output_mode(text: str, task: str, aggregation: Optional[str]) -> str:
         """Determine if the user expects raw records, an aggregate, or an insight."""
         text_lower = text.lower()
+        if task == "discover" or IntentNormalizer.is_capability_discovery(text):
+            return "capabilities"
         if aggregation:
             return "aggregate"
         if task == "analyze" or any(keyword in text_lower for keyword in ["trend", "insight", "summary"]):
             return "insight"
         return "records"
+
+    @staticmethod
+    def is_capability_discovery(text: str) -> bool:
+        """Detect requests asking whether related data/capabilities exist."""
+        text_lower = text.lower()
+        discovery_phrases = [
+            "discover",
+            "discovery",
+            "available",
+            "availability",
+            "exists",
+            "exist",
+            "check whether",
+            "check if",
+            "what else",
+            "what other",
+            "related data",
+            "capability",
+            "capabilities",
+            "what is possible",
+            "what's possible",
+        ]
+        return any(phrase in text_lower for phrase in discovery_phrases)
 
     @staticmethod
     def infer_federation_requirement(
@@ -74,7 +100,14 @@ class IntentNormalizer:
         aggregation: Optional[str],
     ) -> bool:
         """Estimate whether the request likely needs more than one system."""
-        if len(systems) > 1 or len(entities) > 1:
+        if len(systems) > 1:
+            return True
+        entity_systems = {
+            ENTITY_SYSTEM_MAPPING.get(entity)
+            for entity in entities
+            if ENTITY_SYSTEM_MAPPING.get(entity)
+        }
+        if len(entity_systems) > 1:
             return True
         if aggregation and len(systems) > 1:
             return True
@@ -138,6 +171,25 @@ class IntentNormalizer:
         date_pattern = r'(\d{4}-\d{2}-\d{2})'
         for date_value in re.findall(date_pattern, text):
             filters.append({"field": "date", "value": date_value})
+
+        known_categories = [
+            "electronics", "food", "travel", "fashion",
+            "grocery", "entertainment", "beauty", "fitness",
+        ]
+        for category in known_categories:
+            if re.search(rf"\b{re.escape(category)}\b", text_lower):
+                filters.append({"field": "category", "value": category})
+                break
+
+        known_merchants = [
+            "amazon", "flipkart", "swiggy", "zomato", "uber", "myntra",
+            "bigbasket", "makemytrip", "croma", "bookmyshow", "nykaa",
+            "decathlon",
+        ]
+        for merchant in known_merchants:
+            if re.search(rf"\b{re.escape(merchant)}\b", text_lower):
+                filters.append({"field": "merchant", "value": merchant})
+                break
         
         return filters
     

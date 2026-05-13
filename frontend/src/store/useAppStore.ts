@@ -7,7 +7,8 @@ export type ControlCenterPanel =
   | "reasoning"
   | "planner"
   | "normalization"
-  | "federation";
+  | "federation"
+  | "zoweCatalog";
 
 export interface IntentCondition {
   field: string;

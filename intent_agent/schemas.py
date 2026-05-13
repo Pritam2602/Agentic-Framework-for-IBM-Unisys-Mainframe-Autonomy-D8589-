@@ -43,17 +43,17 @@ class IntentOutput(BaseModel):
     """
     Pure Intent Understanding Output
     
-    ENTITIES: Business objects (shopping, transaction, account)
+    ENTITIES: Business objects (shopping, inventory, transaction, account)
     FILTERS: Identifiers and conditions (customerId, date range, etc.)
     
     NO: commands, APIs, parameters, execution logic
     YES: semantic understanding of user requirements
     """
     task: str = Field(
-        description="fetch|reconcile|analyze|compare|transform"
+        description="fetch|discover|reconcile|analyze|compare|transform"
     )
     entities: List[str] = Field(
-        description="Business objects: shopping, transaction, account (NOT identifiers)"
+        description="Business objects: shopping, inventory, transaction, account (NOT identifiers)"
     )
     attributes: List[str] = Field(
         description="Specific fields needed from entities"
@@ -92,7 +92,7 @@ class IntentOutput(BaseModel):
     
     @validator("task")
     def validate_task(cls, v):
-        valid = ["fetch", "reconcile", "analyze", "compare", "transform"]
+        valid = ["fetch", "discover", "reconcile", "analyze", "compare", "transform"]
         if v not in valid:
             raise ValueError(f"task must be one of {valid}")
         return v
@@ -106,7 +106,7 @@ class IntentOutput(BaseModel):
 
     @validator("output_mode")
     def validate_output_mode(cls, v):
-        valid = ["records", "aggregate", "insight"]
+        valid = ["records", "aggregate", "insight", "capabilities"]
         if v not in valid:
             raise ValueError(f"output_mode must be one of {valid}")
         return v

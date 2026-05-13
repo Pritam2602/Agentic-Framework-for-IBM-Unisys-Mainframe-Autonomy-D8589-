@@ -15,6 +15,7 @@ from intent_agent.config import build_llm_model
 from .discovery import discover_capabilities
 from .entity_graph import build_entity_graph, resolve_join_key
 from .executor import execute_view
+from .recommendations import build_discovery_recommendations
 from .schemas import (
     EntityRelationship,
     FederationIntelligenceOutput,
@@ -403,6 +404,16 @@ def run(
 
     relationships = build_entity_graph(intent_entities)
     capability_discovery = discover_capabilities(intent)
+    llm_model = None
+    if enable_llm:
+        llm_model = model if model is not None else build_llm_model(logger=logger)
+    suggested_explorations = build_discovery_recommendations(
+        intent=intent,
+        capability_discovery=capability_discovery,
+        context=context,
+        model=llm_model,
+        enable_llm=enable_llm,
+    )
 
     views = recommend_views(relationships, intent, top_n=5)
     top_view = views[0] if views else None
@@ -445,6 +456,7 @@ def run(
         "entity_relationships_count": len(relationships),
         "views_evaluated": len(views),
         "capability_discovery_mode": capability_discovery.get("mode"),
+        "suggested_explorations_count": len(suggested_explorations),
     }
 
     if isinstance(federated_result, dict) and federated_result.get("reconciliation"):
@@ -462,12 +474,12 @@ def run(
         lineage=lineage,
         governance=governance,
         capability_discovery=capability_discovery,
+        suggested_explorations=suggested_explorations,
         overall_confidence=confidence,
         reasoning=reasoning,
     )
 
     if enable_llm:
-        llm_model = model if model is not None else build_llm_model(logger=logger)
         return _llm_refine_output(
             output=grounded_output,
             intent=intent,

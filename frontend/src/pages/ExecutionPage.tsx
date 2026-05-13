@@ -1,4 +1,4 @@
-import { FormEvent, useEffect } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
   ArrowPathIcon,
   BoltIcon,
@@ -7,9 +7,10 @@ import {
   CpuChipIcon,
   ExclamationTriangleIcon,
   MagnifyingGlassCircleIcon,
+  ServerStackIcon,
 } from "@heroicons/react/24/outline";
 import Layout from "../components/common/Layout";
-import { runPipeline, fetchPipelineHealth, fetchContextHealth } from "@/services/api";
+import { runPipeline, fetchPipelineHealth, fetchContextHealth, fetchCommandsCatalog } from "@/services/api";
 import { PipelineVisualization, IntentPanel, ContextPanel, PlannerPanel, ReasoningPanel } from "@/components/pipeline";
 import { useAppStore, appStore, type ControlCenterPanel } from "@/store/useAppStore";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ const panelNav: Array<{
   { id: "planner", label: "Planner", icon: CpuChipIcon, description: "Preview the downstream execution handoff." },
   { id: "normalization", label: "Normalization", icon: CircleStackIcon, description: "Review canonical records produced after execution." },
   { id: "federation", label: "Federation", icon: MagnifyingGlassCircleIcon, description: "Inspect federated view recommendations and output." },
+  { id: "zoweCatalog", label: "Zowe Catalog", icon: ServerStackIcon, description: "Browse the command catalog loaded from the backend database." },
 ];
 
 const systemPillClass = (online: boolean) =>
@@ -116,6 +118,305 @@ const ObjectAmountTable = ({ title, values }: { title: string; values?: Record<s
   );
 };
 
+const DiscoveryTable = ({
+  items,
+}: {
+  items: Array<{
+    entity?: string;
+    status?: string;
+    discovery_type?: string;
+    confidence?: number;
+    source?: string;
+    relationship?: string;
+    reason?: string;
+  }>;
+}) => {
+  if (!items.length) {
+    return null;
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-800">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-slate-900/80 text-xs uppercase tracking-[0.16em] text-slate-500">
+          <tr>
+            <th className="px-4 py-3">Entity</th>
+            <th className="px-4 py-3">Type</th>
+            <th className="px-4 py-3">Confidence</th>
+            <th className="px-4 py-3">Source</th>
+            <th className="px-4 py-3">Relationship</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={`${item.entity}-${item.discovery_type}`} className="border-t border-slate-800 align-top">
+              <td className="px-4 py-3 font-semibold text-slate-100">{valueText(item.entity)}</td>
+              <td className="px-4 py-3">
+                <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${pillTone(item.discovery_type)}`}>
+                  {valueText(item.discovery_type)}
+                </span>
+              </td>
+              <td className="px-4 py-3 font-mono text-cyan-200">
+                {typeof item.confidence === "number" ? `${Math.round(item.confidence * 100)}%` : "N/A"}
+              </td>
+              <td className="px-4 py-3 text-slate-300">{valueText(item.source)}</td>
+              <td className="px-4 py-3 text-slate-300">
+                <p>{valueText(item.relationship)}</p>
+                {item.reason ? <p className="mt-1 text-xs leading-5 text-slate-500">{item.reason}</p> : null}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const SuggestedExplorations = ({
+  items,
+}: {
+  items: Array<{
+    id?: string;
+    title?: string;
+    prompt?: string;
+    reason?: string;
+    relationship?: string;
+    confidence?: number;
+  }>;
+}) => {
+  if (!items.length) {
+    return null;
+  }
+
+  const handleSuggestion = (prompt?: string) => {
+    if (!prompt) {
+      return;
+    }
+    const store = appStore.getState();
+    store.setQuery(prompt);
+    store.setActivePanel("execution");
+  };
+
+  return (
+    <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4">
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold text-cyan-100">Suggested Next Actions</h3>
+        <p className="mt-1 text-xs leading-5 text-slate-400">
+          AI-guided follow-up prompts based on the current entities, schema relationships, and federation context.
+        </p>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        {items.map((item) => (
+          <button
+            key={item.id ?? item.title}
+            type="button"
+            onClick={() => handleSuggestion(item.prompt)}
+            className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-left transition hover:border-cyan-500/40 hover:bg-cyan-500/10"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-sm font-semibold text-slate-100">{valueText(item.title)}</p>
+              <span className="shrink-0 font-mono text-xs text-cyan-200">
+                {typeof item.confidence === "number" ? `${Math.round(item.confidence * 100)}%` : ""}
+              </span>
+            </div>
+            <p className="mt-2 text-xs leading-5 text-slate-400">{valueText(item.reason)}</p>
+            {item.relationship ? (
+              <p className="mt-3 font-mono text-[11px] text-slate-500">{item.relationship}</p>
+            ) : null}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+type ZoweCatalogCommand = {
+  id: string;
+  zowe_command?: string;
+  category?: string;
+  command_family?: string;
+  subsystem?: string;
+  ibm_artifact?: string;
+  operation?: string;
+  access_pattern?: string | null;
+  response_format?: string | null;
+  intended_agent?: string | null;
+  constraints?: string | null;
+  execution_cost?: string;
+  confidence_level?: number | string | null;
+};
+
+const pillTone = (value?: string | null) => {
+  const normalized = String(value ?? "").toLowerCase();
+  if (normalized === "exact_match") {
+    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-200";
+  }
+  if (normalized === "related_capability") {
+    return "border-cyan-500/30 bg-cyan-500/10 text-cyan-200";
+  }
+  if (normalized === "inferred") {
+    return "border-amber-500/30 bg-amber-500/10 text-amber-200";
+  }
+  if (normalized === "weak_signal") {
+    return "border-red-500/30 bg-red-500/10 text-red-200";
+  }
+  if (["read", "low", "high"].includes(normalized)) {
+    return normalized === "high"
+      ? "border-red-500/30 bg-red-500/10 text-red-200"
+      : normalized === "low"
+        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+        : "border-cyan-500/30 bg-cyan-500/10 text-cyan-200";
+  }
+  if (["execute", "medium"].includes(normalized)) {
+    return "border-amber-500/30 bg-amber-500/10 text-amber-200";
+  }
+  return "border-slate-700 bg-slate-800/70 text-slate-300";
+};
+
+const ZoweCatalogPanel = () => {
+  const [commands, setCommands] = useState<ZoweCatalogCommand[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadCommands = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchCommandsCatalog();
+        if (!cancelled) {
+          setCommands(data as unknown as ZoweCatalogCommand[]);
+        }
+      } catch (catalogError) {
+        if (!cancelled) {
+          setError(catalogError instanceof Error ? catalogError.message : "Failed to load command catalog");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadCommands();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filtered = commands.filter((command) => {
+    const text = [
+      command.id,
+      command.zowe_command,
+      command.command_family,
+      command.subsystem,
+      command.ibm_artifact,
+      command.operation,
+      command.constraints,
+    ].join(" ").toLowerCase();
+    return text.includes(search.toLowerCase());
+  });
+
+  const families = new Set(commands.map((command) => command.command_family).filter(Boolean)).size;
+  const lowRisk = commands.filter((command) => command.execution_cost === "LOW").length;
+  const readOps = commands.filter((command) => command.operation === "READ").length;
+
+  return (
+    <section className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-cyan-300">Zowe Command Catalog</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
+            Command metadata is loaded from the backend catalog database through <span className="font-mono text-slate-200">/api/catalog/commands</span>.
+          </p>
+        </div>
+        <input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search commands"
+          className="h-11 w-full rounded-2xl border border-slate-800 bg-slate-900/70 px-4 text-sm text-slate-100 outline-none transition focus:border-cyan-500/40 focus:ring-2 focus:ring-cyan-500/20 lg:w-72"
+        />
+      </div>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-4">
+        <MiniStat label="Commands" value={commands.length} tone="cyan" />
+        <MiniStat label="Families" value={families} tone="violet" />
+        <MiniStat label="Read Ops" value={readOps} tone="emerald" />
+        <MiniStat label="Low Cost" value={lowRisk} tone="amber" />
+      </div>
+
+      {loading ? (
+        <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-900/70 p-6 text-sm text-slate-300">
+          Loading command catalog...
+        </div>
+      ) : error ? (
+        <div className="mt-5 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-100">
+          {error}
+        </div>
+      ) : (
+        <div className="mt-5 overflow-hidden rounded-2xl border border-slate-800">
+          <div className="max-h-[620px] overflow-auto">
+            <table className="w-full min-w-[980px] text-left text-sm">
+              <thead className="sticky top-0 bg-slate-900 text-xs uppercase tracking-[0.16em] text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Command</th>
+                  <th className="px-4 py-3">Family</th>
+                  <th className="px-4 py-3">Subsystem</th>
+                  <th className="px-4 py-3">Operation</th>
+                  <th className="px-4 py-3">Artifact</th>
+                  <th className="px-4 py-3">Cost</th>
+                  <th className="px-4 py-3">Confidence</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((command) => (
+                  <tr key={command.id} className="border-t border-slate-800 bg-slate-950/60 align-top">
+                    <td className="max-w-[360px] px-4 py-4">
+                      <p className="font-mono text-sm leading-6 text-cyan-100">{command.zowe_command}</p>
+                      {command.constraints ? (
+                        <p className="mt-2 text-xs leading-5 text-slate-500">{command.constraints}</p>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${pillTone(command.command_family)}`}>
+                        {valueText(command.command_family)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 font-mono text-slate-300">{valueText(command.subsystem)}</td>
+                    <td className="px-4 py-4">
+                      <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${pillTone(command.operation)}`}>
+                        {valueText(command.operation)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-slate-300">{valueText(command.ibm_artifact)}</td>
+                    <td className="px-4 py-4">
+                      <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${pillTone(command.execution_cost)}`}>
+                        {valueText(command.execution_cost)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 font-mono text-slate-100">
+                      {typeof command.confidence_level === "number"
+                        ? `${Math.round(command.confidence_level * 100)}%`
+                        : valueText(command.confidence_level)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {!filtered.length ? (
+            <div className="border-t border-slate-800 bg-slate-950 p-6 text-sm text-slate-400">
+              No catalog commands match the current search.
+            </div>
+          ) : null}
+        </div>
+      )}
+    </section>
+  );
+};
+
 const renderPanel = (panel: ControlCenterPanel) => {
   const store = appStore.getState();
 
@@ -135,6 +436,10 @@ const renderPanel = (panel: ControlCenterPanel) => {
     return <PlannerPanel intent={store.intent} context={store.context} planner={store.planner} nextStage={store.nextStage} />;
   }
 
+  if (panel === "zoweCatalog") {
+    return <ZoweCatalogPanel />;
+  }
+
   if (panel === "normalization") {
     const normalization = store.normalization as {
       summary?: {
@@ -152,6 +457,7 @@ const renderPanel = (panel: ControlCenterPanel) => {
         date?: string;
         merchant?: string | null;
         category?: string | null;
+        enrichment?: Record<string, unknown>;
       }>;
     } | null;
     const total = normalization?.summary?.total_records;
@@ -200,9 +506,17 @@ const renderPanel = (panel: ControlCenterPanel) => {
                         <td className="px-4 py-3 font-mono text-slate-300">{valueText(record.date)}</td>
                         <td className="px-4 py-3 font-mono text-cyan-200">{valueText(record.amount)}</td>
                         <td className="px-4 py-3 text-slate-300">
-                          {record.merchant || record.category
-                            ? [record.merchant, record.category].filter(Boolean).join(" / ")
-                            : "financial record"}
+                          {record.entity === "inventory"
+                            ? [
+                                record.enrichment?.sku,
+                                record.enrichment?.availabilityStatus,
+                                record.enrichment?.stockQuantity !== undefined
+                                  ? `stock ${record.enrichment?.stockQuantity}`
+                                  : null,
+                              ].filter(Boolean).join(" / ")
+                            : record.merchant || record.category
+                              ? [record.merchant, record.category].filter(Boolean).join(" / ")
+                              : "financial record"}
                         </td>
                       </tr>
                     ))}
@@ -232,9 +546,25 @@ const renderPanel = (panel: ControlCenterPanel) => {
       };
       governance?: Record<string, unknown>;
       capability_discovery?: {
-        related_capabilities?: Array<{ entity?: string; status?: string; reason?: string }>;
+        related_capabilities?: Array<{
+          entity?: string;
+          status?: string;
+          discovery_type?: string;
+          confidence?: number;
+          source?: string;
+          relationship?: string;
+          reason?: string;
+        }>;
         discovery_notes?: string[];
       };
+      suggested_explorations?: Array<{
+        id?: string;
+        title?: string;
+        prompt?: string;
+        reason?: string;
+        relationship?: string;
+        confidence?: number;
+      }>;
       overall_confidence?: number;
       reasoning?: string;
     } | null;
@@ -244,16 +574,6 @@ const renderPanel = (panel: ControlCenterPanel) => {
     const enrichment = result?.behavioral_enrichment;
     const reconciliation = result?.reconciliation ?? federation?.governance?.amount_reconciliation as Record<string, unknown> | undefined;
     const discoveryItems = federation?.capability_discovery?.related_capabilities ?? [];
-    const availableDiscovery = discoveryItems
-      .filter((item) => item.status === "available")
-      .map((item) => item.entity)
-      .filter(Boolean)
-      .join(", ");
-    const missingDiscovery = discoveryItems
-      .filter((item) => item.status !== "available")
-      .map((item) => item.entity)
-      .filter(Boolean)
-      .join(", ");
     return (
       <section className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6">
         <h2 className="text-base font-semibold text-violet-300">Federation Intelligence</h2>
@@ -281,10 +601,20 @@ const renderPanel = (panel: ControlCenterPanel) => {
                 ["Reconciliation", reconciliation?.status],
                 ["Double-counting protected", federation.governance?.double_counting_protected],
                 ["LLM refinement", federation.governance?.llm_refinement],
-                ["Discovered related data", availableDiscovery || "None"],
-                ["Checked but not found", missingDiscovery || "None"],
               ]}
             />
+
+            <SuggestedExplorations items={federation.suggested_explorations ?? []} />
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <div className="mb-3">
+                <h3 className="text-sm font-semibold text-slate-100">Supporting Discovery Metadata</h3>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Grounding signals behind the suggested next actions. These are not automatically added to the current answer.
+                </p>
+              </div>
+              <DiscoveryTable items={discoveryItems} />
+            </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
               <ObjectAmountTable title="Merchant Observed Amounts" values={enrichment?.merchant_observed_amounts} />

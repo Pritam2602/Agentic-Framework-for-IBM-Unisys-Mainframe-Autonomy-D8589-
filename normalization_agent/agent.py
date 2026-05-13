@@ -223,14 +223,19 @@ class NormalizationAgent:
         return source_hint if source_hint in {"ibm", "unisys"} else "unknown"
 
     def _to_canonical_record(self, source_system: str, raw: Dict[str, Any]) -> CanonicalRecord:
-        entity = "shopping" if source_system == "unisys" else "transaction"
+        entity = str(raw.get("entity") or ("shopping" if source_system == "unisys" else "transaction"))
         customer_id = self._first(raw, "customerId", "customer_id", "customer")
         record_id = self._first(raw, "transactionId", "transaction_id", "id", "recordId")
         amount = self._float_or_none(self._first(raw, "transactionAmount", "amount"))
         date = self._first(raw, "transactionDate", "date")
 
         enrichment = {}
-        for key in ("loyaltyPoints", "browsingSessionMinutes", "cartStatus", "merchantCategory"):
+        for key in (
+            "loyaltyPoints", "browsingSessionMinutes", "cartStatus",
+            "merchantCategory", "sku", "productId", "productName",
+            "stockQuantity", "reorderLevel", "availabilityStatus",
+            "warehouseLocation", "lastUpdated",
+        ):
             if key in raw:
                 enrichment[key] = raw[key]
 

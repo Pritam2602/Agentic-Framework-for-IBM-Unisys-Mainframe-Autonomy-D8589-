@@ -421,7 +421,7 @@ class ContextResolutionAgent:
         include_warning: bool = True,
     ) -> ContextOutput:
         """Rule-based fallback when LLM is unavailable."""
-        entities = intent_data.get("entities", [])
+        entities = self._prioritize_entities_for_resolution(intent_data)
         attributes = intent_data.get("attributes", [])
 
         ibm_context = None
@@ -463,6 +463,21 @@ class ContextResolutionAgent:
             reasoning_summary=self._build_reasoning_summary(ibm_context, unisys_context, is_federation),
             warnings=warnings,
         )
+
+    @staticmethod
+    def _prioritize_entities_for_resolution(intent_data: Dict[str, Any]) -> List[str]:
+        """Prefer explicitly requested capability entities during discovery."""
+        entities = list(intent_data.get("entities", []))
+        attributes = {str(attr).lower() for attr in intent_data.get("attributes", [])}
+        task = str(intent_data.get("task", "")).lower()
+
+        if task == "discover" and attributes & {"inventory", "inventory_data", "stock", "stock_data", "sku"}:
+            return [
+                *[entity for entity in entities if entity == "inventory"],
+                *[entity for entity in entities if entity != "inventory"],
+            ]
+
+        return entities
 
     @staticmethod
     def _compute_confidence(

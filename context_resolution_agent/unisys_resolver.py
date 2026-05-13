@@ -104,7 +104,7 @@ class UnisysContextResolver:
                     logger.warning(
                         f"[Unisys Resolver] No MCP tool found for entity: {entity}"
                     )
-                    return None
+                    return self._resolve_fallback(entity)
 
                 # Try to read schema resource
                 schema_fields = []
@@ -194,6 +194,24 @@ class UnisysContextResolver:
                 "entity": "shopping",
                 "maps_to": "IBM transactions",
                 "schema_endpoint": "schema://shopping",
+            },
+            "inventory": {
+                "name": "get_inventory_data",
+                "endpoint": "/api/inventory",
+                "params": [
+                    {"name": "merchant", "type": "string", "required": False},
+                    {"name": "category", "type": "string", "required": False},
+                    {"name": "sku", "type": "string", "required": False},
+                    {"name": "availabilityStatus", "type": "string", "required": False},
+                ],
+                "output_fields": [
+                    "entity", "sku", "productId", "productName", "merchant",
+                    "category", "merchantCategory", "stockQuantity", "reorderLevel",
+                    "availabilityStatus", "warehouseLocation", "lastUpdated",
+                ],
+                "entity": "inventory",
+                "maps_to": "Unisys shopping",
+                "schema_endpoint": "schema://inventory",
             },
         }
 

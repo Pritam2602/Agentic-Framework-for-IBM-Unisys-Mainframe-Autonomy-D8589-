@@ -92,6 +92,10 @@ class FederationIntelligenceOutput(BaseModel):
         default_factory=dict,
         description="Grounded discovery of available and missing related capabilities",
     )
+    suggested_explorations: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Conversational follow-up recommendations for related exploration",
+    )
     overall_confidence: float = Field(ge=0.0, le=1.0)
     reasoning: str = Field(description="Natural-language explanation of the federation decision")
 
@@ -111,7 +115,10 @@ class FederationAnalyzeRequest(BaseModel):
     )
     use_llm: bool = Field(
         default=True,
-        description="If True, use the LLM to refine view selection and reasoning over grounded candidates",
+        description=(
+            "If True, use the LLM to generate discovery recommendations and refine "
+            "view selection/reasoning over grounded candidates"
+        ),
     )
 
 
