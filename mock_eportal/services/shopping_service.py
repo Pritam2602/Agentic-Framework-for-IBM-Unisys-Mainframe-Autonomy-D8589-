@@ -1,11 +1,19 @@
 """Service for Unisys shopping behavior data generated from IBM CardDemo."""
 
+import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from mock_eportal.utils import load_json_file
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "unisys"
+DATA_FILE = DATA_DIR / "shopping.json"
+WRITABLE_FIELDS = {
+    "loyaltyPoints",
+    "browsingSessionMinutes",
+    "cartStatus",
+    "merchantCategory",
+}
 
 
 class ShoppingService:
@@ -17,9 +25,8 @@ class ShoppingService:
 
     def _load_data(self):
         """Load shopping behavior records from JSON."""
-        data_file = DATA_DIR / "shopping.json"
-        if data_file.exists():
-            self._data = load_json_file(data_file)
+        if DATA_FILE.exists():
+            self._data = load_json_file(DATA_FILE)
 
     def get_all(self) -> List[Dict[str, Any]]:
         """Return all shopping behavior records."""
@@ -48,3 +55,47 @@ class ShoppingService:
         if self._data:
             return list(self._data[0].keys())
         return []
+
+    def update_enrichment(
+        self,
+        customer_id: str,
+        date: str,
+        merchant: str,
+        updates: Dict[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        """Update writable enrichment fields for one shopping record."""
+        safe_updates = {
+            key: value
+            for key, value in updates.items()
+            if key in WRITABLE_FIELDS
+        }
+        if not safe_updates:
+            return None
+
+        for record in self._data:
+            if (
+                str(record.get("customerId")) == str(customer_id)
+                and record.get("date") == date
+                and str(record.get("merchant", "")).lower() == merchant.lower()
+            ):
+                record.update(safe_updates)
+                self._persist()
+                return record
+        return None
+
+    def create_shopping_event(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new shopping enrichment event."""
+        required = {"customerId", "merchant", "amount", "date", "category"}
+        missing = sorted(required - set(record))
+        if missing:
+            raise ValueError(f"Missing required field(s): {', '.join(missing)}")
+
+        self._data.append(record)
+        self._persist()
+        return record
+
+    def _persist(self) -> None:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        with DATA_FILE.open("w", encoding="utf-8") as file:
+            json.dump(self._data, file, indent=4)
+            file.write("\n")

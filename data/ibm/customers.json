@@ -10,5 +10,33 @@
     {
         "customerId": 103,
         "customerName": "Global Tech Inc"
+    },
+    {
+        "customerId": 104,
+        "customerName": "Priya Raman"
+    },
+    {
+        "customerId": 105,
+        "customerName": "Northstar Retail"
+    },
+    {
+        "customerId": 106,
+        "customerName": "Aarav Mehta"
+    },
+    {
+        "customerId": 107,
+        "customerName": "BluePeak Logistics"
+    },
+    {
+        "customerId": 108,
+        "customerName": "Maya Fernandes"
+    },
+    {
+        "customerId": 109,
+        "customerName": "Zenith Travel Group"
+    },
+    {
+        "customerId": 110,
+        "customerName": "Rohan Kapoor"
     }
 ]

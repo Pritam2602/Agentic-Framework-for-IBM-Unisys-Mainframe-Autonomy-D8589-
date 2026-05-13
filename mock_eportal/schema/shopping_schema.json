@@ -23,5 +23,23 @@
         "browsingSessionMinutes",
         "cartStatus",
         "merchantCategory"
+    ],
+    "writable_fields": [
+        "loyaltyPoints",
+        "browsingSessionMinutes",
+        "cartStatus",
+        "merchantCategory"
+    ],
+    "related_capability_discovery": [
+        {
+            "entity": "loyalty",
+            "status": "available",
+            "evidence_fields": ["loyaltyPoints"]
+        },
+        {
+            "entity": "inventory",
+            "status": "not_found",
+            "evidence_fields": []
+        }
     ]
 }

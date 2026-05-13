@@ -1,279 +1,274 @@
-# 🚀 AI-Driven Mainframe Data Federation Platform
+# COMMUNICATOR - AI Data Federation Platform
 
-An enterprise-grade **agentic system** that enables intelligent interaction with legacy mainframe systems (IBM & Unisys) using AI, schema understanding, and modern APIs.
+COMMUNICATOR is an AI-driven data federation platform for querying IBM CardDemo-style mainframe data and simulated Unisys ePortal data through a multi-agent pipeline.
 
----
+The current demo focuses on AWS Card Dataset use cases:
 
-## 🧠 Overview
+- Customer Shopping 360
+- Loyalty & Rewards Optimization
 
-This project builds a **multi-agent architecture** that bridges:
+IBM is treated as the financial authority for transaction amounts. Unisys ePortal provides behavioral enrichment such as merchant, category, loyalty points, browsing time, cart status, and merchant category.
 
-* 🏢 **IBM Mainframe Systems**
+## Goal
 
-  * COBOL programs (parsed using ProLeap)
-  * JCL job execution
-  * Zowe command interface
+The application lets a user ask a natural-language question and then:
 
-* 🖥️ **Unisys Systems**
+1. Understand the intent.
+2. Resolve which systems contain the data.
+3. Plan a safe execution flow.
+4. Fetch mock IBM and Unisys records.
+5. Normalize records into a common shape.
+6. Recommend a federated business view.
+7. Discover related capabilities from available schemas and datasets.
+8. Show lineage, governance, warnings, and final output in the UI.
 
-  * Simulated via a **Mock ePortal**
-  * REST APIs + Schema + MCP endpoints
+## Flow Diagram
 
----
+```mermaid
+flowchart TD
+    A[User query] --> B[React Control Center]
+    B --> C[FastAPI /api/pipeline/run]
 
-### 🎯 Goal
+    C --> D[Intent Agent]
+    D --> E[Context Resolution Agent]
+    E --> F[Planner Agent]
+    F --> G[Execution Agent]
+    G --> H[Normalization Agent]
+    H --> I[Federation Intelligence]
 
-Enable users to query legacy systems in **natural language**, and automatically:
+    J[IBM CardDemo data<br/>transactions, customers, accounts] --> G
+    K[Unisys ePortal data<br/>shopping behavior] --> G
+    L[Unisys schema + mapping] --> E
+    L --> M[Capability Discovery]
+    K --> M
 
-1. Understand intent
-2. Locate relevant data sources
-3. Plan execution
-4. Fetch and unify results
+    I --> M
+    I --> N[Federated View Recommendation]
+    I --> O[Lineage + Governance]
 
----
+    M --> P[Available related data<br/>loyalty, cart, browsing, merchant category]
+    M --> Q[Checked but not found<br/>inventory]
 
-## 🏗️ Architecture
+    N --> R[Dashboard Federation Panel]
+    O --> R
+    P --> R
+    Q --> R
+
+    S[Save / Update path] --> T[Mock ePortal write APIs]
+    T --> U[Unisys enrichment fields only]
+    U --> K
+```
+
+## Architecture
 
 ```text
-User
- ↓
-Intent Agent
- ↓
-Context Resolution Agent
- ↓
-Planner Agent
- ↓
-Execution Agents (IBM + Unisys)
- ↓
-Schema & Mapping
- ↓
-Federation Intelligence
- ↓
-Final Output (UI Dashboard)
+Frontend Dashboard
+  -> FastAPI Backend
+    -> Intent Agent
+    -> Context Resolution Agent
+    -> Planner Agent
+    -> Execution Agent
+    -> Normalization Agent
+    -> Federation Intelligence
+      -> Capability Discovery
+      -> View Recommendation
+      -> Lineage and Governance
 ```
 
----
+## Core Components
 
-## 🤖 Core Components
+### Intent Agent
 
----
+Converts a user query into structured intent:
 
-### 🔹 1. Intent Agent
-
-**Purpose:** Understand *what the user wants*
-
-* Converts natural language → structured JSON
-* Handles:
-
-  * Task detection (fetch, compare, analyze)
-  * Entity extraction (payroll, customer)
-  * Attribute mapping (salary → netSalary)
-  * Date normalization
-
-✅ Example Output:
-
-```json
-{
-  "task": "fetch",
-  "entities": ["payroll"],
-  "attributes": ["employeeId", "netSalary"],
-  "filters": {
-    "time_range": {
-      "start": "2026-03-01",
-      "end": "2026-03-31"
-    }
-  },
-  "systems": ["unisys"],
-  "confidence_score": 0.92
-}
-```
-
----
-
-### 🔹 2. Context Resolution Agent
-
-**Purpose:** Determine *where the data exists*
-
-Uses:
-
-* 📊 COBOL parsed JSON (ProLeap)
-* 📄 JCL metadata
-* ⚙️ Zowe command catalog
-* 🌐 ePortal MCP schema
-
-Output:
-
-```json
-{
-  "ibm": {
-    "program": "CBTRN01",
-    "dataset": "TRANSACTION-FILE"
-  },
-  "unisys": {
-    "api": "/api/unisys/payroll"
-  }
-}
-```
-
----
-
-### 🔹 3. Planner Agent
-
-**Purpose:** Decide *how to execute*
-
-* Combines intent + context
-* Generates execution plan
-
-```json
-{
-  "steps": [
-    {
-      "system": "ibm",
-      "command": "zowe zos-jobs submit ds CBTRN.JCL"
-    },
-    {
-      "system": "unisys",
-      "api": "/api/unisys/payroll"
-    }
-  ]
-}
-```
-
----
-
-### 🔹 4. Execution Agents
-
-#### 🟦 IBM Agent
-
-* Executes Zowe commands
-* Runs JCL jobs
-* Fetches datasets
-
-#### 🟩 Unisys Agent
-
-* Calls mock ePortal APIs
-* Returns structured JSON
-
----
-
-### 🔹 5. Schema & Mapping Agent
-
-* Converts IBM + Unisys outputs → canonical schema
-* Ensures consistency across systems
-
----
-
-### 🔹 6. Federation Intelligence Agent
-
-* AI-powered reasoning layer
-* Matches entities across systems
-* Generates insights and unified views
-
----
-
-## 🧩 IBM Integration (CardDemo Dataset)
-
-Uses the AWS CardDemo dataset:
-
-* COBOL programs → business logic
-* JCL jobs → execution flow
-* DB2/datasets → data storage
-
-### 🔹 COBOL Parsing (ProLeap)
-
-Extracts:
-
-* Program ID
-* Variables
-* File usage
-* Call hierarchy
-
-### 🔹 JCL Parsing
-
-Extracts:
-
-* Job steps
-* Programs executed
-* Input/output datasets
-
----
-
-## 🌐 Mock ePortal (Unisys Simulation)
-
-A FastAPI-based simulation of Unisys ePortal.
-
-### 🔹 APIs
-
-```
-GET /api/unisys/payroll
-GET /api/unisys/customer
-```
-
-### 🔹 Schema Endpoints
-
-```
-GET /schema/payroll
-GET /schema/customer
-```
-
-### 🔹 MCP Endpoint
-
-```
-GET /mcp/tools
-```
+- task
+- entities
+- attributes
+- filters
+- systems
+- metric
+- federation requirement
 
 Example:
 
 ```json
 {
-  "tools": [
-    {
-      "name": "get_payroll",
-      "endpoint": "/api/unisys/payroll",
-      "output": ["employeeId", "netSalary"]
-    }
-  ]
+  "task": "analyze",
+  "entities": ["transaction", "shopping"],
+  "attributes": ["reward points"],
+  "filters": {
+    "conditions": [
+      { "field": "customerId", "value": 101 }
+    ]
+  },
+  "systems": ["ibm", "unisys"],
+  "requires_federation": true
 }
 ```
 
----
+### Context Resolution Agent
 
-## 💻 Frontend
+Determines where the requested data exists.
 
-A modern **agent orchestration dashboard** with:
+It checks:
 
-* Execution Panel
-* Agent pipeline visualization
-* Intent / Context / Planner views
-* Output panel with source tagging
+- IBM CardDemo data and parsed COBOL/JCL metadata.
+- Unisys ePortal schema and API metadata.
+- Entity mappings between IBM and Unisys.
 
----
+### Planner Agent
 
-## ⚙️ Tech Stack
+Creates an execution plan from intent and context.
 
-* **Backend:** Python, FastAPI
-* **AI/LLM:** LangChain, Gemini/OpenAI
-* **Parsing:** ProLeap (COBOL), Custom JCL parser
-* **Mainframe Access:** Zowe CLI/API
-* **Frontend:** React (Dark UI Dashboard)
-* **Deployment:** Render / Cloud
+### Execution Agent
 
----
+Runs the safe mock execution flow and collects IBM + Unisys outputs.
 
-## 🚀 Getting Started
+### Normalization Agent
 
----
+Converts system-specific outputs into canonical records used by federation.
 
-### 1️⃣ Clone Repository
+### Federation Intelligence
 
-```bash
-git clone https://github.com/your-username/project-name.git
-cd project-name
-```
+Discovers cross-system relationships, recommends federated views, executes view logic, and returns:
 
----
+- top view
+- federated result
+- capability discovery
+- lineage
+- governance
+- confidence
+- reasoning
 
-### 2️⃣ Setup Environment
+## Current Federated Views
+
+- `customer_spend_enriched`
+- `merchant_category_spend`
+- `loyalty_spend_correlation`
+- `cart_conversion_analysis`
+- `browsing_to_spend_funnel`
+
+Reward-point or loyalty prompts are routed toward `loyalty_spend_correlation`.
+
+## Demo Dataset
+
+The local demo dataset has been expanded for more realistic discovery and federation testing.
+
+- IBM customers: 10
+- IBM accounts: 10
+- IBM transactions: 60, with 6 transactions per customer
+- Unisys shopping enrichment records: 120, with 12 shopping events per customer
+- Merchants represented: Amazon, Flipkart, Swiggy, Zomato, Uber, Myntra, BigBasket, MakeMyTrip, Croma, BookMyShow, Nykaa, Decathlon
+- Categories represented: electronics, food, travel, shopping, fashion, grocery, entertainment, beauty, fitness
+- Shopping enrichment includes loyalty points, browsing minutes, cart status, and merchant category
+
+The Unisys shopping records are generated from IBM transaction customer/date/amount context by `generate_shopping_data.py`, then enriched with deterministic merchant, category, loyalty, browsing, and cart behavior. The Unisys amount remains behavioral/reference context and must not be added to IBM spend.
+
+## Capability Discovery
+
+The Unisys side is now discovery-driven. The system inspects available schema and dataset fields before claiming that related data exists.
+
+Currently discovered from shopping data:
+
+- Loyalty/reward points: available through `loyaltyPoints`.
+- Cart behavior: available through `cartStatus`.
+- Browsing behavior: available through `browsingSessionMinutes`.
+- Merchant/category intelligence: available through `merchant`, `category`, and `merchantCategory`.
+- Inventory: checked but not found in the current schema/data.
+
+Discovery implementation:
+
+- `federation_intelligence/discovery.py`
+- `federation_intelligence/agent.py`
+- `mock_eportal/schema/shopping_schema.json`
+
+## Save / Update Support
+
+A feasible save/update path exists for Unisys behavioral enrichment data.
+
+Supported write APIs on the mock ePortal:
+
+- `POST /api/shopping`
+- `PATCH /api/shopping/enrichment`
+
+Writable fields:
+
+- `loyaltyPoints`
+- `browsingSessionMinutes`
+- `cartStatus`
+- `merchantCategory`
+
+Guardrails:
+
+- IBM remains the financial source of truth.
+- Unisys `amount` is not added to IBM `transactionAmount`.
+- Writes are limited to Unisys enrichment/context data.
+- Updates use `customerId + date + merchant` as the stable event key.
+
+## LLM Model Used
+
+Agents use the shared model builder in `intent_agent/config.py`.
+
+Provider:
+
+- Google Gemini through `langchain_google_genai.ChatGoogleGenerativeAI`
+
+Primary configured model:
+
+- `gemini-2.5-flash-lite`
+
+Runtime fallback candidates:
+
+- `gemini-2.5-flash-lite`
+- `gemini-3-flash-preview`
+- `gemini-2.0-flash-lite`
+
+Settings:
+
+- Temperature: `0`
+- Retries: `0`
+- Environment variable: `GOOGLE_API_KEY` or `GEMINI_API_KEY`
+
+If no Gemini key is available or model initialization fails, agents use deterministic fallback behavior where implemented.
+
+## API Summary
+
+Backend API:
+
+- `POST /api/pipeline/run`
+- `GET /api/pipeline/health`
+- `POST /api/intent/extract`
+- `POST /api/context/resolve`
+- `POST /api/planner/run`
+- `POST /api/execution/run`
+- `POST /api/normalization/run`
+- `POST /api/federation/analyze`
+- `POST /api/federation/execute`
+- `GET /api/federation/views`
+- `POST /api/federation/discover`
+- `GET /api/federation/write-feasibility`
+
+Mock ePortal:
+
+- `GET /api/shopping`
+- `POST /api/shopping`
+- `PATCH /api/shopping/enrichment`
+- `GET /api/schema/shopping`
+- `GET /api/entity-mapping`
+- `GET /api/capabilities`
+
+## Tech Stack
+
+- Backend: Python, FastAPI
+- Agent orchestration: LangChain
+- LLM provider: Google Gemini
+- Frontend: React, Vite, TypeScript
+- Mock Unisys service: FastAPI + MCP server
+- IBM simulation: CardDemo datasets, COBOL/JCL parser outputs
+
+## Getting Started
+
+Install Python dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -285,17 +280,13 @@ Create `.env`:
 GOOGLE_API_KEY=your_key
 ```
 
----
-
-### 3️⃣ Run Backend
+Run backend:
 
 ```bash
-uvicorn app:app --reload
+uvicorn app.main:app --reload --port 8000
 ```
 
----
-
-### 4️⃣ Run Frontend
+Run frontend:
 
 ```bash
 cd frontend
@@ -303,50 +294,35 @@ npm install
 npm run dev
 ```
 
----
+Run mock ePortal:
 
-## 🧪 Example Query
-
-```
-Compare employee salaries between IBM and Unisys
+```bash
+python mock_eportal/mcp_server.py
 ```
 
----
+## Example Queries
 
-## 🔥 Key Features
+```text
+Show shopping data for customer 101 on 2026-03-10
+```
 
-* ✅ Natural language → execution pipeline
-* ✅ Legacy system integration (COBOL + JCL)
-* ✅ Schema-aware reasoning (MCP)
-* ✅ Multi-agent architecture
-* ✅ Real-time execution visualization
-* ✅ Modular and scalable design
+```text
+Show reward points for customer 101
+```
 
----
+```text
+We know shopping data is available. Based on this, check whether related inventory data exists.
+```
 
-## 📌 Future Enhancements
+Expected discovery behavior:
 
-* 🔹 Real Zowe integration with live mainframe
-* 🔹 Advanced federation (join across systems)
-* 🔹 Authentication & role-based access
-* 🔹 Performance optimization
-* 🔹 Full MCP server implementation
+- The system should report loyalty/reward data as available.
+- The system should report inventory as checked but not found unless inventory schema/data is added.
 
----
+## Handoff
 
-## 👨‍💻 Contributors
+See [HANDOFF.md](./HANDOFF.md) for the full application handoff, model usage details, flow notes, and AI usage disclosure.
 
-* **S. Pritam**
-* Team Members (IBM + Unisys integration)
-
----
-
-## 📜 License
+## License
 
 MIT License
-
----
-
-# ⭐ Final Note
-
-This project demonstrates how **AI + agentic architecture can modernize legacy enterprise systems**, enabling intelligent, scalable, and seamless data federation across heterogeneous platforms.

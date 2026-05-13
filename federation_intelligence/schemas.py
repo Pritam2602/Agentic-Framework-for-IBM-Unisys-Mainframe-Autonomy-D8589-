@@ -88,6 +88,10 @@ class FederationIntelligenceOutput(BaseModel):
     governance: Dict[str, Any] = Field(
         description="Audit metadata: sources, join keys, timestamp, confidence"
     )
+    capability_discovery: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Grounded discovery of available and missing related capabilities",
+    )
     overall_confidence: float = Field(ge=0.0, le=1.0)
     reasoning: str = Field(description="Natural-language explanation of the federation decision")
 

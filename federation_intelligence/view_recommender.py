@@ -2,9 +2,17 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List
 
 from .schemas import EntityRelationship, FederatedView
+
+
+def _term_tokens(values: set[str]) -> set[str]:
+    tokens = set(values)
+    for value in values:
+        tokens.update(token for token in re.split(r"[^a-z0-9_]+", value) if token)
+    return tokens
 
 VIEW_CATALOG: List[Dict[str, Any]] = [
     {
@@ -119,6 +127,13 @@ def _score_view(view_def: Dict[str, Any], intent: Dict[str, Any]) -> float:
     intent_entities = set(intent.get("entities", []))
     intent_metric = intent.get("metric")
     intent_task = intent.get("task", "")
+    intent_attributes = {str(attr).lower() for attr in intent.get("attributes", [])}
+    intent_terms = _term_tokens({
+        *{str(entity).lower() for entity in intent_entities},
+        *intent_attributes,
+        str(intent_metric or "").lower(),
+        str(intent_task or "").lower(),
+    })
     requires_federation = intent.get("requires_federation", False)
 
     trigger_entities: set = view_def.get("trigger_entities", set())
@@ -133,6 +148,13 @@ def _score_view(view_def: Dict[str, Any], intent: Dict[str, Any]) -> float:
 
     if intent_task in trigger_tasks:
         score += 0.20
+
+    unisys_fields = {str(field).lower() for field in view_def.get("unisys_fields", [])}
+    if intent_terms & {"reward", "rewards", "loyalty", "loyaltypoints", "points"}:
+        if view_def.get("view_id") == "loyalty_spend_correlation":
+            score += 0.30
+        elif "loyaltypoints" in unisys_fields:
+            score += 0.10
 
     if requires_federation:
         score += 0.15
@@ -170,12 +192,25 @@ def recommend_views(
     top_n: int = 3,
 ) -> List[FederatedView]:
     scored: List[tuple[float, Dict[str, Any]]] = []
+    intent_terms = _term_tokens({
+        *{str(entity).lower() for entity in intent.get("entities", [])},
+        *{str(attr).lower() for attr in intent.get("attributes", [])},
+        str(intent.get("metric") or "").lower(),
+        str(intent.get("task") or "").lower(),
+    })
+    loyalty_intent = bool(intent_terms & {"reward", "rewards", "loyalty", "loyaltypoints", "points"})
 
     for view_def in VIEW_CATALOG:
         score = _score_view(view_def, intent)
         scored.append((score, view_def))
 
-    scored.sort(key=lambda x: x[0], reverse=True)
+    scored.sort(
+        key=lambda x: (
+            x[0],
+            1 if loyalty_intent and x[1]["view_id"] == "loyalty_spend_correlation" else 0,
+        ),
+        reverse=True,
+    )
 
     results: List[FederatedView] = []
     for score, view_def in scored[:top_n]:

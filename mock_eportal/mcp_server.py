@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import os as _os
 
@@ -27,6 +27,7 @@ import os as _os
 _os.environ.setdefault("FASTMCP_ENV_FILE", "")
 
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 # ================================================================
 # DATA PATHS
@@ -72,6 +73,97 @@ def _shopping_data() -> list[dict]:
     if data_file.exists():
         return _load_json(data_file)
     return []
+
+
+def _write_shopping_data(records: list[dict]) -> None:
+    data_file = DATA_DIR / "shopping.json"
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    with data_file.open("w", encoding="utf-8") as f:
+        json.dump(records, f, indent=4)
+        f.write("\n")
+
+
+WRITABLE_SHOPPING_FIELDS = {
+    "loyaltyPoints",
+    "browsingSessionMinutes",
+    "cartStatus",
+    "merchantCategory",
+}
+
+
+def _capability_discovery() -> dict[str, Any]:
+    schema = _load_json(SCHEMA_DIR / "shopping_schema.json")
+    fields = schema.get("fields", [])
+    return {
+        "source": "unisys",
+        "mode": "schema_and_dataset_discovery",
+        "available_entities": [
+            {
+                "entity": "shopping",
+                "fields": fields,
+                "record_count": len(_shopping_data()),
+                "read_supported": True,
+                "write_supported": True,
+                "writable_fields": schema.get("writable_fields", []),
+            }
+        ],
+        "related_capabilities": schema.get("related_capability_discovery", []),
+        "discovery_notes": [
+            "Reward points are available through loyaltyPoints.",
+            "Inventory was checked and is not available in the current ePortal schema/data.",
+        ],
+    }
+
+
+def _update_shopping_enrichment(
+    customerId: int,
+    date: str,
+    merchant: str,
+    updates: dict[str, Any],
+) -> dict[str, Any]:
+    safe_updates = {
+        key: value
+        for key, value in updates.items()
+        if value is not None and key in WRITABLE_SHOPPING_FIELDS
+    }
+    if not safe_updates:
+        return {
+            "status": "rejected",
+            "reason": "No writable enrichment fields were provided.",
+            "writable_fields": sorted(WRITABLE_SHOPPING_FIELDS),
+        }
+
+    records = _shopping_data()
+    for record in records:
+        if (
+            int(record.get("customerId")) == customerId
+            and record.get("date") == date
+            and str(record.get("merchant", "")).lower() == merchant.lower()
+        ):
+            before = dict(record)
+            record.update(safe_updates)
+            _write_shopping_data(records)
+            return {
+                "status": "updated",
+                "record_key": {
+                    "customerId": customerId,
+                    "date": date,
+                    "merchant": merchant,
+                },
+                "updated_fields": safe_updates,
+                "before": before,
+                "after": record,
+                "governance_note": "Only Unisys enrichment fields were updated; IBM financial amounts remain authoritative.",
+            }
+
+    return {
+        "status": "not_found",
+        "record_key": {
+            "customerId": customerId,
+            "date": date,
+            "merchant": merchant,
+        },
+    }
 
 
 # ================================================================
@@ -120,6 +212,43 @@ def get_shopping_data(
     return json.dumps(result, indent=2)
 
 
+@mcp.tool()
+def discover_eportal_capabilities() -> str:
+    """Discover what related Unisys ePortal data is currently available."""
+    return json.dumps(_capability_discovery(), indent=2)
+
+
+@mcp.tool()
+def update_shopping_enrichment(
+    customerId: int,
+    date: str,
+    merchant: str,
+    loyaltyPoints: Optional[int] = None,
+    browsingSessionMinutes: Optional[int] = None,
+    cartStatus: Optional[str] = None,
+    merchantCategory: Optional[str] = None,
+) -> str:
+    """Update writable Unisys shopping enrichment fields for a single event.
+
+    This intentionally does not update amount. IBM CardDemo remains the
+    financial authority; Unisys updates are limited to behavioral enrichment.
+    """
+    return json.dumps(
+        _update_shopping_enrichment(
+            customerId=customerId,
+            date=date,
+            merchant=merchant,
+            updates={
+                "loyaltyPoints": loyaltyPoints,
+                "browsingSessionMinutes": browsingSessionMinutes,
+                "cartStatus": cartStatus,
+                "merchantCategory": merchantCategory,
+            },
+        ),
+        indent=2,
+    )
+
+
 
 
 # ================================================================
@@ -159,6 +288,12 @@ def health_check() -> str:
     })
 
 
+@mcp.resource("eportal://capability-discovery")
+def capability_discovery() -> str:
+    """Discover available and missing related ePortal capabilities."""
+    return json.dumps(_capability_discovery(), indent=2)
+
+
 # ================================================================
 # FASTAPI REST LAYER  (Swagger docs for humans)
 # ================================================================
@@ -181,6 +316,27 @@ api = FastAPI(
         "category, loyalty, browsing). Do NOT double-count."
     ),
 )
+
+
+class ShoppingCreateRequest(BaseModel):
+    customerId: int
+    merchant: str
+    amount: float
+    date: str
+    category: str
+    loyaltyPoints: int = 0
+    browsingSessionMinutes: int = 0
+    cartStatus: str = "completed"
+    merchantCategory: str = "unknown"
+
+
+class ShoppingUpdateRequest(BaseModel):
+    customerId: int
+    date: str
+    merchant: str
+    updates: dict[str, Any] = Field(
+        description="Writable fields only: loyaltyPoints, browsingSessionMinutes, cartStatus, merchantCategory"
+    )
 
 
 @api.get("/", include_in_schema=False)
@@ -227,6 +383,58 @@ async def api_entity_mapping():
     return json.loads(entity_mapping())
 
 
+@api.get("/api/capabilities", tags=["Schema & Metadata"])
+async def api_capabilities():
+    """Return grounded capability discovery for ePortal data."""
+    return _capability_discovery()
+
+
+@api.post("/api/shopping", tags=["Shopping Data"])
+async def api_create_shopping_event(request: ShoppingCreateRequest):
+    """Create a Unisys shopping enrichment event.
+
+    This is a feasible write path for use case demos. It stores Unisys
+    enrichment/context data only; IBM remains the financial source of truth.
+    """
+    record = request.model_dump()
+    records = _shopping_data()
+    records.append(record)
+    _write_shopping_data(records)
+    return {
+        "status": "created",
+        "record": record,
+        "governance_note": "Created Unisys enrichment record; IBM financial amounts remain authoritative.",
+    }
+
+
+@api.patch("/api/shopping/enrichment", tags=["Shopping Data"])
+async def api_update_shopping_enrichment(request: ShoppingUpdateRequest):
+    """Update writable enrichment fields on an existing shopping event."""
+    unsafe_fields = sorted(set(request.updates) - WRITABLE_SHOPPING_FIELDS)
+    updates = {
+        key: value
+        for key, value in request.updates.items()
+        if key in WRITABLE_SHOPPING_FIELDS
+    }
+    if not updates:
+        return {
+            "status": "rejected",
+            "reason": "No writable enrichment fields were provided.",
+            "rejected_fields": unsafe_fields,
+            "writable_fields": sorted(WRITABLE_SHOPPING_FIELDS),
+        }
+
+    result = _update_shopping_enrichment(
+        customerId=request.customerId,
+        date=request.date,
+        merchant=request.merchant,
+        updates=updates,
+    )
+    if unsafe_fields:
+        result["rejected_fields"] = unsafe_fields
+    return result
+
+
 # ================================================================
 # ENTRY POINT
 # ================================================================
@@ -239,4 +447,3 @@ if __name__ == "__main__":
     api.mount("/", sse_app)
 
     uvicorn.run(api, host="0.0.0.0", port=8001)
-

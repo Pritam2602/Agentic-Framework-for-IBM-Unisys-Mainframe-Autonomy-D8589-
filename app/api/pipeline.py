@@ -122,6 +122,18 @@ async def run_pipeline(request: PipelineRequest):
             unisys_summary = f"Unisys: {context.unisys.api or 'N/A'}"
 
         top_view_name = fed_result.top_view.name if fed_result.top_view else "N/A"
+        discovery = fed_dict.get("capability_discovery", {})
+        related = discovery.get("related_capabilities", [])
+        available_related = [
+            item.get("entity")
+            for item in related
+            if item.get("status") == "available"
+        ]
+        missing_related = [
+            item.get("entity")
+            for item in related
+            if item.get("status") != "available"
+        ]
         system_parts = [s for s in [ibm_summary, unisys_summary] if s]
         summary = (
             f"Query: {request.user_query}\n"
@@ -139,7 +151,9 @@ async def run_pipeline(request: PipelineRequest):
             f"Normalized records: {normalization_result.summary.total_records}\n"
             f"Federation: {len(fed_result.entity_relationships)} relationships found | "
             f"Top view: '{top_view_name}' | "
-            f"Confidence: {fed_result.overall_confidence:.0%}"
+            f"Confidence: {fed_result.overall_confidence:.0%}\n"
+            f"Discovery: available related data: {', '.join(available_related) or 'none'} | "
+            f"not found: {', '.join(missing_related) or 'none'}"
         )
 
         return PipelineResponse(

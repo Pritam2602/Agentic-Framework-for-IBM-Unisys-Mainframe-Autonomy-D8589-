@@ -20,6 +20,7 @@ from federation_intelligence.schemas import (
 )
 from federation_intelligence.executor import execute_view
 from federation_intelligence.view_recommender import get_all_views
+from federation_intelligence.discovery import discover_capabilities
 
 router = APIRouter(prefix="/api/federation", tags=["federation-intelligence"])
 
@@ -88,6 +89,52 @@ async def execute(request: FederationExecuteRequest) -> Dict[str, Any]:
 async def list_views() -> List[FederatedView]:
     """Return the full catalog of available federated business views."""
     return get_all_views()
+
+
+@router.post("/discover", response_model=Dict[str, Any])
+async def discover(intent: Dict[str, Any]) -> Dict[str, Any]:
+    """Discover related capabilities from current schemas and datasets."""
+    return discover_capabilities(intent)
+
+
+@router.get("/write-feasibility", response_model=Dict[str, Any])
+async def write_feasibility() -> Dict[str, Any]:
+    """Describe the feasible save/update path for federated demo use cases."""
+    return {
+        "status": "feasible_for_unisys_enrichment",
+        "supported_use_cases": [
+            {
+                "id": 1,
+                "name": "Customer Shopping 360",
+                "read": "IBM transactions + Unisys shopping enrichment",
+                "save_update": "Create/update Unisys shopping enrichment events.",
+            },
+            {
+                "id": 3,
+                "name": "Loyalty & Rewards Optimization",
+                "read": "IBM spend + Unisys loyaltyPoints, merchant, and category context",
+                "save_update": "Update loyaltyPoints and related enrichment fields on Unisys shopping events.",
+            },
+        ],
+        "write_boundaries": {
+            "ibm": "read_only in this demo; IBM remains financial authority",
+            "unisys": {
+                "create_endpoint": "POST /api/shopping on the ePortal service",
+                "update_endpoint": "PATCH /api/shopping/enrichment on the ePortal service",
+                "writable_fields": [
+                    "loyaltyPoints",
+                    "browsingSessionMinutes",
+                    "cartStatus",
+                    "merchantCategory",
+                ],
+            },
+        },
+        "guardrails": [
+            "Do not update or add Unisys amount to IBM amount for total spend.",
+            "Use Unisys writes only for behavioral enrichment/context.",
+            "Require a stable event key: customerId + date + merchant.",
+        ],
+    }
 
 
 @router.get("/health")

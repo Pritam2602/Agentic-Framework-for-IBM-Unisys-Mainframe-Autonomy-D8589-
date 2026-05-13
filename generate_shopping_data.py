@@ -32,20 +32,32 @@ IBM_DIR = ROOT / "data" / "ibm"
 UNISYS_DIR = ROOT / "data" / "unisys"
 OUTPUT_FILE = UNISYS_DIR / "shopping.json"
 
-MERCHANTS = ["Amazon", "Flipkart", "Swiggy", "Zomato", "Uber"]
-CATEGORIES = ["electronics", "food", "travel", "shopping"]
-AMOUNT_FACTORS = [0.60, 0.40, 0.50, 0.25, 0.30, 0.70, 0.45]
-DATE_OFFSETS = [0, 1, 2, 0, -1, 1, -2]
-MIN_ENTRIES_PER_CUSTOMER = 5
+MERCHANTS = [
+    "Amazon", "Flipkart", "Swiggy", "Zomato", "Uber", "Myntra",
+    "BigBasket", "MakeMyTrip", "Croma", "BookMyShow", "Nykaa", "Decathlon",
+]
+CATEGORIES = [
+    "electronics", "food", "travel", "shopping", "fashion", "grocery",
+    "entertainment", "beauty", "fitness",
+]
+AMOUNT_FACTORS = [0.60, 0.40, 0.50, 0.25, 0.30, 0.70, 0.45, 0.35, 0.55, 0.20, 0.65, 0.28]
+DATE_OFFSETS = [0, 1, 2, 0, -1, 1, -2, 2, -1, 0, 1, -2]
+MIN_ENTRIES_PER_CUSTOMER = 12
 MAX_ENTRIES_PER_CUSTOMER = 15
 
 # Behavioral enrichment — deterministic cycles
-LOYALTY_POINTS_BASE = [120, 85, 200, 50, 95, 150, 60]
-BROWSING_MINUTES = [12, 5, 25, 3, 8, 18, 7]
-CART_STATUSES = ["completed", "completed", "abandoned", "completed", "wishlisted", "completed", "completed"]
+LOYALTY_POINTS_BASE = [120, 85, 200, 50, 95, 150, 60, 110, 175, 40, 220, 75]
+BROWSING_MINUTES = [12, 5, 25, 3, 8, 18, 7, 14, 21, 4, 28, 9]
+CART_STATUSES = [
+    "completed", "completed", "abandoned", "completed", "wishlisted",
+    "completed", "completed", "abandoned", "completed", "wishlisted",
+    "completed", "completed",
+]
 MERCHANT_CATEGORIES = [
     "electronics_premium", "fashion_apparel", "food_delivery",
-    "groceries", "ride_hailing", "electronics_budget", "dining_out"
+    "groceries", "ride_hailing", "electronics_budget", "dining_out",
+    "online_grocery", "travel_booking", "events_ticketing",
+    "beauty_personal_care", "sports_outdoor",
 ]
 
 

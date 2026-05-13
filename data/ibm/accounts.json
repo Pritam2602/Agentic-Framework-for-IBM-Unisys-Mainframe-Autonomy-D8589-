@@ -10,5 +10,33 @@
     {
         "accountNumber": "ACC-10003",
         "customerId": 103
+    },
+    {
+        "accountNumber": "ACC-10004",
+        "customerId": 104
+    },
+    {
+        "accountNumber": "ACC-10005",
+        "customerId": 105
+    },
+    {
+        "accountNumber": "ACC-10006",
+        "customerId": 106
+    },
+    {
+        "accountNumber": "ACC-10007",
+        "customerId": 107
+    },
+    {
+        "accountNumber": "ACC-10008",
+        "customerId": 108
+    },
+    {
+        "accountNumber": "ACC-10009",
+        "customerId": 109
+    },
+    {
+        "accountNumber": "ACC-10010",
+        "customerId": 110
     }
 ]

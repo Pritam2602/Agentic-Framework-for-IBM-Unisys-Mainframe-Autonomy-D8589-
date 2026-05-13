@@ -12,6 +12,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from intent_agent.config import build_llm_model
 
+from .discovery import discover_capabilities
 from .entity_graph import build_entity_graph, resolve_join_key
 from .executor import execute_view
 from .schemas import (
@@ -401,6 +402,7 @@ def run(
         intent_entities = ["transaction", "shopping"]
 
     relationships = build_entity_graph(intent_entities)
+    capability_discovery = discover_capabilities(intent)
 
     views = recommend_views(relationships, intent, top_n=5)
     top_view = views[0] if views else None
@@ -442,6 +444,7 @@ def run(
         "overall_confidence": confidence,
         "entity_relationships_count": len(relationships),
         "views_evaluated": len(views),
+        "capability_discovery_mode": capability_discovery.get("mode"),
     }
 
     if isinstance(federated_result, dict) and federated_result.get("reconciliation"):
@@ -458,6 +461,7 @@ def run(
         federated_result=federated_result,
         lineage=lineage,
         governance=governance,
+        capability_discovery=capability_discovery,
         overall_confidence=confidence,
         reasoning=reasoning,
     )

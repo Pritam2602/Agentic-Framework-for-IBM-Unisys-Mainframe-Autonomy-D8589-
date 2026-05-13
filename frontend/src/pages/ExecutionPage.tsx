@@ -231,6 +231,10 @@ const renderPanel = (panel: ControlCenterPanel) => {
         reconciliation?: Record<string, unknown>;
       };
       governance?: Record<string, unknown>;
+      capability_discovery?: {
+        related_capabilities?: Array<{ entity?: string; status?: string; reason?: string }>;
+        discovery_notes?: string[];
+      };
       overall_confidence?: number;
       reasoning?: string;
     } | null;
@@ -239,6 +243,17 @@ const renderPanel = (panel: ControlCenterPanel) => {
     const fedMetrics = result?.federation;
     const enrichment = result?.behavioral_enrichment;
     const reconciliation = result?.reconciliation ?? federation?.governance?.amount_reconciliation as Record<string, unknown> | undefined;
+    const discoveryItems = federation?.capability_discovery?.related_capabilities ?? [];
+    const availableDiscovery = discoveryItems
+      .filter((item) => item.status === "available")
+      .map((item) => item.entity)
+      .filter(Boolean)
+      .join(", ");
+    const missingDiscovery = discoveryItems
+      .filter((item) => item.status !== "available")
+      .map((item) => item.entity)
+      .filter(Boolean)
+      .join(", ");
     return (
       <section className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6">
         <h2 className="text-base font-semibold text-violet-300">Federation Intelligence</h2>
@@ -266,6 +281,8 @@ const renderPanel = (panel: ControlCenterPanel) => {
                 ["Reconciliation", reconciliation?.status],
                 ["Double-counting protected", federation.governance?.double_counting_protected],
                 ["LLM refinement", federation.governance?.llm_refinement],
+                ["Discovered related data", availableDiscovery || "None"],
+                ["Checked but not found", missingDiscovery || "None"],
               ]}
             />
 
