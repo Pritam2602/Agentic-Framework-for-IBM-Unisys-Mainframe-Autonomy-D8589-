@@ -1,0 +1,31 @@
+{
+    "entity": "inventory",
+    "fields": [
+        "entity",
+        "sku",
+        "productId",
+        "productName",
+        "merchant",
+        "category",
+        "merchantCategory",
+        "stockQuantity",
+        "reorderLevel",
+        "availabilityStatus",
+        "warehouseLocation",
+        "lastUpdated"
+    ],
+    "maps_to": "Unisys shopping",
+    "join_key": "merchantCategory",
+    "related_to": "shopping",
+    "relationship_note": "Inventory records describe product availability for merchants and categories observed in shopping behavior.",
+    "capability": "inventory_availability",
+    "read_supported": true,
+    "write_supported": false,
+    "filter_fields": [
+        "merchant",
+        "category",
+        "merchantCategory",
+        "sku",
+        "availabilityStatus"
+    ]
+}

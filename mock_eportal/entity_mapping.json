@@ -19,6 +19,21 @@
                 "cartStatus": "cartStatus (Unisys-only)",
                 "merchantCategory": "merchantCategory (Unisys-only)"
             }
+        },
+        {
+            "entity_name": "Inventory",
+            "unisys_name": "inventory",
+            "maps_to": "Unisys shopping",
+            "relationship": "Inventory records provide product availability context for merchants and categories observed in shopping behavior",
+            "linking_key": "merchantCategory",
+            "field_mapping": {
+                "merchant": "merchant",
+                "category": "category",
+                "merchantCategory": "merchantCategory",
+                "sku": "SKU / product identifier",
+                "stockQuantity": "available stock quantity",
+                "availabilityStatus": "in_stock | low_stock | out_of_stock"
+            }
         }
     ]
 }

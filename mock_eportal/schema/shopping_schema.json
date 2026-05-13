@@ -38,8 +38,8 @@
         },
         {
             "entity": "inventory",
-            "status": "not_found",
-            "evidence_fields": []
+            "status": "available",
+            "evidence_fields": ["sku", "stockQuantity", "availabilityStatus"]
         }
     ]
 }

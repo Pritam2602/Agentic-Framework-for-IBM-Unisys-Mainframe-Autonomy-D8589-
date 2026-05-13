@@ -75,6 +75,14 @@ def _shopping_data() -> list[dict]:
     return []
 
 
+def _inventory_data() -> list[dict]:
+    """Load all inventory records from disk."""
+    data_file = DATA_DIR / "inventory.json"
+    if data_file.exists():
+        return _load_json(data_file)
+    return []
+
+
 def _write_shopping_data(records: list[dict]) -> None:
     data_file = DATA_DIR / "shopping.json"
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -92,25 +100,62 @@ WRITABLE_SHOPPING_FIELDS = {
 
 
 def _capability_discovery() -> dict[str, Any]:
-    schema = _load_json(SCHEMA_DIR / "shopping_schema.json")
-    fields = schema.get("fields", [])
+    shopping_schema = _load_json(SCHEMA_DIR / "shopping_schema.json")
+    inventory_schema_path = SCHEMA_DIR / "inventory_schema.json"
+    inventory_schema = _load_json(inventory_schema_path) if inventory_schema_path.exists() else None
+    fields = shopping_schema.get("fields", [])
+    related = list(shopping_schema.get("related_capability_discovery", []))
+    if inventory_schema:
+        related = [
+            item for item in related
+            if item.get("entity") != "inventory"
+        ]
+        related.append(
+            {
+                "entity": "inventory",
+                "status": "available",
+                "evidence_fields": [
+                    "sku",
+                    "merchant",
+                    "category",
+                    "merchantCategory",
+                    "stockQuantity",
+                    "availabilityStatus",
+                ],
+                "record_count": len(_inventory_data()),
+            }
+        )
+
+    available_entities = [
+        {
+            "entity": "shopping",
+            "fields": fields,
+            "record_count": len(_shopping_data()),
+            "read_supported": True,
+            "write_supported": True,
+            "writable_fields": shopping_schema.get("writable_fields", []),
+        }
+    ]
+    if inventory_schema:
+        available_entities.append(
+            {
+                "entity": "inventory",
+                "fields": inventory_schema.get("fields", []),
+                "record_count": len(_inventory_data()),
+                "read_supported": True,
+                "write_supported": False,
+                "filter_fields": inventory_schema.get("filter_fields", []),
+            }
+        )
+
     return {
         "source": "unisys",
         "mode": "schema_and_dataset_discovery",
-        "available_entities": [
-            {
-                "entity": "shopping",
-                "fields": fields,
-                "record_count": len(_shopping_data()),
-                "read_supported": True,
-                "write_supported": True,
-                "writable_fields": schema.get("writable_fields", []),
-            }
-        ],
-        "related_capabilities": schema.get("related_capability_discovery", []),
+        "available_entities": available_entities,
+        "related_capabilities": related,
         "discovery_notes": [
             "Reward points are available through loyaltyPoints.",
-            "Inventory was checked and is not available in the current ePortal schema/data.",
+            "Inventory availability is available through inventory schema/data when present.",
         ],
     }
 
@@ -213,6 +258,51 @@ def get_shopping_data(
 
 
 @mcp.tool()
+def get_inventory_data(
+    merchant: Optional[str] = None,
+    category: Optional[str] = None,
+    sku: Optional[str] = None,
+    availabilityStatus: Optional[str] = None,
+) -> str:
+    """Retrieve Unisys inventory availability data.
+
+    Inventory is related to shopping behavior by merchant, category, and
+    merchantCategory. It is operational context, not financial authority.
+    """
+    records = _inventory_data()
+
+    if merchant is not None:
+        records = [
+            r for r in records
+            if str(r.get("merchant", "")).lower() == merchant.lower()
+        ]
+    if category is not None:
+        records = [
+            r for r in records
+            if str(r.get("category", "")).lower() == category.lower()
+        ]
+    if sku is not None:
+        records = [
+            r for r in records
+            if str(r.get("sku", "")).lower() == sku.lower()
+        ]
+    if availabilityStatus is not None:
+        records = [
+            r for r in records
+            if str(r.get("availabilityStatus", "")).lower() == availabilityStatus.lower()
+        ]
+
+    result = {
+        "source": "unisys",
+        "entity": "inventory",
+        "count": len(records),
+        "note": "Inventory provides product availability context related to shopping merchants/categories.",
+        "data": records,
+    }
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
 def discover_eportal_capabilities() -> str:
     """Discover what related Unisys ePortal data is currently available."""
     return json.dumps(_capability_discovery(), indent=2)
@@ -264,6 +354,15 @@ def shopping_schema() -> str:
     return json.dumps({"error": "Schema not found"})
 
 
+@mcp.resource("schema://inventory")
+def inventory_schema() -> str:
+    """Inventory entity schema - product availability and stock context."""
+    schema_file = SCHEMA_DIR / "inventory_schema.json"
+    if schema_file.exists():
+        return json.dumps(_load_json(schema_file), indent=2)
+    return json.dumps({"error": "Schema not found"})
+
+
 @mcp.resource("eportal://entity-mapping")
 def entity_mapping() -> str:
     """Entity mapping — how Unisys entities relate to IBM entities."""
@@ -284,6 +383,7 @@ def health_check() -> str:
         "data_loaded": len(_shopping_data()) > 0,
         "entities_available": {
             "shopping": "Behavioral enrichment data for card shopping events",
+            "inventory": "Product availability and stock context related to shopping behavior",
         },
     })
 
@@ -371,10 +471,34 @@ async def api_get_shopping_data(
     return json.loads(get_shopping_data(customerId=customerId, date=date))
 
 
+@api.get("/api/inventory", tags=["Inventory Data"])
+async def api_get_inventory_data(
+    merchant: Optional[str] = Query(None, description="Filter by merchant"),
+    category: Optional[str] = Query(None, description="Filter by category"),
+    sku: Optional[str] = Query(None, description="Filter by SKU"),
+    availabilityStatus: Optional[str] = Query(None, description="Filter by availability status"),
+):
+    """Retrieve Unisys inventory availability data."""
+    return json.loads(
+        get_inventory_data(
+            merchant=merchant,
+            category=category,
+            sku=sku,
+            availabilityStatus=availabilityStatus,
+        )
+    )
+
+
 @api.get("/api/schema/shopping", tags=["Schema & Metadata"])
 async def api_shopping_schema():
     """Return the shopping entity schema."""
     return json.loads(shopping_schema())
+
+
+@api.get("/api/schema/inventory", tags=["Schema & Metadata"])
+async def api_inventory_schema():
+    """Return the inventory entity schema."""
+    return json.loads(inventory_schema())
 
 
 @api.get("/api/entity-mapping", tags=["Schema & Metadata"])
