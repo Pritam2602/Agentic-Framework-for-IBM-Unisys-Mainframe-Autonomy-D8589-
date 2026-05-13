@@ -20,6 +20,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from app.execution.dataset_executor import DatasetExecutor
 from app.execution.job_executor import JobExecutor
 from app.execution.workflow_executor import WorkflowExecutor
+from app.mock_zos import MockZOSSimulator
 from app.models.schemas import TraceEvent
 from intent_agent.config import build_llm_model
 from mock_eportal.services.shopping_service import ShoppingService
@@ -92,6 +93,7 @@ class ExecutionAgent:
         self.job_executor = JobExecutor()
         self.dataset_executor = DatasetExecutor()
         self.workflow_executor = WorkflowExecutor()
+        self.zos_simulator = MockZOSSimulator()
         self.shopping_service = ShoppingService()
 
     def run(
@@ -300,6 +302,8 @@ class ExecutionAgent:
         text = " ".join(str(part or "").lower() for part in [action, command, endpoint])
         if system == "unisys" or endpoint:
             return "unisys_api"
+        if "transaction" in text:
+            return "ibm_dataset"
         if "workflow" in text:
             return "ibm_workflow"
         if "dataset" in text or "listcat" in text or "files" in text or " ds " in f" {text} ":
@@ -344,7 +348,9 @@ class ExecutionAgent:
                 "category": step.step_type,
             }
 
-            if step.step_type == "ibm_job":
+            if mode == "safe_mock" and step.command and step.command.strip().lower().startswith("zowe "):
+                output = self.zos_simulator.execute(step.command, step.parameters)
+            elif step.step_type == "ibm_job":
                 output = self.job_executor.execute(command_def, step.parameters)
             elif step.step_type == "ibm_dataset":
                 output = self.dataset_executor.execute(command_def, step.parameters)
@@ -391,14 +397,7 @@ class ExecutionAgent:
             )
 
     def _execute_zowe_mock(self, step: ExecutionStep) -> Dict[str, Any]:
-        return {
-            "status": "completed",
-            "mode": "safe_mock",
-            "platform": "IBM z/OS",
-            "command": step.command or step.action,
-            "parameters": step.parameters,
-            "message": "Zowe command validated and simulated",
-        }
+        return self.zos_simulator.execute(step.command or step.action, step.parameters)
 
     def _execute_unisys_api(self, step: ExecutionStep) -> Dict[str, Any]:
         params = step.parameters

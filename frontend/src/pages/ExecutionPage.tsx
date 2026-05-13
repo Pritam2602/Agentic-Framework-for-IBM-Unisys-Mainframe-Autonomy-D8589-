@@ -25,6 +25,8 @@ const panelNav: Array<{
   { id: "context", label: "Context", icon: CircleStackIcon, description: "Inspect where data exists across systems." },
   { id: "reasoning", label: "Reasoning", icon: MagnifyingGlassCircleIcon, description: "Review AI decision logic and warnings." },
   { id: "planner", label: "Planner", icon: CpuChipIcon, description: "Preview the downstream execution handoff." },
+  { id: "normalization", label: "Normalization", icon: CircleStackIcon, description: "Review canonical records produced after execution." },
+  { id: "federation", label: "Federation", icon: MagnifyingGlassCircleIcon, description: "Inspect federated view recommendations and output." },
 ];
 
 const systemPillClass = (online: boolean) =>
@@ -38,6 +40,81 @@ const validationTone = (status: "pass" | "warn" | "fail") =>
     : status === "warn"
       ? "border-amber-500/30 bg-amber-500/10 text-amber-200"
       : "border-red-500/30 bg-red-500/10 text-red-200";
+
+const valueText = (value: unknown) => {
+  if (value === null || value === undefined || value === "") {
+    return "N/A";
+  }
+  if (typeof value === "number") {
+    return Number.isInteger(value) ? String(value) : value.toFixed(2);
+  }
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+  return String(value);
+};
+
+const smallStatClass = "rounded-2xl border border-slate-800 bg-slate-900/70 p-4";
+
+const MiniStat = ({ label, value, tone = "slate" }: { label: string; value: unknown; tone?: "slate" | "emerald" | "cyan" | "violet" | "amber" }) => {
+  const toneClass =
+    tone === "emerald"
+      ? "text-emerald-200"
+      : tone === "cyan"
+        ? "text-cyan-200"
+        : tone === "violet"
+          ? "text-violet-200"
+          : tone === "amber"
+            ? "text-amber-200"
+            : "text-slate-100";
+
+  return (
+    <div className={smallStatClass}>
+      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <p className={`mt-2 text-lg font-semibold ${toneClass}`}>{valueText(value)}</p>
+    </div>
+  );
+};
+
+const KeyValueTable = ({ rows }: { rows: Array<[string, unknown]> }) => (
+  <div className="overflow-hidden rounded-2xl border border-slate-800">
+    <table className="w-full text-left text-sm">
+      <tbody>
+        {rows.map(([label, value]) => (
+          <tr key={label} className="border-b border-slate-800 last:border-b-0">
+            <th className="w-1/2 bg-slate-900/70 px-4 py-3 font-medium text-slate-400">{label}</th>
+            <td className="px-4 py-3 font-mono text-slate-100">{valueText(value)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+
+const ObjectAmountTable = ({ title, values }: { title: string; values?: Record<string, unknown> }) => {
+  const entries = Object.entries(values ?? {});
+  if (!entries.length) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+      <h3 className="text-sm font-semibold text-slate-100">{title}</h3>
+      <div className="mt-3 overflow-hidden rounded-xl border border-slate-800">
+        <table className="w-full text-left text-sm">
+          <tbody>
+            {entries.map(([key, value]) => (
+              <tr key={key} className="border-b border-slate-800 last:border-b-0">
+                <td className="px-4 py-2 text-slate-300">{key}</td>
+                <td className="px-4 py-2 text-right font-mono text-cyan-200">{valueText(value)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
 
 const renderPanel = (panel: ControlCenterPanel) => {
   const store = appStore.getState();
@@ -55,7 +132,163 @@ const renderPanel = (panel: ControlCenterPanel) => {
   }
 
   if (panel === "planner") {
-    return <PlannerPanel intent={store.intent} context={store.context} nextStage={store.nextStage} />;
+    return <PlannerPanel intent={store.intent} context={store.context} planner={store.planner} nextStage={store.nextStage} />;
+  }
+
+  if (panel === "normalization") {
+    const normalization = store.normalization as {
+      summary?: {
+        total_records?: number;
+        ibm_records?: number;
+        unisys_records?: number;
+        canonical_entities?: string[];
+        warnings?: string[];
+      };
+      records?: Array<{
+        source_system?: string;
+        entity?: string;
+        customer_id?: string;
+        amount?: number;
+        date?: string;
+        merchant?: string | null;
+        category?: string | null;
+      }>;
+    } | null;
+    const total = normalization?.summary?.total_records;
+    return (
+      <section className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6">
+        <h2 className="text-base font-semibold text-emerald-300">Normalization</h2>
+        <p className="mt-3 text-sm text-slate-400">
+          {normalization
+            ? `${total ?? 0} canonical record(s) were produced for federation.`
+            : "Run the pipeline to see normalized execution outputs."}
+        </p>
+        {normalization && (
+          <div className="mt-5 space-y-5">
+            <div className="grid gap-4 md:grid-cols-3">
+              <MiniStat label="Total Records" value={normalization.summary?.total_records} tone="emerald" />
+              <MiniStat label="IBM Records" value={normalization.summary?.ibm_records} tone="cyan" />
+              <MiniStat label="Unisys Records" value={normalization.summary?.unisys_records} tone="violet" />
+            </div>
+
+            <KeyValueTable
+              rows={[
+                ["Canonical entities", normalization.summary?.canonical_entities?.join(", ")],
+                ["Warnings", normalization.summary?.warnings?.join("; ") || "None"],
+              ]}
+            />
+
+            {normalization.records?.length ? (
+              <div className="overflow-hidden rounded-2xl border border-slate-800">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-900/80 text-xs uppercase tracking-[0.16em] text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3">Source</th>
+                      <th className="px-4 py-3">Entity</th>
+                      <th className="px-4 py-3">Customer</th>
+                      <th className="px-4 py-3">Date</th>
+                      <th className="px-4 py-3">Amount</th>
+                      <th className="px-4 py-3">Context</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {normalization.records.map((record, index) => (
+                      <tr key={`${record.source_system}-${record.entity}-${index}`} className="border-t border-slate-800">
+                        <td className="px-4 py-3 text-slate-100">{valueText(record.source_system).toUpperCase()}</td>
+                        <td className="px-4 py-3 text-slate-300">{valueText(record.entity)}</td>
+                        <td className="px-4 py-3 font-mono text-slate-300">{valueText(record.customer_id)}</td>
+                        <td className="px-4 py-3 font-mono text-slate-300">{valueText(record.date)}</td>
+                        <td className="px-4 py-3 font-mono text-cyan-200">{valueText(record.amount)}</td>
+                        <td className="px-4 py-3 text-slate-300">
+                          {record.merchant || record.category
+                            ? [record.merchant, record.category].filter(Boolean).join(" / ")
+                            : "financial record"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+          </div>
+        )}
+      </section>
+    );
+  }
+
+  if (panel === "federation") {
+    const federation = store.federation as {
+      top_view?: { name?: string; view_id?: string };
+      federated_result?: {
+        federation?: Record<string, unknown>;
+        behavioral_enrichment?: {
+          merchant_observed_amounts?: Record<string, unknown>;
+          category_observed_amounts?: Record<string, unknown>;
+          loyalty?: { total_loyalty_points?: number };
+          cart_status_breakdown?: Record<string, unknown>;
+          browsing?: { total_browsing_minutes?: number };
+        };
+        reconciliation?: Record<string, unknown>;
+      };
+      governance?: Record<string, unknown>;
+      overall_confidence?: number;
+      reasoning?: string;
+    } | null;
+    const topView = federation?.top_view;
+    const result = federation?.federated_result;
+    const fedMetrics = result?.federation;
+    const enrichment = result?.behavioral_enrichment;
+    const reconciliation = result?.reconciliation ?? federation?.governance?.amount_reconciliation as Record<string, unknown> | undefined;
+    return (
+      <section className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6">
+        <h2 className="text-base font-semibold text-violet-300">Federation Intelligence</h2>
+        <p className="mt-3 text-sm text-slate-400">
+          {federation
+            ? `Top view: ${topView?.name ?? topView?.view_id ?? "N/A"}`
+            : "Run the pipeline to see federated view recommendations."}
+        </p>
+        {federation && (
+          <div className="mt-5 space-y-5">
+            <div className="grid gap-4 md:grid-cols-4">
+              <MiniStat label="Total Spend" value={fedMetrics?.total_spend} tone="emerald" />
+              <MiniStat label="IBM Txns" value={fedMetrics?.ibm_transaction_count} tone="cyan" />
+              <MiniStat label="Unisys Events" value={fedMetrics?.unisys_enrichment_count} tone="violet" />
+              <MiniStat label="Confidence" value={`${Math.round((federation.overall_confidence ?? 0) * 100)}%`} tone="amber" />
+            </div>
+
+            <KeyValueTable
+              rows={[
+                ["Top view", topView?.name ?? topView?.view_id],
+                ["View ID", topView?.view_id],
+                ["IBM authoritative total", reconciliation?.ibm_authoritative_total],
+                ["Unisys observed total", reconciliation?.unisys_observed_total],
+                ["Variance", reconciliation?.variance],
+                ["Reconciliation", reconciliation?.status],
+                ["Double-counting protected", federation.governance?.double_counting_protected],
+                ["LLM refinement", federation.governance?.llm_refinement],
+              ]}
+            />
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <ObjectAmountTable title="Merchant Observed Amounts" values={enrichment?.merchant_observed_amounts} />
+              <ObjectAmountTable title="Category Observed Amounts" values={enrichment?.category_observed_amounts} />
+              <ObjectAmountTable title="Cart Status Breakdown" values={enrichment?.cart_status_breakdown} />
+              <KeyValueTable
+                rows={[
+                  ["Total loyalty points", enrichment?.loyalty?.total_loyalty_points],
+                  ["Total browsing minutes", enrichment?.browsing?.total_browsing_minutes],
+                ]}
+              />
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Reasoning</p>
+              <p className="mt-2 text-sm leading-7 text-slate-300">{federation.reasoning}</p>
+            </div>
+          </div>
+        )}
+      </section>
+    );
   }
 
   return null;
@@ -69,6 +302,9 @@ export default function ExecutionPage() {
   const nextStage = useAppStore((state) => state.nextStage);
   const intent = useAppStore((state) => state.intent);
   const context = useAppStore((state) => state.context);
+  const execution = useAppStore((state) => state.execution);
+  const normalization = useAppStore((state) => state.normalization);
+  const federation = useAppStore((state) => state.federation);
   const reasoning = useAppStore((state) => state.reasoning);
   const warnings = useAppStore((state) => state.warnings);
   const validation = useAppStore((state) => state.validation);
@@ -380,6 +616,22 @@ export default function ExecutionPage() {
                       <div className="flex items-center justify-between">
                         <span className="text-slate-400">Reasoning Notes</span>
                         <span className="text-slate-100">{reasoning?.decisions.length ?? 0}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400">Execution</span>
+                        <span className="text-slate-100">{(execution as { status?: string } | null)?.status ?? "pending"}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400">Normalized Records</span>
+                        <span className="text-slate-100">
+                          {(normalization as { summary?: { total_records?: number } } | null)?.summary?.total_records ?? "pending"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400">Federated View</span>
+                        <span className="text-slate-100">
+                          {(federation as { top_view?: { view_id?: string } } | null)?.top_view?.view_id ?? "pending"}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-slate-400">Warnings</span>

@@ -46,7 +46,9 @@ async def analyze(request: FederationAnalyzeRequest) -> FederationIntelligenceOu
         result = run_federation_intelligence(
             intent=request.intent,
             context=request.context,
+            normalized_output=request.normalized_output,
             execute=request.execute,
+            enable_llm=request.use_llm,
         )
         return result
     except Exception as exc:

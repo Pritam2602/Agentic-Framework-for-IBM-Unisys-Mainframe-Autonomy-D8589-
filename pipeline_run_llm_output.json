@@ -1,0 +1,1642 @@
+{
+  "intent": {
+    "task": "analyze",
+    "entities": [
+      "shopping",
+      "transaction"
+    ],
+    "attributes": [
+      "customerId",
+      "transactionAmount",
+      "transactionDate",
+      "merchant",
+      "category"
+    ],
+    "filters": {
+      "time_range": null,
+      "conditions": [
+        {
+          "field": "customerId",
+          "value": 101
+        },
+        {
+          "field": "date",
+          "value": "2026-03-10"
+        }
+      ]
+    },
+    "systems": [
+      "unisys",
+      "ibm"
+    ],
+    "metric": "total_spend",
+    "aggregation": "sum",
+    "output_mode": "aggregate",
+    "requires_federation": true,
+    "priority": "high",
+    "confidence_score": 1.0
+  },
+  "context": {
+    "ibm": {
+      "program": "CBTRN03C",
+      "program_name": "CBTRN03C (batch/JCL-resolved - Resolved from JCL transaction datasets and steps)",
+      "dataset": "AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS",
+      "all_datasets": [
+        "AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS",
+        "AWS.M2.CARDDEMO.TRANSACT.BKUP(+1)",
+        "AWS.M2.CARDDEMO.TRANSACT.DALY(+1)",
+        "AWS.M2.CARDDEMO.LOADLIB",
+        "AWS.M2.CARDDEMO.CARDXREF.VSAM.KSDS",
+        "AWS.M2.CARDDEMO.TRANTYPE.VSAM.KSDS",
+        "AWS.M2.CARDDEMO.TRANCATG.VSAM.KSDS",
+        "AWS.M2.CARDDEMO.DATEPARM",
+        "AWS.M2.CARDDEMO.TRANREPT(+1)",
+        "ACCTFILE-FILE",
+        "OUT-FILE",
+        "ARRY-FILE",
+        "VBRC-FILE"
+      ],
+      "jcl_job": "TRANREPT",
+      "jcl_steps": [
+        {
+          "step_name": "STEP05R",
+          "program": "REPROC",
+          "datasets": [
+            {
+              "dsn": "AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS",
+              "type": "input",
+              "disp": "SHR"
+            },
+            {
+              "dsn": "AWS.M2.CARDDEMO.TRANSACT.BKUP(+1)",
+              "type": "output",
+              "disp": "(NEW,CATLG,DELETE)"
+            }
+          ],
+          "parm": "",
+          "cond": ""
+        },
+        {
+          "step_name": "STEP05R",
+          "program": "SORT",
+          "datasets": [
+            {
+              "dsn": "AWS.M2.CARDDEMO.TRANSACT.BKUP(+1)",
+              "type": "input",
+              "disp": "SHR"
+            },
+            {
+              "dsn": "AWS.M2.CARDDEMO.TRANSACT.DALY(+1)",
+              "type": "output",
+              "disp": "(NEW,CATLG,DELETE)"
+            }
+          ],
+          "parm": "",
+          "cond": ""
+        },
+        {
+          "step_name": "STEP10R",
+          "program": "CBTRN03C",
+          "datasets": [
+            {
+              "dsn": "AWS.M2.CARDDEMO.LOADLIB",
+              "type": "input",
+              "disp": "SHR"
+            },
+            {
+              "dsn": "AWS.M2.CARDDEMO.TRANSACT.DALY(+1)",
+              "type": "input",
+              "disp": "SHR"
+            },
+            {
+              "dsn": "AWS.M2.CARDDEMO.CARDXREF.VSAM.KSDS",
+              "type": "input",
+              "disp": "SHR"
+            },
+            {
+              "dsn": "AWS.M2.CARDDEMO.TRANTYPE.VSAM.KSDS",
+              "type": "input",
+              "disp": "SHR"
+            },
+            {
+              "dsn": "AWS.M2.CARDDEMO.TRANCATG.VSAM.KSDS",
+              "type": "input",
+              "disp": "SHR"
+            },
+            {
+              "dsn": "AWS.M2.CARDDEMO.DATEPARM",
+              "type": "input",
+              "disp": "SHR"
+            },
+            {
+              "dsn": "AWS.M2.CARDDEMO.TRANREPT(+1)",
+              "type": "output",
+              "disp": "(NEW,CATLG,DELETE)"
+            }
+          ],
+          "parm": "",
+          "cond": ""
+        }
+      ],
+      "zowe_commands": [],
+      "variables": [
+        {
+          "name": "ACCOUNT-RECORD",
+          "level": 1,
+          "pic": "",
+          "usage": ""
+        },
+        {
+          "name": "ACCT-ID",
+          "level": 5,
+          "pic": "9(11)",
+          "usage": ""
+        },
+        {
+          "name": "ACCT-ACTIVE-STATUS",
+          "level": 5,
+          "pic": "X(01)",
+          "usage": ""
+        },
+        {
+          "name": "ACCT-CURR-BAL",
+          "level": 5,
+          "pic": "S9(10)V99",
+          "usage": ""
+        },
+        {
+          "name": "ACCT-CREDIT-LIMIT",
+          "level": 5,
+          "pic": "S9(10)V99",
+          "usage": ""
+        },
+        {
+          "name": "ACCT-CASH-CREDIT-LIMIT",
+          "level": 5,
+          "pic": "S9(10)V99",
+          "usage": ""
+        },
+        {
+          "name": "ACCT-OPEN-DATE",
+          "level": 5,
+          "pic": "X(10)",
+          "usage": ""
+        },
+        {
+          "name": "ACCT-EXPIRAION-DATE",
+          "level": 5,
+          "pic": "X(10)",
+          "usage": ""
+        },
+        {
+          "name": "ACCT-REISSUE-DATE",
+          "level": 5,
+          "pic": "X(10)",
+          "usage": ""
+        },
+        {
+          "name": "ACCT-CURR-CYC-CREDIT",
+          "level": 5,
+          "pic": "S9(10)V99",
+          "usage": ""
+        },
+        {
+          "name": "ACCT-CURR-CYC-DEBIT",
+          "level": 5,
+          "pic": "S9(10)V99",
+          "usage": ""
+        },
+        {
+          "name": "ACCT-ADDR-ZIP",
+          "level": 5,
+          "pic": "X(10)",
+          "usage": ""
+        },
+        {
+          "name": "ACCT-GROUP-ID",
+          "level": 5,
+          "pic": "X(10)",
+          "usage": ""
+        },
+        {
+          "name": "",
+          "level": 5,
+          "pic": "X(178)",
+          "usage": ""
+        },
+        {
+          "name": "CODATECN-REC",
+          "level": 1,
+          "pic": "",
+          "usage": ""
+        },
+        {
+          "name": "CODATECN-IN-REC",
+          "level": 5,
+          "pic": "",
+          "usage": ""
+        },
+        {
+          "name": "CODATECN-TYPE",
+          "level": 10,
+          "pic": "X",
+          "usage": ""
+        },
+        {
+          "name": "YYYYMMDD-IN",
+          "level": 88,
+          "pic": "",
+          "usage": ""
+        },
+        {
+          "name": "YYYY-MM-DD-IN",
+          "level": 88,
+          "pic": "",
+          "usage": ""
+        },
+        {
+          "name": "CODATECN-INP-DATE",
+          "level": 10,
+          "pic": "X(20)",
+          "usage": ""
+        }
+      ],
+      "io_operations": {
+        "reads": [
+          "ACCTFILE-FILE"
+        ],
+        "writes": [
+          "OUT-ACCT-REC",
+          "ARR-ARRAY-REC",
+          "VBR-REC"
+        ]
+      }
+    },
+    "unisys": {
+      "api": "/api/unisys/shopping",
+      "fields": [
+        "customerId",
+        "merchant",
+        "amount",
+        "date",
+        "category",
+        "loyaltyPoints",
+        "browsingSessionMinutes",
+        "cartStatus",
+        "merchantCategory"
+      ],
+      "tool_name": "get_shopping_data",
+      "params": [
+        {
+          "name": "customerId",
+          "type": "integer",
+          "required": false
+        },
+        {
+          "name": "date",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "schema_endpoint": "schema://shopping",
+      "entity": "shopping"
+    },
+    "entity_mapping": {
+      "customerId": "customerId",
+      "date": "transactionDate",
+      "amount": "transactionAmount"
+    },
+    "entities_resolved": [
+      "ibm:transactions",
+      "unisys:shopping"
+    ],
+    "systems_checked": [
+      "unisys",
+      "ibm"
+    ],
+    "resolution_confidence": 0.92,
+    "is_federation": true,
+    "reasoning_summary": "The user wants to analyze shopping transactions. The federation rule states that 'shopping' maps to Unisys shopping behavior API and IBM transaction context. The IBM system provides transaction data via CBTRN03C program and TRANREPT JCL job, which includes customerId, transactionAmount, and transactionDate. The Unisys system provides shopping data via the get_shopping_data API, which also includes customerId, amount, and date. These can be joined using customerId and comparable date fields for a comprehensive analysis.",
+    "warnings": []
+  },
+  "planner_json": {
+    "plan_id": "planner-agent-plan",
+    "objective": "analyze | shopping, transaction | metric=total_spend | aggregation=sum",
+    "mode": "safe_mock",
+    "strategy": "The grounded plan correctly identifies the need to fetch data from both IBM and Unisys systems and outlines a sequential execution. The IBM transaction data is considered the financial source of truth. The plan correctly uses `customerId` as the join key. The `zowe files view ds` command is appropriate for fetching data from the IBM dataset. The `zowe files list ds` command is not directly needed for data retrieval in this specific plan, but it's a valid command candidate. The plan's steps are logical and follow the established federation rules.",
+    "selected_commands": [
+      {
+        "id": "cmd-015",
+        "zowe_command": "zowe files view ds",
+        "category": "data",
+        "command_family": "FILES",
+        "subsystem": "z/OSMF",
+        "ibm_artifact": "Sequential Dataset",
+        "operation": "READ",
+        "access_pattern": "REST",
+        "response_format": "TEXT",
+        "intended_agent": "IngestAgent",
+        "constraints": "May expose business data",
+        "execution_cost": "MEDIUM",
+        "confidence_level": 0.95,
+        "command_id": "cmd-015",
+        "name": "ZOWE_FILES_VIEW_DS",
+        "system": "ibm",
+        "command": "zowe files view ds"
+      }
+    ],
+    "execution_sequence": [
+      {
+        "command_id": "cmd-015",
+        "command_name": "ZOWE_FILES_VIEW_DS",
+        "command": "zowe files view ds",
+        "zowe_command": "zowe files view ds",
+        "system": "ibm",
+        "category": "data",
+        "command_family": "FILES",
+        "operation": "READ",
+        "risk_level": "MEDIUM",
+        "requires_approval": false,
+        "order": 1,
+        "parameters": {
+          "customerId": 101,
+          "date": "2026-03-10",
+          "entities": [
+            "shopping",
+            "transaction"
+          ]
+        },
+        "expected_output": "TEXT"
+      }
+    ],
+    "parallel_groups": [],
+    "estimated_duration_seconds": 4,
+    "rollback_plan": null,
+    "steps": [
+      {
+        "step_id": "fetch-ibm-transactions",
+        "order": 1,
+        "system": "ibm",
+        "step_type": "ibm_dataset",
+        "action": "fetch transactions",
+        "description": "Fetch IBM CardDemo transaction records using resolved dataset context, extracted filters, and the selected Zowe catalog command.",
+        "command": "zowe files view ds \"AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS\"",
+        "endpoint": null,
+        "parameters": {
+          "customerId": 101,
+          "date": "2026-03-10"
+        },
+        "depends_on": [],
+        "expected_output": "IBM transaction records",
+        "risk_level": "LOW",
+        "requires_approval": false
+      },
+      {
+        "step_id": "fetch-unisys-shopping",
+        "order": 2,
+        "system": "unisys",
+        "step_type": "unisys_api",
+        "action": "fetch shopping enrichment",
+        "description": "Fetch Unisys ePortal shopping behavior records as behavioral enrichment for the resolved request.",
+        "command": null,
+        "endpoint": "/api/unisys/shopping",
+        "parameters": {
+          "customerId": 101,
+          "date": "2026-03-10"
+        },
+        "depends_on": [
+          "fetch-ibm-transactions"
+        ],
+        "expected_output": "Unisys shopping enrichment records",
+        "risk_level": "LOW",
+        "requires_approval": false
+      }
+    ],
+    "data_dependencies": [
+      "ibm:AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS",
+      "unisys:/api/unisys/shopping"
+    ],
+    "federation_required": true,
+    "join_keys": [
+      "customerId"
+    ],
+    "normalization_required": true,
+    "governance_controls": [
+      "safe_mock execution mode unless explicitly switched to allowlisted",
+      "source lineage must be preserved for every normalized field",
+      "customerId is the preferred cross-system join key",
+      "IBM transaction amounts remain the financial authority",
+      "Unisys amounts must not be added to IBM spend totals",
+      "IBM transaction amounts are the financial source of truth.",
+      "Unisys shopping data is behavioral enrichment only.",
+      "When federation is required, preserve customerId as the preferred join key."
+    ],
+    "stop_on_error": true,
+    "reasoning_summary": "The user wants to analyze total spend by customer for a specific date, requiring data from both IBM (transactions) and Unisys (shopping behavior). The grounded plan correctly identifies the necessary systems and data sources. The strategy of fetching IBM data first, then Unisys data, and then normalizing is sound. The plan correctly uses `customerId` as the join key and adheres to the governance rule that IBM transaction amounts are the financial source of truth. The selected Zowe command `zowe files view ds` is appropriate for accessing the IBM dataset. The `zowe files list ds` command, while a valid candidate, is not strictly necessary for this data retrieval task but is included in the grounded plan's selected commands. The plan's steps and dependencies are well-defined.",
+    "warnings": [
+      "The `zowe files list ds` command (cmd-012) is included in the grounded plan but is not directly used in the execution steps for data retrieval. It may be intended for metadata discovery, which is not explicitly requested in the user's intent for this specific analysis."
+    ]
+  },
+  "execution": {
+    "status": "completed",
+    "natural_response": "Execution completed. 2/2 executed step(s) completed successfully.",
+    "normalized_plan": {
+      "plan_id": "planner-agent-plan",
+      "objective": "analyze | shopping, transaction | metric=total_spend | aggregation=sum",
+      "mode": "safe_mock",
+      "steps": [
+        {
+          "step_id": "fetch-ibm-transactions",
+          "order": 1,
+          "description": "Fetch IBM CardDemo transaction records using resolved dataset context, extracted filters, and the selected Zowe catalog command.",
+          "system": "ibm",
+          "step_type": "ibm_dataset",
+          "action": "fetch transactions",
+          "command": "zowe files view ds \"AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS\"",
+          "endpoint": null,
+          "parameters": {
+            "customerId": 101,
+            "date": "2026-03-10"
+          },
+          "depends_on": [],
+          "risk_level": "LOW",
+          "requires_approval": false,
+          "expected_output": "IBM transaction records"
+        },
+        {
+          "step_id": "fetch-unisys-shopping",
+          "order": 2,
+          "description": "Fetch Unisys ePortal shopping behavior records as behavioral enrichment for the resolved request.",
+          "system": "unisys",
+          "step_type": "unisys_api",
+          "action": "fetch shopping enrichment",
+          "command": null,
+          "endpoint": "/api/unisys/shopping",
+          "parameters": {
+            "customerId": 101,
+            "date": "2026-03-10"
+          },
+          "depends_on": [
+            "fetch-ibm-transactions"
+          ],
+          "risk_level": "LOW",
+          "requires_approval": false,
+          "expected_output": "Unisys shopping enrichment records"
+        }
+      ],
+      "stop_on_error": true,
+      "reasoning_summary": "The user wants to analyze total spend by customer for a specific date, requiring data from both IBM (transactions) and Unisys (shopping behavior). The plan correctly identifies the necessary systems and data sources. The strategy of fetching IBM data first, then Unisys data, and then normalizing is sound. The plan correctly uses `customerId` as the join key and adheres to the governance rule that IBM transaction amounts are the financial source of truth. The selected Zowe command `zowe files view ds` is appropriate for accessing the IBM dataset."
+    },
+    "step_results": [
+      {
+        "step_id": "fetch-ibm-transactions",
+        "order": 1,
+        "status": "completed",
+        "started_at": "2026-04-29T20:50:28.060250",
+        "ended_at": "2026-04-29T20:50:28.066179",
+        "system": "ibm",
+        "step_type": "ibm_dataset",
+        "action": "fetch transactions",
+        "command": "zowe files view ds \"AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS\"",
+        "output": {
+          "status": "completed",
+          "mode": "safe_mock",
+          "platform": "IBM z/OS",
+          "source": "ibm",
+          "entity": "transaction",
+          "command": "zowe files view ds \"AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS\"",
+          "dataset": "AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS",
+          "record_format": "JSON",
+          "count": 1,
+          "data": [
+            {
+              "transactionId": "TXN-20260310-101-001",
+              "customerId": 101,
+              "amount": 2000.0,
+              "date": "2026-03-10",
+              "transactionType": "DEBIT"
+            }
+          ],
+          "spool": {
+            "ddName": "SYSOUT",
+            "content": "MOCK Z/OS READ 1 TRANSACTION RECORD(S)"
+          },
+          "note": "Mock z/OS dataset read; IBM transaction amounts remain financial source of truth."
+        },
+        "error": null
+      },
+      {
+        "step_id": "fetch-unisys-shopping",
+        "order": 2,
+        "status": "completed",
+        "started_at": "2026-04-29T20:50:28.066179",
+        "ended_at": "2026-04-29T20:50:28.066179",
+        "system": "unisys",
+        "step_type": "unisys_api",
+        "action": "fetch shopping enrichment",
+        "command": null,
+        "output": {
+          "status": "completed",
+          "source": "unisys",
+          "endpoint": "/api/unisys/shopping",
+          "count": 3,
+          "data": [
+            {
+              "customerId": 101,
+              "merchant": "Amazon",
+              "amount": 1200.0,
+              "date": "2026-03-10",
+              "category": "electronics",
+              "loyaltyPoints": 120,
+              "browsingSessionMinutes": 12,
+              "cartStatus": "completed",
+              "merchantCategory": "electronics_premium"
+            },
+            {
+              "customerId": 101,
+              "merchant": "Zomato",
+              "amount": 500.0,
+              "date": "2026-03-10",
+              "category": "shopping",
+              "loyaltyPoints": 50,
+              "browsingSessionMinutes": 3,
+              "cartStatus": "completed",
+              "merchantCategory": "groceries"
+            },
+            {
+              "customerId": 101,
+              "merchant": "Uber",
+              "amount": 300.0,
+              "date": "2026-03-10",
+              "category": "electronics",
+              "loyaltyPoints": 95,
+              "browsingSessionMinutes": 8,
+              "cartStatus": "wishlisted",
+              "merchantCategory": "ride_hailing"
+            }
+          ],
+          "note": "Unisys data is behavioral enrichment; do not double-count financial amounts with IBM."
+        },
+        "error": null
+      }
+    ],
+    "canonical_output": {
+      "plan_id": "planner-agent-plan",
+      "objective": "analyze | shopping, transaction | metric=total_spend | aggregation=sum",
+      "total_steps": 2,
+      "executed_steps": 2,
+      "successful_steps": 2,
+      "failed_steps": 0,
+      "results": [
+        {
+          "step_id": "fetch-ibm-transactions",
+          "order": 1,
+          "status": "completed",
+          "started_at": "2026-04-29T20:50:28.060250",
+          "ended_at": "2026-04-29T20:50:28.066179",
+          "system": "ibm",
+          "step_type": "ibm_dataset",
+          "action": "fetch transactions",
+          "command": "zowe files view ds \"AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS\"",
+          "output": {
+            "status": "completed",
+            "mode": "safe_mock",
+            "platform": "IBM z/OS",
+            "source": "ibm",
+            "entity": "transaction",
+            "command": "zowe files view ds \"AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS\"",
+            "dataset": "AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS",
+            "record_format": "JSON",
+            "count": 1,
+            "data": [
+              {
+                "transactionId": "TXN-20260310-101-001",
+                "customerId": 101,
+                "amount": 2000.0,
+                "date": "2026-03-10",
+                "transactionType": "DEBIT"
+              }
+            ],
+            "spool": {
+              "ddName": "SYSOUT",
+              "content": "MOCK Z/OS READ 1 TRANSACTION RECORD(S)"
+            },
+            "note": "Mock z/OS dataset read; IBM transaction amounts remain financial source of truth."
+          },
+          "error": null
+        },
+        {
+          "step_id": "fetch-unisys-shopping",
+          "order": 2,
+          "status": "completed",
+          "started_at": "2026-04-29T20:50:28.066179",
+          "ended_at": "2026-04-29T20:50:28.066179",
+          "system": "unisys",
+          "step_type": "unisys_api",
+          "action": "fetch shopping enrichment",
+          "command": null,
+          "output": {
+            "status": "completed",
+            "source": "unisys",
+            "endpoint": "/api/unisys/shopping",
+            "count": 3,
+            "data": [
+              {
+                "customerId": 101,
+                "merchant": "Amazon",
+                "amount": 1200.0,
+                "date": "2026-03-10",
+                "category": "electronics",
+                "loyaltyPoints": 120,
+                "browsingSessionMinutes": 12,
+                "cartStatus": "completed",
+                "merchantCategory": "electronics_premium"
+              },
+              {
+                "customerId": 101,
+                "merchant": "Zomato",
+                "amount": 500.0,
+                "date": "2026-03-10",
+                "category": "shopping",
+                "loyaltyPoints": 50,
+                "browsingSessionMinutes": 3,
+                "cartStatus": "completed",
+                "merchantCategory": "groceries"
+              },
+              {
+                "customerId": 101,
+                "merchant": "Uber",
+                "amount": 300.0,
+                "date": "2026-03-10",
+                "category": "electronics",
+                "loyaltyPoints": 95,
+                "browsingSessionMinutes": 8,
+                "cartStatus": "wishlisted",
+                "merchantCategory": "ride_hailing"
+              }
+            ],
+            "note": "Unisys data is behavioral enrichment; do not double-count financial amounts with IBM."
+          },
+          "error": null
+        }
+      ]
+    },
+    "execution_trace": [
+      {
+        "timestamp": "2026-04-29T20:50:12.406751",
+        "stage": "execution_planning",
+        "message": "Received planner JSON",
+        "metadata": null
+      },
+      {
+        "timestamp": "2026-04-29T20:50:28.060250",
+        "stage": "execution_planning",
+        "message": "Normalized execution plan with 2 step(s)",
+        "metadata": {
+          "plan_id": "planner-agent-plan",
+          "objective": "analyze | shopping, transaction | metric=total_spend | aggregation=sum",
+          "mode": "safe_mock",
+          "steps": [
+            {
+              "step_id": "fetch-ibm-transactions",
+              "order": 1,
+              "description": "Fetch IBM CardDemo transaction records using resolved dataset context, extracted filters, and the selected Zowe catalog command.",
+              "system": "ibm",
+              "step_type": "ibm_dataset",
+              "action": "fetch transactions",
+              "command": "zowe files view ds \"AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS\"",
+              "endpoint": null,
+              "parameters": {
+                "customerId": 101,
+                "date": "2026-03-10"
+              },
+              "depends_on": [],
+              "risk_level": "LOW",
+              "requires_approval": false,
+              "expected_output": "IBM transaction records"
+            },
+            {
+              "step_id": "fetch-unisys-shopping",
+              "order": 2,
+              "description": "Fetch Unisys ePortal shopping behavior records as behavioral enrichment for the resolved request.",
+              "system": "unisys",
+              "step_type": "unisys_api",
+              "action": "fetch shopping enrichment",
+              "command": null,
+              "endpoint": "/api/unisys/shopping",
+              "parameters": {
+                "customerId": 101,
+                "date": "2026-03-10"
+              },
+              "depends_on": [
+                "fetch-ibm-transactions"
+              ],
+              "risk_level": "LOW",
+              "requires_approval": false,
+              "expected_output": "Unisys shopping enrichment records"
+            }
+          ],
+          "stop_on_error": true,
+          "reasoning_summary": "The user wants to analyze total spend by customer for a specific date, requiring data from both IBM (transactions) and Unisys (shopping behavior). The plan correctly identifies the necessary systems and data sources. The strategy of fetching IBM data first, then Unisys data, and then normalizing is sound. The plan correctly uses `customerId` as the join key and adheres to the governance rule that IBM transaction amounts are the financial source of truth. The selected Zowe command `zowe files view ds` is appropriate for accessing the IBM dataset."
+        }
+      },
+      {
+        "timestamp": "2026-04-29T20:50:28.066179",
+        "stage": "execution",
+        "message": "Executed step fetch-ibm-transactions: completed",
+        "metadata": {
+          "step_id": "fetch-ibm-transactions",
+          "order": 1,
+          "status": "completed",
+          "started_at": "2026-04-29T20:50:28.060250",
+          "ended_at": "2026-04-29T20:50:28.066179",
+          "system": "ibm",
+          "step_type": "ibm_dataset",
+          "action": "fetch transactions",
+          "command": "zowe files view ds \"AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS\"",
+          "output": {
+            "status": "completed",
+            "mode": "safe_mock",
+            "platform": "IBM z/OS",
+            "source": "ibm",
+            "entity": "transaction",
+            "command": "zowe files view ds \"AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS\"",
+            "dataset": "AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS",
+            "record_format": "JSON",
+            "count": 1,
+            "data": [
+              {
+                "transactionId": "TXN-20260310-101-001",
+                "customerId": 101,
+                "amount": 2000.0,
+                "date": "2026-03-10",
+                "transactionType": "DEBIT"
+              }
+            ],
+            "spool": {
+              "ddName": "SYSOUT",
+              "content": "MOCK Z/OS READ 1 TRANSACTION RECORD(S)"
+            },
+            "note": "Mock z/OS dataset read; IBM transaction amounts remain financial source of truth."
+          },
+          "error": null
+        }
+      },
+      {
+        "timestamp": "2026-04-29T20:50:28.066179",
+        "stage": "execution",
+        "message": "Executed step fetch-unisys-shopping: completed",
+        "metadata": {
+          "step_id": "fetch-unisys-shopping",
+          "order": 2,
+          "status": "completed",
+          "started_at": "2026-04-29T20:50:28.066179",
+          "ended_at": "2026-04-29T20:50:28.066179",
+          "system": "unisys",
+          "step_type": "unisys_api",
+          "action": "fetch shopping enrichment",
+          "command": null,
+          "output": {
+            "status": "completed",
+            "source": "unisys",
+            "endpoint": "/api/unisys/shopping",
+            "count": 3,
+            "data": [
+              {
+                "customerId": 101,
+                "merchant": "Amazon",
+                "amount": 1200.0,
+                "date": "2026-03-10",
+                "category": "electronics",
+                "loyaltyPoints": 120,
+                "browsingSessionMinutes": 12,
+                "cartStatus": "completed",
+                "merchantCategory": "electronics_premium"
+              },
+              {
+                "customerId": 101,
+                "merchant": "Zomato",
+                "amount": 500.0,
+                "date": "2026-03-10",
+                "category": "shopping",
+                "loyaltyPoints": 50,
+                "browsingSessionMinutes": 3,
+                "cartStatus": "completed",
+                "merchantCategory": "groceries"
+              },
+              {
+                "customerId": 101,
+                "merchant": "Uber",
+                "amount": 300.0,
+                "date": "2026-03-10",
+                "category": "electronics",
+                "loyaltyPoints": 95,
+                "browsingSessionMinutes": 8,
+                "cartStatus": "wishlisted",
+                "merchantCategory": "ride_hailing"
+              }
+            ],
+            "note": "Unisys data is behavioral enrichment; do not double-count financial amounts with IBM."
+          },
+          "error": null
+        }
+      },
+      {
+        "timestamp": "2026-04-29T20:50:28.066179",
+        "stage": "result_collection",
+        "message": "Collected 2 execution result(s)",
+        "metadata": {
+          "status": "completed"
+        }
+      }
+    ],
+    "warnings": []
+  },
+  "normalization": {
+    "status": "completed",
+    "natural_response": "Normalized 4 record(s) into the common intermediate schema.",
+    "canonical_output": {
+      "type": "canonical_records",
+      "data": [
+        {
+          "source_system": "ibm",
+          "entity": "transaction",
+          "customer_id": "101",
+          "record_id": "TXN-20260310-101-001",
+          "amount": 2000.0,
+          "date": "2026-03-10",
+          "transaction_type": "DEBIT",
+          "merchant": null,
+          "category": null,
+          "enrichment": {},
+          "raw": {
+            "transactionId": "TXN-20260310-101-001",
+            "customerId": 101,
+            "amount": 2000.0,
+            "date": "2026-03-10",
+            "transactionType": "DEBIT"
+          }
+        },
+        {
+          "source_system": "unisys",
+          "entity": "shopping",
+          "customer_id": "101",
+          "record_id": null,
+          "amount": 1200.0,
+          "date": "2026-03-10",
+          "transaction_type": null,
+          "merchant": "Amazon",
+          "category": "electronics",
+          "enrichment": {
+            "loyaltyPoints": 120,
+            "browsingSessionMinutes": 12,
+            "cartStatus": "completed",
+            "merchantCategory": "electronics_premium"
+          },
+          "raw": {
+            "customerId": 101,
+            "merchant": "Amazon",
+            "amount": 1200.0,
+            "date": "2026-03-10",
+            "category": "electronics",
+            "loyaltyPoints": 120,
+            "browsingSessionMinutes": 12,
+            "cartStatus": "completed",
+            "merchantCategory": "electronics_premium"
+          }
+        },
+        {
+          "source_system": "unisys",
+          "entity": "shopping",
+          "customer_id": "101",
+          "record_id": null,
+          "amount": 500.0,
+          "date": "2026-03-10",
+          "transaction_type": null,
+          "merchant": "Zomato",
+          "category": "shopping",
+          "enrichment": {
+            "loyaltyPoints": 50,
+            "browsingSessionMinutes": 3,
+            "cartStatus": "completed",
+            "merchantCategory": "groceries"
+          },
+          "raw": {
+            "customerId": 101,
+            "merchant": "Zomato",
+            "amount": 500.0,
+            "date": "2026-03-10",
+            "category": "shopping",
+            "loyaltyPoints": 50,
+            "browsingSessionMinutes": 3,
+            "cartStatus": "completed",
+            "merchantCategory": "groceries"
+          }
+        },
+        {
+          "source_system": "unisys",
+          "entity": "shopping",
+          "customer_id": "101",
+          "record_id": null,
+          "amount": 300.0,
+          "date": "2026-03-10",
+          "transaction_type": null,
+          "merchant": "Uber",
+          "category": "electronics",
+          "enrichment": {
+            "loyaltyPoints": 95,
+            "browsingSessionMinutes": 8,
+            "cartStatus": "wishlisted",
+            "merchantCategory": "ride_hailing"
+          },
+          "raw": {
+            "customerId": 101,
+            "merchant": "Uber",
+            "amount": 300.0,
+            "date": "2026-03-10",
+            "category": "electronics",
+            "loyaltyPoints": 95,
+            "browsingSessionMinutes": 8,
+            "cartStatus": "wishlisted",
+            "merchantCategory": "ride_hailing"
+          }
+        }
+      ],
+      "metadata": {
+        "record_count": 4,
+        "sources": [
+          "ibm",
+          "unisys"
+        ],
+        "normalization_rule": "IBM amounts are financial source of truth; Unisys amounts are enrichment only.",
+        "llm_reasoning": "The execution output contains data from both IBM transactions and Unisys shopping. The IBM transaction data is identified as the primary financial source of truth. The field mapping prioritizes the IBM transaction fields for 'transaction' entity. The warnings explicitly state the governance rules regarding the handling of IBM and Unisys data, particularly concerning the calculation of total spend."
+      }
+    },
+    "records": [
+      {
+        "source_system": "ibm",
+        "entity": "transaction",
+        "customer_id": "101",
+        "record_id": "TXN-20260310-101-001",
+        "amount": 2000.0,
+        "date": "2026-03-10",
+        "transaction_type": "DEBIT",
+        "merchant": null,
+        "category": null,
+        "enrichment": {},
+        "raw": {
+          "transactionId": "TXN-20260310-101-001",
+          "customerId": 101,
+          "amount": 2000.0,
+          "date": "2026-03-10",
+          "transactionType": "DEBIT"
+        }
+      },
+      {
+        "source_system": "unisys",
+        "entity": "shopping",
+        "customer_id": "101",
+        "record_id": null,
+        "amount": 1200.0,
+        "date": "2026-03-10",
+        "transaction_type": null,
+        "merchant": "Amazon",
+        "category": "electronics",
+        "enrichment": {
+          "loyaltyPoints": 120,
+          "browsingSessionMinutes": 12,
+          "cartStatus": "completed",
+          "merchantCategory": "electronics_premium"
+        },
+        "raw": {
+          "customerId": 101,
+          "merchant": "Amazon",
+          "amount": 1200.0,
+          "date": "2026-03-10",
+          "category": "electronics",
+          "loyaltyPoints": 120,
+          "browsingSessionMinutes": 12,
+          "cartStatus": "completed",
+          "merchantCategory": "electronics_premium"
+        }
+      },
+      {
+        "source_system": "unisys",
+        "entity": "shopping",
+        "customer_id": "101",
+        "record_id": null,
+        "amount": 500.0,
+        "date": "2026-03-10",
+        "transaction_type": null,
+        "merchant": "Zomato",
+        "category": "shopping",
+        "enrichment": {
+          "loyaltyPoints": 50,
+          "browsingSessionMinutes": 3,
+          "cartStatus": "completed",
+          "merchantCategory": "groceries"
+        },
+        "raw": {
+          "customerId": 101,
+          "merchant": "Zomato",
+          "amount": 500.0,
+          "date": "2026-03-10",
+          "category": "shopping",
+          "loyaltyPoints": 50,
+          "browsingSessionMinutes": 3,
+          "cartStatus": "completed",
+          "merchantCategory": "groceries"
+        }
+      },
+      {
+        "source_system": "unisys",
+        "entity": "shopping",
+        "customer_id": "101",
+        "record_id": null,
+        "amount": 300.0,
+        "date": "2026-03-10",
+        "transaction_type": null,
+        "merchant": "Uber",
+        "category": "electronics",
+        "enrichment": {
+          "loyaltyPoints": 95,
+          "browsingSessionMinutes": 8,
+          "cartStatus": "wishlisted",
+          "merchantCategory": "ride_hailing"
+        },
+        "raw": {
+          "customerId": 101,
+          "merchant": "Uber",
+          "amount": 300.0,
+          "date": "2026-03-10",
+          "category": "electronics",
+          "loyaltyPoints": 95,
+          "browsingSessionMinutes": 8,
+          "cartStatus": "wishlisted",
+          "merchantCategory": "ride_hailing"
+        }
+      }
+    ],
+    "summary": {
+      "total_records": 4,
+      "ibm_records": 1,
+      "unisys_records": 3,
+      "canonical_entities": [
+        "shopping",
+        "transaction"
+      ],
+      "warnings": [
+        "IBM CardDemo transaction amounts are the financial source of truth.",
+        "Unisys ePortal shopping amounts mirror IBM shopping spend and are behavioral enrichment only.",
+        "Never add IBM amounts and Unisys amounts together for total_spend.",
+        "Do not add Unisys amount to IBM amount for spend totals; Unisys is enrichment."
+      ]
+    },
+    "execution_trace": [
+      {
+        "timestamp": "2026-04-29T20:50:28.253217",
+        "stage": "normalization",
+        "message": "Received execution output",
+        "metadata": null
+      },
+      {
+        "timestamp": "2026-04-29T20:50:34.265247",
+        "stage": "normalization",
+        "message": "Normalized 4 record(s)",
+        "metadata": {
+          "total_records": 4,
+          "ibm_records": 1,
+          "unisys_records": 3,
+          "canonical_entities": [
+            "shopping",
+            "transaction"
+          ],
+          "warnings": [
+            "IBM CardDemo transaction amounts are the financial source of truth.",
+            "Unisys ePortal shopping amounts mirror IBM shopping spend and are behavioral enrichment only.",
+            "Never add IBM amounts and Unisys amounts together for total_spend.",
+            "Do not add Unisys amount to IBM amount for spend totals; Unisys is enrichment."
+          ]
+        }
+      }
+    ],
+    "warnings": [
+      "IBM CardDemo transaction amounts are the financial source of truth.",
+      "Unisys ePortal shopping amounts mirror IBM shopping spend and are behavioral enrichment only.",
+      "Never add IBM amounts and Unisys amounts together for total_spend.",
+      "Do not add Unisys amount to IBM amount for spend totals; Unisys is enrichment."
+    ]
+  },
+  "federation_intelligence": {
+    "entity_relationships": [
+      {
+        "source_entity": "transaction",
+        "target_entity": "shopping",
+        "source_system": "ibm",
+        "target_system": "unisys",
+        "join_key": "customerId",
+        "relationship_type": "enrichment",
+        "confidence": 0.95,
+        "reasoning": "IBM CardDemo transactions carry all financial amounts. Unisys shopping records mirror those amounts and add behavioral context (merchant, category, loyalty, browsing, cart status). They join on customerId. Field mapping note: IBM transactionAmount already includes shopping spend. Unisys amount mirrors it \u2014 do NOT sum both for total spend."
+      },
+      {
+        "source_entity": "account",
+        "target_entity": "shopping",
+        "source_system": "ibm",
+        "target_system": "unisys",
+        "join_key": "customerId",
+        "relationship_type": "reference",
+        "confidence": 0.8,
+        "reasoning": "IBM account records reference a customerId that can be used to look up Unisys shopping behavioral data for the same customer. Field mapping note: IBM transactionAmount already includes shopping spend. Unisys amount mirrors it \u2014 do NOT sum both for total spend."
+      },
+      {
+        "source_entity": "customer",
+        "target_entity": "shopping",
+        "source_system": "ibm",
+        "target_system": "unisys",
+        "join_key": "customerId",
+        "relationship_type": "enrichment",
+        "confidence": 0.9,
+        "reasoning": "Customer records in IBM can be enriched with Unisys shopping behavior to build a 360\u00b0 customer profile. Field mapping note: IBM transactionAmount already includes shopping spend. Unisys amount mirrors it \u2014 do NOT sum both for total spend."
+      }
+    ],
+    "recommended_views": [
+      {
+        "view_id": "customer_spend_enriched",
+        "name": "Customer Spend with Behavioral Context",
+        "description": "Combines IBM transaction amounts (financial truth) with Unisys merchant, category, loyalty, browsing, and cart data to give a 360\u00b0 spending view per customer.",
+        "entities_involved": [
+          "transaction",
+          "shopping"
+        ],
+        "systems_involved": [
+          "ibm",
+          "unisys"
+        ],
+        "join_key": "customerId",
+        "ibm_fields": [
+          "transactionId",
+          "customerId",
+          "amount",
+          "date",
+          "transactionType"
+        ],
+        "unisys_fields": [
+          "merchant",
+          "category",
+          "loyaltyPoints",
+          "browsingSessionMinutes",
+          "cartStatus",
+          "merchantCategory"
+        ],
+        "business_value": "Enables product managers and analysts to understand not just HOW MUCH a customer spends but WHERE and HOW \u2014 unlocking loyalty segmentation, cart abandonment insights, and category-level marketing.",
+        "applicability_score": 1.0,
+        "recommended": true,
+        "recommendation_reason": "High relevance: intent entities ['shopping', 'transaction'] directly align with this view's join pattern (customerId) and the requested metric 'total_spend' is served by this view."
+      },
+      {
+        "view_id": "merchant_category_spend",
+        "name": "Spend by Merchant and Category",
+        "description": "Aggregates IBM spend amounts grouped by Unisys merchant and category \u2014 showing where customers spend money by business type.",
+        "entities_involved": [
+          "transaction",
+          "shopping"
+        ],
+        "systems_involved": [
+          "ibm",
+          "unisys"
+        ],
+        "join_key": "customerId",
+        "ibm_fields": [
+          "customerId",
+          "amount",
+          "date"
+        ],
+        "unisys_fields": [
+          "merchant",
+          "category",
+          "merchantCategory"
+        ],
+        "business_value": "Reveals top merchants and spending categories per customer, enabling targeted offers, co-brand partnerships, and product cross-sell.",
+        "applicability_score": 1.0,
+        "recommended": true,
+        "recommendation_reason": "High relevance: intent entities ['shopping', 'transaction'] directly align with this view's join pattern (customerId) and the requested metric 'total_spend' is served by this view."
+      },
+      {
+        "view_id": "loyalty_spend_correlation",
+        "name": "Loyalty Points vs Spend Correlation",
+        "description": "Correlates IBM spend amounts with Unisys loyalty points to reveal how much loyalty value customers accumulate relative to their spend.",
+        "entities_involved": [
+          "transaction",
+          "shopping"
+        ],
+        "systems_involved": [
+          "ibm",
+          "unisys"
+        ],
+        "join_key": "customerId",
+        "ibm_fields": [
+          "customerId",
+          "amount",
+          "date"
+        ],
+        "unisys_fields": [
+          "loyaltyPoints",
+          "merchant",
+          "category"
+        ],
+        "business_value": "Helps loyalty program managers assess engagement \u2014 are high-spend customers accumulating proportional loyalty rewards?",
+        "applicability_score": 1.0,
+        "recommended": true,
+        "recommendation_reason": "High relevance: intent entities ['shopping', 'transaction'] directly align with this view's join pattern (customerId) and the requested metric 'total_spend' is served by this view."
+      },
+      {
+        "view_id": "cart_conversion_analysis",
+        "name": "Cart Conversion and Spend Impact",
+        "description": "Joins IBM spend data with Unisys cart status (completed/abandoned) to understand how cart decisions translate into actual financial impact.",
+        "entities_involved": [
+          "transaction",
+          "shopping"
+        ],
+        "systems_involved": [
+          "ibm",
+          "unisys"
+        ],
+        "join_key": "customerId",
+        "ibm_fields": [
+          "customerId",
+          "amount",
+          "date",
+          "transactionType"
+        ],
+        "unisys_fields": [
+          "cartStatus",
+          "merchant",
+          "category",
+          "browsingSessionMinutes"
+        ],
+        "business_value": "Quantifies cart abandonment's revenue impact \u2014 which merchants and categories have the highest abandonment and what is the lost spend potential.",
+        "applicability_score": 0.75,
+        "recommended": true,
+        "recommendation_reason": "High relevance: intent entities ['shopping', 'transaction'] directly align with this view's join pattern (customerId) and the requested metric 'total_spend' is served by this view."
+      },
+      {
+        "view_id": "browsing_to_spend_funnel",
+        "name": "Browsing Behaviour to Spend Conversion",
+        "description": "Correlates Unisys browsing session minutes with IBM spend amounts to reveal whether longer browsing sessions translate to higher spend.",
+        "entities_involved": [
+          "transaction",
+          "shopping"
+        ],
+        "systems_involved": [
+          "ibm",
+          "unisys"
+        ],
+        "join_key": "customerId",
+        "ibm_fields": [
+          "customerId",
+          "amount",
+          "date"
+        ],
+        "unisys_fields": [
+          "browsingSessionMinutes",
+          "cartStatus",
+          "merchant"
+        ],
+        "business_value": "Guides UX and marketing investment \u2014 if browsing time drives spend, improve product discovery; if not, optimise checkout conversion.",
+        "applicability_score": 0.75,
+        "recommended": true,
+        "recommendation_reason": "High relevance: intent entities ['shopping', 'transaction'] directly align with this view's join pattern (customerId) and the requested metric 'total_spend' is served by this view."
+      }
+    ],
+    "top_view": {
+      "view_id": "customer_spend_enriched",
+      "name": "Customer Spend with Behavioral Context",
+      "description": "Combines IBM transaction amounts (financial truth) with Unisys merchant, category, loyalty, browsing, and cart data to give a 360\u00b0 spending view per customer.",
+      "entities_involved": [
+        "transaction",
+        "shopping"
+      ],
+      "systems_involved": [
+        "ibm",
+        "unisys"
+      ],
+      "join_key": "customerId",
+      "ibm_fields": [
+        "transactionId",
+        "customerId",
+        "amount",
+        "date",
+        "transactionType"
+      ],
+      "unisys_fields": [
+        "merchant",
+        "category",
+        "loyaltyPoints",
+        "browsingSessionMinutes",
+        "cartStatus",
+        "merchantCategory"
+      ],
+      "business_value": "Enables product managers and analysts to understand not just HOW MUCH a customer spends but WHERE and HOW \u2014 unlocking loyalty segmentation, cart abandonment insights, and category-level marketing.",
+      "applicability_score": 1.0,
+      "recommended": true,
+      "recommendation_reason": "High relevance: intent entities ['shopping', 'transaction'] directly align with this view's join pattern (customerId) and the requested metric 'total_spend' is served by this view."
+    },
+    "federation_plan": {
+      "primary_source": "ibm",
+      "enrichment_source": "unisys",
+      "join_strategy": "left",
+      "join_key": "customerId",
+      "financial_authority": "IBM CardDemo is the authoritative source for all financial amounts. Unisys ePortal shopping amounts mirror IBM and must NOT be summed with IBM figures.",
+      "enrichment_fields": [
+        "merchant",
+        "category",
+        "loyaltyPoints",
+        "browsingSessionMinutes",
+        "cartStatus",
+        "merchantCategory"
+      ],
+      "execution_steps": [
+        "1. Resolve IBM intent entities -> fetch transaction records via IBM CardDemo dataset",
+        "2. Resolve Unisys intent entities -> query ePortal shopping API via MCP",
+        "3. Join IBM transactions + Unisys shopping on 'customerId' (left join - keep all IBM records)",
+        "4. Assert financial authority: use IBM 'amount' as total_spend - NEVER sum Unisys amounts",
+        "5. Attach Unisys enrichment fields: merchant, category, loyaltyPoints, browsingSessionMinutes ...",
+        "6. Compute federation metrics (category analysis, loyalty summary, cart analysis, browsing)",
+        "7. Record lineage for every output field",
+        "8. Apply governance controls and emit audit record"
+      ],
+      "double_counting_guard": "Unisys 'amount' == IBM 'transactionAmount'. total_spend = SUM(IBM amounts) only. Unisys contributes zero dollars to the total."
+    },
+    "federated_result": {
+      "view_id": "customer_spend_enriched",
+      "customerIds": [
+        "101"
+      ],
+      "dates": [
+        "2026-03-10"
+      ],
+      "federation": {
+        "total_spend": 2000.0,
+        "ibm_transaction_count": 1,
+        "unisys_enrichment_count": 3,
+        "unisys_observed_amount_total": 2000.0,
+        "amount_variance_unisys_minus_ibm": 0.0,
+        "note": "total_spend is computed from normalized IBM records only. Unisys normalized records provide behavioral enrichment and are not additive."
+      },
+      "behavioral_enrichment": {
+        "category_observed_amounts": {
+          "electronics": 1500.0,
+          "shopping": 500.0
+        },
+        "merchant_events": {
+          "Amazon": 1,
+          "Zomato": 1,
+          "Uber": 1
+        },
+        "merchant_observed_amounts": {
+          "Amazon": 1200.0,
+          "Zomato": 500.0,
+          "Uber": 300.0
+        },
+        "loyalty": {
+          "total_loyalty_points": 265
+        },
+        "cart_status_breakdown": {
+          "completed": 2,
+          "wishlisted": 1
+        },
+        "browsing": {
+          "total_browsing_minutes": 23
+        }
+      },
+      "reconciliation": {
+        "status": "matched",
+        "ibm_authoritative_total": 2000.0,
+        "unisys_observed_total": 2000.0,
+        "variance": 0.0,
+        "warning": null,
+        "rule": "Use IBM amount for total_spend; use Unisys amount only as observed behavior/enrichment."
+      },
+      "metadata": {
+        "input": "normalization_agent",
+        "join_key": "customer_id",
+        "source_record_count": 4,
+        "requested_metric": "total_spend"
+      },
+      "normalized_records": [
+        {
+          "source_system": "ibm",
+          "entity": "transaction",
+          "customer_id": "101",
+          "record_id": "TXN-20260310-101-001",
+          "amount": 2000.0,
+          "date": "2026-03-10",
+          "transaction_type": "DEBIT",
+          "merchant": null,
+          "category": null,
+          "enrichment": {},
+          "raw": {
+            "transactionId": "TXN-20260310-101-001",
+            "customerId": 101,
+            "amount": 2000.0,
+            "date": "2026-03-10",
+            "transactionType": "DEBIT"
+          }
+        },
+        {
+          "source_system": "unisys",
+          "entity": "shopping",
+          "customer_id": "101",
+          "record_id": null,
+          "amount": 1200.0,
+          "date": "2026-03-10",
+          "transaction_type": null,
+          "merchant": "Amazon",
+          "category": "electronics",
+          "enrichment": {
+            "loyaltyPoints": 120,
+            "browsingSessionMinutes": 12,
+            "cartStatus": "completed",
+            "merchantCategory": "electronics_premium"
+          },
+          "raw": {
+            "customerId": 101,
+            "merchant": "Amazon",
+            "amount": 1200.0,
+            "date": "2026-03-10",
+            "category": "electronics",
+            "loyaltyPoints": 120,
+            "browsingSessionMinutes": 12,
+            "cartStatus": "completed",
+            "merchantCategory": "electronics_premium"
+          }
+        },
+        {
+          "source_system": "unisys",
+          "entity": "shopping",
+          "customer_id": "101",
+          "record_id": null,
+          "amount": 500.0,
+          "date": "2026-03-10",
+          "transaction_type": null,
+          "merchant": "Zomato",
+          "category": "shopping",
+          "enrichment": {
+            "loyaltyPoints": 50,
+            "browsingSessionMinutes": 3,
+            "cartStatus": "completed",
+            "merchantCategory": "groceries"
+          },
+          "raw": {
+            "customerId": 101,
+            "merchant": "Zomato",
+            "amount": 500.0,
+            "date": "2026-03-10",
+            "category": "shopping",
+            "loyaltyPoints": 50,
+            "browsingSessionMinutes": 3,
+            "cartStatus": "completed",
+            "merchantCategory": "groceries"
+          }
+        },
+        {
+          "source_system": "unisys",
+          "entity": "shopping",
+          "customer_id": "101",
+          "record_id": null,
+          "amount": 300.0,
+          "date": "2026-03-10",
+          "transaction_type": null,
+          "merchant": "Uber",
+          "category": "electronics",
+          "enrichment": {
+            "loyaltyPoints": 95,
+            "browsingSessionMinutes": 8,
+            "cartStatus": "wishlisted",
+            "merchantCategory": "ride_hailing"
+          },
+          "raw": {
+            "customerId": 101,
+            "merchant": "Uber",
+            "amount": 300.0,
+            "date": "2026-03-10",
+            "category": "electronics",
+            "loyaltyPoints": 95,
+            "browsingSessionMinutes": 8,
+            "cartStatus": "wishlisted",
+            "merchantCategory": "ride_hailing"
+          }
+        }
+      ]
+    },
+    "lineage": [
+      {
+        "field": "transactionId",
+        "source_system": "ibm",
+        "source_entity": "transaction",
+        "transformation": null
+      },
+      {
+        "field": "customerId",
+        "source_system": "ibm",
+        "source_entity": "transaction",
+        "transformation": "join key \u2014 also present in Unisys"
+      },
+      {
+        "field": "amount",
+        "source_system": "ibm",
+        "source_entity": "transaction",
+        "transformation": "financial authority \u2014 do NOT add Unisys amount"
+      },
+      {
+        "field": "date",
+        "source_system": "ibm",
+        "source_entity": "transaction",
+        "transformation": "maps to Unisys 'date' field"
+      },
+      {
+        "field": "transactionType",
+        "source_system": "ibm",
+        "source_entity": "transaction",
+        "transformation": null
+      },
+      {
+        "field": "merchant",
+        "source_system": "unisys",
+        "source_entity": "shopping",
+        "transformation": "behavioral enrichment"
+      },
+      {
+        "field": "category",
+        "source_system": "unisys",
+        "source_entity": "shopping",
+        "transformation": "behavioral enrichment"
+      },
+      {
+        "field": "merchantCategory",
+        "source_system": "unisys",
+        "source_entity": "shopping",
+        "transformation": "behavioral enrichment"
+      },
+      {
+        "field": "loyaltyPoints",
+        "source_system": "unisys",
+        "source_entity": "shopping",
+        "transformation": "behavioral enrichment"
+      },
+      {
+        "field": "browsingSessionMinutes",
+        "source_system": "unisys",
+        "source_entity": "shopping",
+        "transformation": "behavioral enrichment"
+      },
+      {
+        "field": "cartStatus",
+        "source_system": "unisys",
+        "source_entity": "shopping",
+        "transformation": "behavioral enrichment"
+      }
+    ],
+    "governance": {
+      "audit_timestamp": "2026-04-29T15:20:34.297084Z",
+      "sources_accessed": [
+        "IBM CardDemo",
+        "Unisys ePortal"
+      ],
+      "join_key": "customerId",
+      "financial_authority": "IBM CardDemo",
+      "enrichment_authority": "Unisys ePortal",
+      "double_counting_protected": true,
+      "federation_executed": true,
+      "consumed_normalization_output": true,
+      "normalized_record_count": 4,
+      "overall_confidence": 0.932,
+      "entity_relationships_count": 3,
+      "views_evaluated": 5,
+      "amount_reconciliation": {
+        "status": "matched",
+        "ibm_authoritative_total": 2000.0,
+        "unisys_observed_total": 2000.0,
+        "variance": 0.0,
+        "warning": null,
+        "rule": "Use IBM amount for total_spend; use Unisys amount only as observed behavior/enrichment."
+      },
+      "llm_refinement": "applied",
+      "llm_governance_notes": [
+        "IBM CardDemo is the financial authority for total_spend. Unisys ePortal data is for behavioral enrichment only.",
+        "Ensure that IBM transaction amounts are used for calculating total_spend and that Unisys amounts are not summed to avoid double-counting."
+      ],
+      "llm_plan_notes": [
+        "The federation plan correctly identifies IBM CardDemo as the primary source for financial data and Unisys ePortal for enrichment.",
+        "The join strategy on 'customerId' is appropriate for linking transaction and shopping data.",
+        "The plan correctly emphasizes using IBM's 'amount' for total_spend and not summing Unisys amounts."
+      ]
+    },
+    "overall_confidence": 0.932,
+    "reasoning": "The 'customer_spend_enriched' view directly aligns with the intent to analyze 'shopping' and 'transaction' data for 'total_spend', incorporating both IBM's financial data and Unisys's behavioral enrichment. It is explicitly designed to provide a 360-degree view of customer spending."
+  },
+  "pipeline_stage": "consumer_ready",
+  "next_stage": "consumer_layer",
+  "summary": "Query: show total spend for customer 101 on 2026-03-10 with shopping behavior\nIntent: analyze on shopping, transaction (confidence: 100%)\nOutput: aggregate | Metric: total_spend | Aggregation: sum | Federation required\nContext: IBM: CBTRN03C \u2192 AWS.M2.CARDDEMO.TRANSACT.VSAM.KSDS | Unisys: /api/unisys/shopping (confidence: 92%)\nPlanning: completed | Steps: 2\nExecution: completed | Normalized records: 4\nFederation: 3 relationships found | Top view: 'Customer Spend with Behavioral Context' | Confidence: 93%"
+}

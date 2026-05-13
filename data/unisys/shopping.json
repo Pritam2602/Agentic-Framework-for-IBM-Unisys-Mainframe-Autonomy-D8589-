@@ -46,7 +46,7 @@
     {
         "customerId": 101,
         "merchant": "Uber",
-        "amount": 450.0,
+        "amount": 300.0,
         "date": "2026-03-10",
         "category": "electronics",
         "loyaltyPoints": 95,

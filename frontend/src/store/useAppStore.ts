@@ -5,7 +5,9 @@ export type ControlCenterPanel =
   | "intent"
   | "context"
   | "reasoning"
-  | "planner";
+  | "planner"
+  | "normalization"
+  | "federation";
 
 export interface IntentCondition {
   field: string;
@@ -73,6 +75,10 @@ export interface ContextData {
 export interface PipelineResponse {
   intent: IntentData;
   context: ContextData;
+  planner_json?: Record<string, unknown> | null;
+  execution?: Record<string, unknown> | null;
+  normalization?: Record<string, unknown> | null;
+  federation_intelligence?: Record<string, unknown> | null;
   pipeline_stage: string;
   next_stage: string;
   summary: string;
@@ -126,6 +132,7 @@ export interface AppState {
   context: ContextData | null;
   planner: Record<string, unknown> | null;
   execution: Record<string, unknown> | null;
+  normalization: Record<string, unknown> | null;
   federation: Record<string, unknown> | null;
   reasoning: ReasoningData | null;
   warnings: string[];
@@ -202,6 +209,9 @@ const deriveReasoning = (query: string, response: PipelineResponse): ReasoningDa
     `Intent mapped the request to ${response.intent.task} on ${response.intent.entities.join(", ")}.`,
     `Systems selected: ${response.intent.systems.join(", ")}.`,
     ...(response.context.reasoning_summary ? [response.context.reasoning_summary] : []),
+    ...(response.execution ? ["Execution Agent ran the planner handoff and returned step results."] : []),
+    ...(response.normalization ? ["Normalization Agent mapped execution outputs into common canonical records."] : []),
+    ...(response.federation_intelligence ? ["Federation Intelligence consumed normalized records to recommend a federated view."] : []),
     ...nonOperationalMessages,
   ];
 
@@ -273,7 +283,7 @@ const deriveValidation = (response: PipelineResponse): ValidationData => {
       },
       {
         label: "Planner readiness",
-        status: response.next_stage === "planner_agent" ? "pass" : "warn",
+        status: response.planner_json ? "pass" : "warn",
         detail: `Next orchestration handoff: ${response.next_stage}.`,
       },
     ],
@@ -331,6 +341,7 @@ const initialState = (): Omit<
   context: null,
   planner: null,
   execution: null,
+  normalization: null,
   federation: null,
   reasoning: null,
   warnings: [],
@@ -381,16 +392,23 @@ state = {
     updateState({
       intent: response.intent,
       context: response.context,
-      planner: null,
-      execution: null,
-      federation: null,
+      planner: response.planner_json ?? null,
+      execution: response.execution ?? null,
+      normalization: response.normalization ?? null,
+      federation: response.federation_intelligence ?? null,
       reasoning,
-      warnings,
+      warnings: [
+        ...warnings,
+        ...((response.normalization as { warnings?: string[] } | null | undefined)?.warnings ?? []),
+      ],
       validation: deriveValidation(response),
       trace: {
         pipeline_stage: response.pipeline_stage,
         next_stage: response.next_stage,
         systems_checked: response.context.systems_checked,
+        execution_status: (response.execution as { status?: string } | null | undefined)?.status,
+        normalized_records: (response.normalization as { summary?: { total_records?: number } } | null | undefined)?.summary?.total_records,
+        federation_view: (response.federation_intelligence as { top_view?: { view_id?: string } } | null | undefined)?.top_view?.view_id,
       },
       pipelineStage: response.pipeline_stage,
       summary: response.summary,

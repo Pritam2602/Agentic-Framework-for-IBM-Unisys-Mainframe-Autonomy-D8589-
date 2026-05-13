@@ -38,6 +38,14 @@ const getStages = (pipelineStage: string, loading: boolean, nextStage: string | 
     completed.add("execution");
     completed.add("federation");
     active = "federation";
+  } else if (pipelineStage === "consumer_ready") {
+    completed.add("intent");
+    completed.add("context");
+    completed.add("planner");
+    completed.add("execution");
+    completed.add("normalization");
+    completed.add("federation");
+    active = "consumer";
   }
 
   const base: Array<Omit<VisualStage, "status">> = [
@@ -49,7 +57,8 @@ const getStages = (pipelineStage: string, loading: boolean, nextStage: string | 
       detail: nextStage === "planner_agent" ? "Next stage is queued for planning." : "Execution plan not generated yet.",
     },
     { id: "execution", label: "Execution", detail: "Run APIs or jobs when planner is ready." },
-    { id: "federation", label: "Federation", detail: "Assemble the final business output." },
+    { id: "normalization", label: "Normalization", detail: "Map outputs into common records." },
+    { id: "federation", label: "Federation", detail: "Recommend and assemble federated views." },
   ];
 
   return base.map((stage) => ({
@@ -77,7 +86,7 @@ export const PipelineVisualization = ({ pipelineStage, loading, nextStage }: Pro
         <h2 className="text-base font-semibold text-cyan-300">Pipeline Status</h2>
       </div>
       <div className="space-y-4">
-        <div className="grid gap-3 md:grid-cols-5">
+        <div className="grid gap-3 md:grid-cols-6">
           {stages.map((stage, index) => (
             <div key={stage.id} className="flex items-center gap-3 md:block">
               <div

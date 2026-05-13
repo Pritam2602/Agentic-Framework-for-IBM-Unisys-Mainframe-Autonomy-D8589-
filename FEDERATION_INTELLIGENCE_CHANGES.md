@@ -1,168 +1,340 @@
-# Federation Intelligence Layer — Changes & Achievements
+# Federation Intelligence Layer - Changes & Achievements
+
+## Current Architecture
+
+The Federation Intelligence Layer now follows the architecture from the shared diagram:
+
+```text
+Intent Agent
+-> Context Resolution Agent
+-> Planning Layer
+-> Execution Layer
+-> Normalization Layer
+-> Federation Intelligence Layer
+-> Consumer Layer
+```
+
+The repo now includes a local Planner Agent. `/api/pipeline/run` passes Intent and
+Context output to the Planner Agent, then sends the planner output to the Execution
+Agent, then to the Normalization Agent, and Federation Intelligence consumes the
+Normalization Agent output.
+
+---
 
 ## What Was Built
 
-A fully working **Federation Intelligence Layer** that slots between the Normalization Layer
-and the Consumer Layer in the COMMUNICATOR stack. It identifies cross-system entity
-relationships, scores and ranks federated business views against the current user intent,
-generates a structured federation execution plan, executes the chosen view to return real
-federated data, and records lineage and governance metadata for every field.
+A working **LLM-backed Federation Intelligence Layer** that consumes normalized IBM
+and Unisys records, identifies cross-system relationships, ranks federated business
+views, builds a federation plan, produces lineage/governance metadata, and returns a
+consumer-ready federated result.
+
+The layer is grounded-first:
+
+- deterministic logic builds relationships, candidate views, lineage, and governance;
+- the LLM refines the best view selection, reasoning, confidence, and notes;
+- the LLM can only choose from grounded candidate view IDs;
+- IBM remains the financial authority and Unisys remains behavioral enrichment.
 
 ---
 
 ## Files Created
 
+### `planner_agent/__init__.py`
+
+Package entry point. Exports `PlannerAgent`, `PlannerOutput`, `PlannerStep`, and
+the planner API request/response models.
+
+### `planner_agent/schemas.py`
+
+Defines the Planner Agent contract: a safe execution plan with ordered steps,
+data dependencies, federation join keys, normalization requirements, governance
+controls, warnings, and reasoning.
+
+### `planner_agent/agent.py`
+
+Builds a grounded execution plan from Intent and Context output.
+
+- Creates IBM dataset and Unisys API steps when those systems are resolved.
+- Selects relevant IBM access commands from the local Zowe command catalog.
+- Includes catalog command metadata and rendered Zowe command text in the planner JSON.
+- Produces the classic `execution_sequence`, `parallel_groups`,
+  `estimated_duration_seconds`, and `rollback_plan` fields expected from an
+  execution planner.
+- Preserves extracted filters such as `customerId` and date.
+- Marks `customerId` as the preferred federation join key.
+- Adds governance controls for lineage, safe mock execution, IBM financial
+  authority, and Unisys enrichment-only behavior.
+- Optionally asks the LLM to refine strategy, reasoning, warnings, and governance
+  notes without inventing new execution targets.
+
+### `app/api/planner.py`
+
+Adds Planner Agent endpoints:
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/planner/run` | Creates a planner output from intent and context |
+| `GET` | `/api/planner/health` | Planner health and capability check |
+
+### `app/mock_zos/simulator.py`
+
+Adds a local mock z/OS simulator for safe Zowe command execution without a real
+mainframe. It parses common Zowe command strings and returns z/OS-like responses
+from local mock data.
+
+Supported examples:
+
+- `zowe files view ds "..."`
+- `zowe files list ds "..."`
+- `zowe zos-jobs submit ...`
+- `zowe zos-jobs list/view ...`
+- `zowe zos-workflows list/view ...`
+- `zowe zosmf info`
+
+Dataset reads map CardDemo-style dataset names to local IBM JSON records.
+
+### `app/api/mock_zos.py`
+
+Adds mock z/OS endpoints:
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/mock-zos/execute` | Simulates a Zowe command locally |
+| `GET` | `/api/mock-zos/health` | Lists supported mock z/OS command families |
+
 ### `federation_intelligence/__init__.py`
-Package entry point. Exports `run_federation_intelligence` (the agent's main function)
-and `FederationIntelligenceOutput` so callers need only one import.
+
+Package entry point. Exports `run_federation_intelligence` and
+`FederationIntelligenceOutput`.
 
 ### `federation_intelligence/schemas.py`
-Pydantic v2 models defining the layer's contract:
+
+Defines the Federation Intelligence contract:
 
 | Model | Purpose |
-|-------|---------|
-| `EntityRelationship` | One cross-system entity link (source/target entity, system, join key, relationship type, confidence, reasoning) |
-| `FederatedView` | One candidate business view — its entities, IBM fields, Unisys fields, business value, applicability score, and recommendation reason |
-| `FederationPlan` | How to execute: join strategy, financial-authority rule, enrichment fields, 8-step execution sequence, double-counting guard |
-| `LineageRecord` | Per-field data lineage — which system and entity each output field comes from |
-| `FederationIntelligenceOutput` | Full layer output combining all of the above plus federated data, governance metadata, confidence, and reasoning |
-| `FederationAnalyzeRequest` | POST /api/federation/analyze request body |
-| `FederationExecuteRequest` | POST /api/federation/execute request body |
+| --- | --- |
+| `EntityRelationship` | Cross-system entity link with source/target systems, join key, relationship type, confidence, and reasoning |
+| `FederatedView` | Candidate business view with IBM fields, Unisys enrichment fields, business value, score, and recommendation reason |
+| `FederationPlan` | Join strategy, financial-authority rule, enrichment fields, execution steps, and double-counting guard |
+| `LineageRecord` | Field-level source system/entity lineage |
+| `FederationIntelligenceOutput` | Relationships, recommended views, top view, plan, federated result, lineage, governance, confidence, and reasoning |
+| `FederationAnalyzeRequest` | Request body for `/api/federation/analyze`; now accepts `normalized_output` and `use_llm` |
+| `FederationExecuteRequest` | Request body for `/api/federation/execute` |
 
 ### `federation_intelligence/entity_graph.py`
-Builds a relationship graph across IBM and Unisys entities.
 
-- Maintains a **relationship catalog** of 3 pre-defined cross-system links
-  (transaction→shopping, account→shopping, customer→shopping) with confidence scores
-  and reasoning derived from `mock_eportal/entity_mapping.json`.
-- `build_entity_graph(intent_entities)` — returns all relationships relevant to the
-  entities in the current intent.
-- `_infer_relationships()` — fallback inference when entities are not in the catalog,
-  using system-ownership rules to guess plausible join keys.
-- `resolve_join_key()` — picks the most common join key across all discovered relationships.
+Builds relationship graphs across IBM and Unisys entities.
+
+- Maintains known links such as `transaction -> shopping`, `account -> shopping`,
+  and `customer -> shopping`.
+- Uses `mock_eportal/entity_mapping.json` when available.
+- Falls back to system-ownership inference when the exact relationship is not in
+  the catalog.
+- Resolves the common join key, usually `customerId`.
 
 ### `federation_intelligence/view_recommender.py`
-Scores and ranks the federated view catalog against the current intent.
 
-**Catalog of 5 federated business views:**
+Scores and ranks the federated view catalog.
 
-| view_id | Business question answered |
-|---------|---------------------------|
-| `customer_spend_enriched` | 360° spend view — IBM amounts + all Unisys behavioral context |
-| `merchant_category_spend` | Where does the customer spend by merchant and category? |
-| `loyalty_spend_correlation` | How much loyalty value is earned per dollar spent? |
-| `cart_conversion_analysis` | How do cart decisions translate to IBM-confirmed spend? |
-| `browsing_to_spend_funnel` | Does longer browsing drive higher spend? |
+Available views:
 
-Scoring weighs: entity overlap (35 %), metric match (25 %), task type (20 %),
-federation flag (15 %), dual-system presence (5 %).
+| view_id | Business question |
+| --- | --- |
+| `customer_spend_enriched` | IBM spend with Unisys behavioral context |
+| `merchant_category_spend` | Spend grouped by merchant/category enrichment |
+| `loyalty_spend_correlation` | Loyalty value compared with IBM spend |
+| `cart_conversion_analysis` | Cart behavior and confirmed spend impact |
+| `browsing_to_spend_funnel` | Browsing behavior versus spend |
+
+Scoring weighs entity overlap, metric match, task type, federation requirement,
+and dual-system presence.
 
 ### `federation_intelligence/executor.py`
-Executes any of the 5 federated views for a given `customerId` (and optional date)
-by calling the existing functions in `app/federation/shopping_federation.py`.
-Each view returns a structured dict with IBM financial data, Unisys enrichment,
-and explicit notes preventing double-counting.
+
+Still supports direct execution of the 5 named federated views for a `customerId`
+and optional date using `app/federation/shopping_federation.py`.
+
+This direct execution path is retained for testing and backward compatibility.
+The preferred pipeline path is now:
+
+```text
+Execution Agent -> Normalization Agent -> Federation Intelligence
+```
 
 ### `federation_intelligence/agent.py`
-The main orchestrator — `run(intent, context, execute)`:
 
-1. Extract intent entities and `requires_federation` flag.
-2. Call `entity_graph.build_entity_graph()` to discover relationships.
-3. Call `view_recommender.recommend_views()` to rank all 5 views.
-4. Select the top-scoring view.
-5. Call `_build_federation_plan()` to produce the 8-step execution plan.
-6. Build field-level lineage (11 fields: 5 IBM, 6 Unisys).
-7. If `execute=True` and a `customerId` filter is present, call `executor.execute_view()`.
-8. Compute overall confidence from relationship confidence (40 %), context confidence (35 %),
-   and view applicability (25 %).
-9. Build governance metadata (timestamp, sources, double-counting protection flag, etc.).
-10. Return `FederationIntelligenceOutput`.
+Main orchestrator:
+
+1. Reads normalized records from `normalized_output`.
+2. Derives entities from normalized canonical records when available.
+3. Builds entity relationships and candidate federated views.
+4. Builds the federation plan and lineage.
+5. Produces a federated result from normalized records.
+6. Computes IBM-only total spend from normalized IBM records.
+7. Treats normalized Unisys records as enrichment only.
+8. Reports Unisys observed amount totals separately and flags reconciliation
+   variance when Unisys enrichment amounts do not match the IBM financial total.
+9. Adds governance metadata including `consumed_normalization_output`.
+10. Optionally invokes the LLM to refine top view, reasoning, confidence, and notes.
+11. Returns `FederationIntelligenceOutput`.
+
+If `normalized_output` is not supplied, the agent can still fall back to direct
+view execution when `execute=True` and a `customerId` filter exists.
 
 ---
 
 ## Files Modified
 
-### `app/api/federation_intelligence.py` *(new)*
-Four REST endpoints:
+### `app/api/federation_intelligence.py`
+
+Endpoints:
 
 | Method | Path | Purpose |
-|--------|------|---------|
-| `POST` | `/api/federation/analyze` | Full Federation Intelligence: intent + context in, complete output out |
-| `POST` | `/api/federation/execute` | Direct federated view execution by customerId and view_id |
-| `GET` | `/api/federation/views` | Catalog of all 5 available federated views |
-| `GET` | `/api/federation/health` | Health check with capability list |
+| --- | --- | --- |
+| `POST` | `/api/federation/analyze` | Runs Federation Intelligence from intent, context, optional normalized output, and `use_llm` |
+| `POST` | `/api/federation/execute` | Directly executes a named federated view |
+| `GET` | `/api/federation/views` | Lists all federated view definitions |
+| `GET` | `/api/federation/health` | Health and capability check |
 
 ### `app/api/pipeline.py`
-Added **Step 3: Federation Intelligence** to the `/api/pipeline/run` endpoint.
-The pipeline now runs: Intent Agent → Context Resolution Agent → Federation Intelligence.
-`PipelineResponse` gained a `federation_intelligence` field.
-The summary line now includes relationship count, top view name, and federation confidence.
-`/api/pipeline/health` now reports `federation_intelligence: ready`.
+
+`/api/pipeline/run` now orchestrates the full agent chain:
+
+```text
+Intent -> Context -> Planner -> Execution -> Normalization -> Federation Intelligence
+```
+
+`PipelineResponse` now includes:
+
+- `planner_json`
+- `execution`
+- `normalization`
+- `federation_intelligence`
+
+The final pipeline stage is now `consumer_ready`, and `next_stage` is
+`consumer_layer`.
+
+### `app/execution/dataset_executor.py`
+
+Added simulated IBM transaction fetching from `data/ibm/transactions.json`, filtered
+by `customerId` and date. This lets Execution Agent return real mock IBM records for
+Normalization Agent to canonicalize.
+
+### `execution_agent/agent.py`
+
+Recognizes transaction-fetch planner steps as IBM dataset work.
+
+In `safe_mock` mode, Zowe command strings from the Planner Agent are now routed
+through the mock z/OS simulator instead of requiring a real z/OS connection.
+
+### `normalization_agent/agent.py`
+
+Deduplicates canonical records so federation totals are not inflated when the
+execution response contains both step-level results and aggregated canonical output.
 
 ### `app/main.py`
-- Imported and registered `federation_router` (`/api/federation/*`).
-- Added `/api/federation/analyze` and `/api/federation/views` to the root endpoint's
-  `endpoints` map.
-- Added `"federation_intelligence": "ready"` to the `/health` response.
+
+Registers all relevant routers:
+
+- `/api/execution/*`
+- `/api/normalization/*`
+- `/api/federation/*`
+
+### Frontend
+
+Updated the execution page to show the expanded flow:
+
+```text
+Intent -> Context -> Planner -> Execution -> Normalization -> Federation
+```
+
+The frontend now stores and displays:
+
+- planner output;
+- execution status;
+- normalized record count;
+- federation top view and full federation output.
 
 ---
 
-## What the Layer Achieves
+## Role of Federation Intelligence
 
-### Entity Relationship Discovery
-Given any user intent, the layer identifies every meaningful cross-system relationship
-between IBM and Unisys entities. Each relationship includes its join key, type
-(enrichment / reconciliation / reference / mirror), confidence score, and a plain-English
-reasoning string derived from the live entity mapping catalog.
+Federation Intelligence is no longer just a shortcut after context resolution.
+Its intended role is now:
 
-### Federated View Recommendation
-The layer scores all 5 business views against the current intent and returns them in
-ranked order. Each view specifies exactly which IBM fields (financial truth) and Unisys
-fields (behavioral enrichment) are combined, along with the business value and a
-recommendation reason tailored to the intent.
+- consume normalized IBM and Unisys records;
+- discover entity relationships;
+- choose join keys;
+- recommend federated business views;
+- combine canonical records into a business-ready output;
+- preserve lineage;
+- enforce governance and double-counting rules;
+- provide LLM-generated reasoning over grounded candidates.
 
-### Federation Plan Generation
-A structured, 8-step execution plan is produced for every request. It names the primary
-source (IBM), the enrichment source (Unisys), the join strategy (left join on customerId),
-and includes an explicit double-counting guard preventing Unisys amounts from being added
-to IBM amounts.
+Critical rule:
 
-### Federation Execution
-When a `customerId` filter is present in the intent, the layer executes the top-ranked
-view and returns real federated data: IBM spend totals, transaction counts, and full
-Unisys behavioral enrichment (category breakdown, merchant insights, loyalty summary,
-browsing metrics, cart analysis).
+```text
+total_spend = SUM(normalized IBM amounts only)
+```
 
-### Data Lineage
-Every output field is tagged with its source system, source entity, and any
-transformation applied — 11 fields across 5 IBM + 6 Unisys columns.
-
-### Governance Metadata
-Each response carries: audit timestamp (UTC), sources accessed, join key used,
-financial authority declaration, enrichment authority declaration, double-counting
-protection flag, execution flag, overall confidence score, relationship count, and
-views evaluated count.
-
-### Pipeline Integration
-The full `/api/pipeline/run` endpoint now delivers all three layers in one call:
-intent understanding, context resolution, and federation intelligence — with a unified
-summary string covering all three stages.
+Unisys shopping amounts are not added to IBM amounts. They provide enrichment such as
+merchant, category, loyalty points, browsing minutes, cart status, and merchant
+category.
 
 ---
 
-## Verified Behaviour (smoke test)
+## LLM Behaviour
 
-Input: analyze intent on `[transaction, shopping]` for `total_spend`, customer 101, date 2026-03-10.
+Federation Intelligence uses the same LLM pattern as the other agents:
+
+```text
+grounded deterministic output -> LLM refinement -> schema-validated response
+```
+
+The LLM receives:
+
+- intent summary;
+- context summary;
+- discovered relationships;
+- candidate federated views;
+- current top view;
+- federation plan;
+- governance metadata.
+
+The LLM returns strict JSON with:
+
+- `recommended_view_id`;
+- `overall_confidence`;
+- `reasoning`;
+- `governance_notes`;
+- `plan_notes`.
+
+The agent only accepts a `recommended_view_id` that exists in the candidate catalog.
+
+---
+
+## Verified Behaviour
+
+Smoke test query:
+
+```text
+show total spend for customer 101 on 2026-03-10 with shopping behavior
+```
+
+Verified output:
 
 | Output | Value |
-|--------|-------|
-| Entity relationships discovered | 3 |
-| Views ranked | 5 (all views) |
-| Top view | `customer_spend_enriched` (score 1.0) |
-| Federation plan steps | 8 |
-| Lineage fields tracked | 11 |
-| IBM total spend (customer 101, 2026-03-10) | $2,000.00 |
-| IBM transaction count | 1 |
-| Top spending category (Unisys) | electronics |
-| Overall confidence | 91.1 % |
+| --- | --- |
+| `/api/pipeline/run` status | 200 |
+| Pipeline stage | `consumer_ready` |
+| Execution result present | Yes |
+| Normalized records | 4 |
+| IBM normalized records | 1 |
+| Unisys normalized records | 3 |
+| Federation consumed normalization output | Yes |
+| Federated total spend | 2000.0 |
 | Double-counting protected | Yes |
+| Frontend TypeScript | Pass (`npx tsc --noEmit`) |
+
+Note: `npm run build` may fail on Windows with an `esbuild spawn EPERM` issue in this
+environment, but TypeScript validation passed.

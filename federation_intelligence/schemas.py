@@ -97,9 +97,17 @@ class FederationAnalyzeRequest(BaseModel):
 
     intent: Dict[str, Any] = Field(description="IntentOutput serialized as dict")
     context: Dict[str, Any] = Field(description="ContextOutput serialized as dict")
+    normalized_output: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="NormalizationAgent response serialized as dict; preferred input for federation",
+    )
     execute: bool = Field(
         default=True,
         description="If True and a customerId filter exists, run the federation and return real data",
+    )
+    use_llm: bool = Field(
+        default=True,
+        description="If True, use the LLM to refine view selection and reasoning over grounded candidates",
     )
 
 

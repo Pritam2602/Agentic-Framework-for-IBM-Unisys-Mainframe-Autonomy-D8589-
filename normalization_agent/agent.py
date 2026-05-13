@@ -150,8 +150,23 @@ class NormalizationAgent:
 
     def _normalize_records(self, execution_output: Dict[str, Any]) -> List[CanonicalRecord]:
         records: List[CanonicalRecord] = []
+        seen: set[tuple[Any, ...]] = set()
         for source_system, raw_record in self._iter_source_records(execution_output):
-            records.append(self._to_canonical_record(source_system, raw_record))
+            record = self._to_canonical_record(source_system, raw_record)
+            key = (
+                record.source_system,
+                record.entity,
+                record.record_id,
+                record.customer_id,
+                record.date,
+                record.amount,
+                record.merchant,
+                record.category,
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            records.append(record)
         return records
 
     def _iter_source_records(self, payload: Any, source_hint: str = "unknown") -> Iterable[tuple[str, Dict[str, Any]]]:

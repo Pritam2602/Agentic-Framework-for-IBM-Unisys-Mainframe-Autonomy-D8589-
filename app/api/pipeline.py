@@ -17,9 +17,12 @@ class PipelineRequest(BaseModel):
 
 
 class PipelineResponse(BaseModel):
-    """Full pipeline response with intent + context + federation intelligence"""
+    """Full pipeline response across the agent architecture"""
     intent: Dict[str, Any]
     context: Dict[str, Any]
+    planner_json: Optional[Dict[str, Any]] = None
+    execution: Optional[Dict[str, Any]] = None
+    normalization: Optional[Dict[str, Any]] = None
     federation_intelligence: Optional[Dict[str, Any]] = None
     pipeline_stage: str
     next_stage: str
@@ -57,17 +60,56 @@ async def run_pipeline(request: PipelineRequest):
         # Step 2: Context Resolution Agent
         from context_resolution_agent import ContextResolutionAgent
 
-        context_agent = ContextResolutionAgent()
+        context_agent = ContextResolutionAgent(enable_llm=request.enable_llm)
         context = await context_agent.resolve_async(intent_dict)
         context_dict = context.model_dump()
 
-        # Step 3: Federation Intelligence Layer
+        # Step 3: Planner Agent
+        from planner_agent import PlannerAgent
+
+        planner_agent = PlannerAgent(enable_llm=request.enable_llm)
+        planner_result = planner_agent.run(
+            intent=intent_dict,
+            context=context_dict,
+            use_llm=request.enable_llm,
+            mode="safe_mock",
+        )
+        planner_json = planner_result.canonical_output
+
+        # Step 4: Execution Agent
+        from execution_agent import ExecutionAgent
+
+        execution_agent = ExecutionAgent(enable_llm=request.enable_llm)
+        execution_result = execution_agent.run(
+            planner_json=planner_json,
+            intent=intent_dict,
+            context=context_dict,
+            dry_run=False,
+            mode="safe_mock",
+        )
+        execution_dict = execution_result.model_dump(mode="json")
+
+        # Step 5: Normalization Agent
+        from normalization_agent import NormalizationAgent
+
+        normalization_agent = NormalizationAgent(enable_llm=request.enable_llm)
+        normalization_result = normalization_agent.run(
+            execution_output=execution_dict,
+            intent=intent_dict,
+            context=context_dict,
+            use_llm=request.enable_llm,
+        )
+        normalization_dict = normalization_result.model_dump(mode="json")
+
+        # Step 6: Federation Intelligence Layer consumes normalized output
         from federation_intelligence import run_federation_intelligence
 
         fed_result = run_federation_intelligence(
             intent=intent_dict,
             context=context_dict,
+            normalized_output=normalization_dict,
             execute=True,
+            enable_llm=request.enable_llm,
         )
         fed_dict = fed_result.model_dump()
 
@@ -91,6 +133,10 @@ async def run_pipeline(request: PipelineRequest):
             f"{' | Federation required' if intent.requires_federation else ''}\n"
             f"Context: {' | '.join(system_parts) or 'No systems resolved'} "
             f"(confidence: {context.resolution_confidence:.0%})\n"
+            f"Planning: {planner_result.status} | "
+            f"Steps: {len(planner_result.plan.steps)}\n"
+            f"Execution: {execution_result.status} | "
+            f"Normalized records: {normalization_result.summary.total_records}\n"
             f"Federation: {len(fed_result.entity_relationships)} relationships found | "
             f"Top view: '{top_view_name}' | "
             f"Confidence: {fed_result.overall_confidence:.0%}"
@@ -99,9 +145,12 @@ async def run_pipeline(request: PipelineRequest):
         return PipelineResponse(
             intent=intent_dict,
             context=context_dict,
+            planner_json=planner_json,
+            execution=execution_dict,
+            normalization=normalization_dict,
             federation_intelligence=fed_dict,
-            pipeline_stage="federation_intelligence_complete",
-            next_stage="planner_agent",
+            pipeline_stage="consumer_ready",
+            next_stage="consumer_layer",
             summary=summary,
         )
 
@@ -122,7 +171,7 @@ async def pipeline_health():
             "intent_agent": "ready",
             "context_resolution_agent": "ready",
             "federation_intelligence": "ready",
-            "planner_agent": "not_implemented",
+            "planner_agent": "ready",
             "execution_agents": "ready",
             "normalization_agent": "ready",
         }

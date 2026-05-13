@@ -115,15 +115,17 @@ class ContextResolutionAgent:
     metadata and Unisys MCP tool manifests.
     """
 
-    def __init__(self, model=None, eportal_url: str = None):
+    def __init__(self, model=None, eportal_url: str = None, enable_llm: bool = True):
         self.ibm_resolver = IBMContextResolver()
         self.unisys_resolver = UnisysContextResolver(base_url=eportal_url)
         self.model = model
-        self._init_llm()
+        self._init_llm(enable_llm=enable_llm)
 
-    def _init_llm(self):
+    def _init_llm(self, enable_llm: bool = True):
         """Initialize the LLM model if not provided"""
-        if self.model is None:
+        if not enable_llm:
+            self.model = None
+        elif self.model is None:
             self.model = build_llm_model(logger=logger)
             if self.model is not None:
                 candidates = getattr(self.model, "model_candidates", [])

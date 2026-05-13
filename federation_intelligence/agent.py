@@ -3,7 +3,14 @@
 from __future__ import annotations
 
 import datetime
+import json
+import logging
+import re
 from typing import Any, Dict, List, Optional
+
+from langchain_core.prompts import ChatPromptTemplate
+
+from intent_agent.config import build_llm_model
 
 from .entity_graph import build_entity_graph, resolve_join_key
 from .executor import execute_view
@@ -15,6 +22,31 @@ from .schemas import (
     LineageRecord,
 )
 from .view_recommender import recommend_views
+
+logger = logging.getLogger(__name__)
+
+
+FEDERATION_INTELLIGENCE_SYSTEM_PROMPT = """
+You are an enterprise Federation Intelligence Agent for IBM + Unisys data federation.
+
+Your job is to reason over grounded entity relationships, candidate federated views,
+lineage, governance metadata, and the user's intent. You may recommend the best view
+ONLY from the provided candidate view IDs.
+
+Critical domain rule:
+- IBM CardDemo is the financial authority for all spend/amount totals.
+- Unisys ePortal shopping data is behavioral enrichment only.
+- NEVER recommend summing IBM amount + Unisys amount for total_spend.
+
+Return STRICT JSON only:
+{{
+  "recommended_view_id": "one of the candidate view IDs",
+  "overall_confidence": 0.0,
+  "reasoning": "short business-readable explanation",
+  "governance_notes": ["short audit/governance note"],
+  "plan_notes": ["short execution or lineage note"]
+}}
+"""
 
 
 _IBM_LINEAGE_TEMPLATE: List[Dict[str, str]] = [
@@ -155,14 +187,214 @@ def _build_reasoning(
     )
 
 
+def _records_from_normalized(normalized_output: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    if not normalized_output:
+        return []
+    records = normalized_output.get("records")
+    if isinstance(records, list):
+        return [record for record in records if isinstance(record, dict)]
+    canonical = normalized_output.get("canonical_output", {})
+    data = canonical.get("data") if isinstance(canonical, dict) else None
+    if isinstance(data, list):
+        return [record for record in data if isinstance(record, dict)]
+    return []
+
+
+def _entities_from_normalized(records: List[Dict[str, Any]]) -> List[str]:
+    entities = []
+    for record in records:
+        entity = record.get("entity")
+        if entity and entity not in entities:
+            entities.append(str(entity))
+    return entities
+
+
+def _build_normalized_federated_result(
+    records: List[Dict[str, Any]],
+    top_view: Optional[FederatedView],
+    intent: Dict[str, Any],
+) -> Dict[str, Any]:
+    ibm_records = [record for record in records if record.get("source_system") == "ibm"]
+    unisys_records = [record for record in records if record.get("source_system") == "unisys"]
+
+    ibm_total = round(
+        sum(float(record.get("amount") or 0) for record in ibm_records),
+        2,
+    )
+
+    category_totals: Dict[str, float] = {}
+    merchant_events: Dict[str, int] = {}
+    merchant_observed_amounts: Dict[str, float] = {}
+    loyalty_points = 0
+    cart_statuses: Dict[str, int] = {}
+    browsing_minutes = 0
+    unisys_observed_total = 0.0
+
+    for record in unisys_records:
+        observed_amount = float(record.get("amount") or 0)
+        unisys_observed_total += observed_amount
+        category = record.get("category") or "unknown"
+        category_totals[category] = round(
+            category_totals.get(category, 0) + observed_amount,
+            2,
+        )
+        merchant = record.get("merchant")
+        if merchant:
+            merchant_events[merchant] = merchant_events.get(merchant, 0) + 1
+            merchant_observed_amounts[merchant] = round(
+                merchant_observed_amounts.get(merchant, 0) + observed_amount,
+                2,
+            )
+        enrichment = record.get("enrichment") or {}
+        loyalty_points += int(enrichment.get("loyaltyPoints") or 0)
+        cart_status = enrichment.get("cartStatus")
+        if cart_status:
+            cart_statuses[cart_status] = cart_statuses.get(cart_status, 0) + 1
+        browsing_minutes += int(enrichment.get("browsingSessionMinutes") or 0)
+
+    customer_ids = sorted(
+        {str(record.get("customer_id")) for record in records if record.get("customer_id")}
+    )
+    dates = sorted({str(record.get("date")) for record in records if record.get("date")})
+    unisys_observed_total = round(unisys_observed_total, 2)
+    amount_variance = round(unisys_observed_total - ibm_total, 2)
+    reconciliation_status = "matched" if amount_variance == 0 else "variance_detected"
+    reconciliation_warning = None
+    if amount_variance != 0:
+        reconciliation_warning = (
+            "Unisys observed shopping amounts do not reconcile exactly to the IBM "
+            "financial total for the same filter. IBM remains authoritative for "
+            "total_spend; Unisys amounts are retained only as behavioral/enrichment "
+            "signals and must not be summed into the ledger total."
+        )
+
+    return {
+        "view_id": top_view.view_id if top_view else "normalized_federated_view",
+        "customerIds": customer_ids,
+        "dates": dates,
+        "federation": {
+            "total_spend": ibm_total,
+            "ibm_transaction_count": len(ibm_records),
+            "unisys_enrichment_count": len(unisys_records),
+            "unisys_observed_amount_total": unisys_observed_total,
+            "amount_variance_unisys_minus_ibm": amount_variance,
+            "note": (
+                "total_spend is computed from normalized IBM records only. "
+                "Unisys normalized records provide behavioral enrichment and are not additive."
+            ),
+        },
+        "behavioral_enrichment": {
+            "category_observed_amounts": category_totals,
+            "merchant_events": merchant_events,
+            "merchant_observed_amounts": merchant_observed_amounts,
+            "loyalty": {"total_loyalty_points": loyalty_points},
+            "cart_status_breakdown": cart_statuses,
+            "browsing": {"total_browsing_minutes": browsing_minutes},
+        },
+        "reconciliation": {
+            "status": reconciliation_status,
+            "ibm_authoritative_total": ibm_total,
+            "unisys_observed_total": unisys_observed_total,
+            "variance": amount_variance,
+            "warning": reconciliation_warning,
+            "rule": "Use IBM amount for total_spend; use Unisys amount only as observed behavior/enrichment.",
+        },
+        "metadata": {
+            "input": "normalization_agent",
+            "join_key": "customer_id",
+            "source_record_count": len(records),
+            "requested_metric": intent.get("metric"),
+        },
+        "normalized_records": records,
+    }
+
+
+def _llm_refine_output(
+    output: FederationIntelligenceOutput,
+    intent: Dict[str, Any],
+    context: Dict[str, Any],
+    model: Any,
+) -> FederationIntelligenceOutput:
+    """Use an LLM to refine view choice and explanation over grounded candidates."""
+    if model is None or not output.recommended_views:
+        return output
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", FEDERATION_INTELLIGENCE_SYSTEM_PROMPT),
+            ("user", "{federation_request}"),
+        ]
+    )
+    request = {
+        "intent": intent,
+        "context_summary": {
+            "resolution_confidence": context.get("resolution_confidence"),
+            "is_federation": context.get("is_federation"),
+            "systems_checked": context.get("systems_checked"),
+        },
+        "entity_relationships": [
+            relationship.model_dump() for relationship in output.entity_relationships
+        ],
+        "candidate_views": [view.model_dump() for view in output.recommended_views],
+        "current_top_view": output.top_view.model_dump() if output.top_view else None,
+        "federation_plan": output.federation_plan.model_dump(),
+        "governance": output.governance,
+    }
+
+    try:
+        chain = prompt | model
+        result = chain.invoke({"federation_request": json.dumps(request, default=str)})
+        json_match = re.search(r"\{[\s\S]*\}", result.content)
+        if not json_match:
+            raise ValueError("No JSON found in LLM output")
+        data = json.loads(json_match.group())
+    except Exception as exc:
+        logger.warning("[Federation Intelligence] LLM refinement failed: %s", exc)
+        output.governance["llm_refinement"] = "fallback_grounded"
+        return output
+
+    candidate_by_id = {view.view_id: view for view in output.recommended_views}
+    recommended_id = data.get("recommended_view_id")
+    if recommended_id in candidate_by_id:
+        selected = candidate_by_id[recommended_id]
+        output.recommended_views = [
+            selected,
+            *[view for view in output.recommended_views if view.view_id != recommended_id],
+        ]
+        output.top_view = selected
+        output.federation_plan = _build_federation_plan(output.entity_relationships, selected)
+
+    confidence = data.get("overall_confidence")
+    if isinstance(confidence, (int, float)):
+        grounded = output.overall_confidence
+        output.overall_confidence = round(
+            min(max((grounded * 0.7) + (float(confidence) * 0.3), 0.0), 0.97),
+            3,
+        )
+        output.governance["overall_confidence"] = output.overall_confidence
+
+    if data.get("reasoning"):
+        output.reasoning = str(data["reasoning"])
+
+    output.governance["llm_refinement"] = "applied"
+    output.governance["llm_governance_notes"] = data.get("governance_notes", [])
+    output.governance["llm_plan_notes"] = data.get("plan_notes", [])
+    return output
+
+
 def run(
     intent: Dict[str, Any],
     context: Dict[str, Any],
+    normalized_output: Optional[Dict[str, Any]] = None,
     execute: bool = True,
+    model: Any = None,
+    enable_llm: bool = True,
 ) -> FederationIntelligenceOutput:
     """Entry point for the Federation Intelligence Agent."""
 
-    intent_entities: List[str] = intent.get("entities", [])
+    normalized_records = _records_from_normalized(normalized_output)
+    normalized_entities = _entities_from_normalized(normalized_records)
+    intent_entities: List[str] = normalized_entities or intent.get("entities", [])
     requires_federation: bool = intent.get("requires_federation", False)
 
     if not intent_entities and not requires_federation:
@@ -179,7 +411,14 @@ def run(
     federated_result: Optional[Dict[str, Any]] = None
     executed = False
 
-    if execute:
+    if normalized_records:
+        federated_result = _build_normalized_federated_result(
+            normalized_records,
+            top_view,
+            intent,
+        )
+        executed = True
+    elif execute:
         customer_id = _extract_customer_id(intent)
         if customer_id is not None:
             date = _extract_date(intent)
@@ -198,12 +437,20 @@ def run(
         "enrichment_authority": "Unisys ePortal",
         "double_counting_protected": True,
         "federation_executed": executed,
+        "consumed_normalization_output": bool(normalized_records),
+        "normalized_record_count": len(normalized_records),
         "overall_confidence": confidence,
         "entity_relationships_count": len(relationships),
         "views_evaluated": len(views),
     }
 
-    return FederationIntelligenceOutput(
+    if isinstance(federated_result, dict) and federated_result.get("reconciliation"):
+        reconciliation = federated_result["reconciliation"]
+        governance["amount_reconciliation"] = reconciliation
+        if reconciliation.get("status") == "variance_detected":
+            governance["reconciliation_warning"] = reconciliation.get("warning")
+
+    grounded_output = FederationIntelligenceOutput(
         entity_relationships=relationships,
         recommended_views=views,
         top_view=top_view,
@@ -214,3 +461,15 @@ def run(
         overall_confidence=confidence,
         reasoning=reasoning,
     )
+
+    if enable_llm:
+        llm_model = model if model is not None else build_llm_model(logger=logger)
+        return _llm_refine_output(
+            output=grounded_output,
+            intent=intent,
+            context=context,
+            model=llm_model,
+        )
+
+    grounded_output.governance["llm_refinement"] = "disabled"
+    return grounded_output

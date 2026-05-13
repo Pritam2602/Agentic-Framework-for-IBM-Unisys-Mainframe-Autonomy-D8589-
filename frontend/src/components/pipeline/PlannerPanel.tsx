@@ -15,6 +15,7 @@ export interface PlanData {
 interface Props {
   intent: IntentData | null;
   context: ContextData | null;
+  planner: Record<string, unknown> | null;
   nextStage: string | null;
 }
 
@@ -66,8 +67,15 @@ const badgeClass = (system?: ExecutionStep["system"]) => {
   return "border-violet-500/30 bg-violet-500/10 text-violet-200";
 };
 
-export const PlannerPanel = ({ intent, context, nextStage }: Props) => {
+export const PlannerPanel = ({ intent, context, planner, nextStage }: Props) => {
   const plan = buildPlanPreview(intent, context);
+  const plannerSteps = Array.isArray((planner as { steps?: unknown[] } | null)?.steps)
+    ? ((planner as { steps: Array<Record<string, unknown>> }).steps)
+    : null;
+  const commandForStep = (step: Record<string, unknown>) => {
+    const command = step.command ?? step.zowe_command ?? step.command_text;
+    return typeof command === "string" && command.trim().length > 0 ? command : null;
+  };
 
   return (
     <section className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6">
@@ -79,11 +87,39 @@ export const PlannerPanel = ({ intent, context, nextStage }: Props) => {
           <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Next Stage</p>
           <p className="mt-2 text-lg font-semibold text-slate-100">{nextStage ?? "Planner not assigned"}</p>
           <p className="mt-2 text-sm text-slate-400">
-            The backend has not produced a full planner artifact yet, so this panel shows the execution design that would be passed downstream.
+            {planner
+              ? "The backend produced a Planner Agent execution plan and passed it to the Execution Agent."
+              : "The backend has not produced a planner artifact yet, so this panel shows the execution design that would be passed downstream."}
           </p>
         </div>
 
-        {plan ? (
+        {plannerSteps ? (
+          <div className="space-y-3">
+            {plannerSteps.map((step, index) => (
+              <div key={`${step.step_id ?? index}`} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-slate-100">
+                      Step {String(step.order ?? index + 1)}: {String(step.action ?? step.description ?? "Execute")}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-400">{String(step.description ?? step.expected_output ?? "")}</p>
+                    {commandForStep(step) ? (
+                      <div className="mt-3 rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Command</p>
+                        <code className="mt-1 block break-words text-xs leading-5 text-emerald-200">
+                          {commandForStep(step)}
+                        </code>
+                      </div>
+                    ) : null}
+                  </div>
+                  <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${badgeClass(step.system as ExecutionStep["system"])}`}>
+                    {String(step.system ?? "federation").toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : plan ? (
           <div className="space-y-3">
             {plan.steps.map((step) => (
               <div key={step.step} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
