@@ -8,3 +8,4 @@ export { PlannerPanel } from "./PlannerPanel";
 export type { ExecutionStep, PlanData } from "./PlannerPanel";
 
 export { ReasoningPanel } from "./ReasoningPanel";
+export { ObservabilityPanel } from "./ObservabilityPanel";

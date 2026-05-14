@@ -126,6 +126,20 @@
         "transactionType": "DEBIT"
     },
     {
+        "transactionId": "TXN-20260322-103-007",
+        "customerId": 103,
+        "amount": 10500.0,
+        "date": "2026-03-22",
+        "transactionType": "DEBIT"
+    },
+    {
+        "transactionId": "TXN-20260402-103-008",
+        "customerId": 103,
+        "amount": 15000.0,
+        "date": "2026-04-02",
+        "transactionType": "DEBIT"
+    },
+    {
         "transactionId": "TXN-20260309-104-001",
         "customerId": 104,
         "amount": 1340.0,

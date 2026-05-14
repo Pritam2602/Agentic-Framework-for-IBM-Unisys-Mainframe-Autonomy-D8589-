@@ -31,13 +31,23 @@ The application contains these major parts:
    - Unisys provides `loyaltyPoints`, merchant, and category context.
    - Reward-point prompts now prefer the `loyalty_spend_correlation` federated view.
 
+4. Fraud and Risk Detection
+   - IBM/Zowe provides authoritative transactions.
+   - Unisys/ePortal provides same-day shopping behavior: merchant, cart status, browsing time, and observed amount.
+   - The federation layer scores each IBM transaction using explainable rules:
+     `high_value_outlier`, `missing_behavioral_context`,
+     `abandoned_cart_with_charge`, `instant_high_spend`, and
+     `ibm_unisys_amount_divergence`.
+   - Verdicts are `genuine`, `suspicious`, or `likely_fraud`, with low/medium/high bands and per-signal evidence.
+   - Fraud-related prompts prefer the `fraud_risk_assessment` federated view.
+
 ## Demo Dataset Coverage
 
 The local data has been expanded so demos can show meaningful discovery across multiple customers, merchants, categories, reward-point patterns, cart states, and browsing behavior.
 
 - IBM customers: 10
 - IBM accounts: 10
-- IBM transactions: 60, with 6 transactions per customer
+- IBM transactions: 62, with two extra high-risk records for customer 103 to anchor the fraud demo
 - Unisys shopping enrichment records: 120, with 12 shopping events per customer
 - Merchant coverage: Amazon, Flipkart, Swiggy, Zomato, Uber, Myntra, BigBasket, MakeMyTrip, Croma, BookMyShow, Nykaa, Decathlon
 - Category coverage: electronics, food, travel, shopping, fashion, grocery, entertainment, beauty, fitness
@@ -120,6 +130,8 @@ Related implementation:
 - `federation_intelligence/recommendations.py`: LLM-based Discovery Recommendation Agent
 - `federation_intelligence/agent.py`
 - `federation_intelligence/view_recommender.py`
+- `federation_intelligence/executor.py`
+- `app/federation/fraud_federation.py`: deterministic fraud/risk scoring rules
 - `mock_eportal/schema/shopping_schema.json`
 - `frontend/src/pages/ExecutionPage.tsx`
 
@@ -151,6 +163,41 @@ Related implementation:
 - `mock_eportal/mcp_server.py`
 - `mock_eportal/services/shopping_service.py`
 - `app/api/federation_intelligence.py`
+
+## Observability Implementation
+
+The application now includes a built-in observability layer for the full pipeline.
+
+Backend coverage:
+
+- Request correlation middleware injects `X-Request-ID`.
+- `/api/pipeline/run` returns `request_id`, `total_duration_ms`, `stage_timings`, `stage_reasoning`, `pipeline_status`, `errors`, and an `observability` object.
+- Per-stage timings are captured for intent, context resolution, planner, execution, normalization, and federation intelligence.
+- Domain checks track join-key match rate, IBM amount authority, governance violations, LLM fallback, systems checked, and normalized record counts.
+- `/metrics` and `/api/observability/metrics` expose Prometheus-compatible metrics.
+- `/api/observability/summary` and `/api/observability/runs` expose recent-run telemetry backed by SQLite persistence.
+- `/api/observability/events` and `/api/observability/stream` expose live event history and server-sent events.
+- `/api/observability/llm-usage` exposes persisted token/cost usage when provider metadata is available.
+- Optional OpenTelemetry + Jaeger/OTLP tracing is enabled by `OTEL_ENABLED=true`.
+- Optional LangSmith tracing hooks are documented in `LANGSMITH_INTEGRATION.md`.
+- Prometheus alerts and Grafana dashboard JSON are under `observability/`.
+
+Frontend coverage:
+
+- The Control Center has an **Observability** panel.
+- The panel displays latest request ID, total latency, stage timings, domain checks, stage reasoning, and errors.
+
+Related implementation:
+
+- `app/observability/`
+- `app/middleware/observability.py`
+- `app/api/observability.py`
+- `app/api/pipeline.py`
+- `observability/prometheus_alerts.yml`
+- `observability/grafana_dashboard.json`
+- `frontend/src/components/pipeline/ObservabilityPanel.tsx`
+- `frontend/src/pages/ExecutionPage.tsx`
+- `frontend/src/store/useAppStore.ts`
 
 ## LLM Model Used By Agents
 
@@ -207,8 +254,8 @@ Backend FastAPI:
 - `POST /api/normalization/run`: normalization agent.
 - `POST /api/federation/analyze`: federation intelligence.
 - `POST /api/federation/execute`: execute a federated view.
-- `GET /api/federation/views`: federated view catalog.
-- `POST /api/federation/discover`: grounded capability discovery.
+- `GET /api/federation/views`: federated view catalog, including `fraud_risk_assessment`.
+- `POST /api/federation/discover`: grounded capability discovery, including fraud capability signals.
 - `GET /api/federation/write-feasibility`: save/update feasibility summary.
 
 Mock ePortal:
@@ -253,6 +300,7 @@ python mock_eportal/mcp_server.py
 - Federation test confirmed reward-point requests select `loyalty_spend_correlation`.
 - Discovery test confirmed inventory is available after phase-two onboarding when explicitly requested.
 - Recommendation smoke check confirmed shopping queries produce next-action prompts for inventory, rewards, merchant analytics, and cart conversion.
+- Fraud smoke check (`python verify_fraud_use_case.py`) confirmed fraud queries route to `fraud_risk_assessment` and produce high-band risk signals from seeded customer 103 transactions.
 
 ## AI Usage Disclosure
 

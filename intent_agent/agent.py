@@ -83,6 +83,13 @@ CRITICAL RULES:
      explicitly asks for shopping behavior/enrichment (merchant, category, loyalty,
      browsing, cart, Unisys/ePortal)
 
+7. FRAUD AND RISK:
+   - If the user mentions fraud, risk, suspicious, unusual, anomalous, or genuine
+     transactions, treat it as a federation request:
+     entities=["transaction","shopping"], systems=["ibm","unisys"],
+     attributes include "fraud_risk", task="analyze", output_mode="insight",
+     requires_federation=true.
+
 Return STRICT JSON ONLY (no markdown, no backticks):
 
 {{
@@ -209,6 +216,7 @@ NOTES:
                 data["priority"] = infer_priority(data["task"])
 
             self._apply_metric_routing(data, source_text)
+            self._apply_fraud_routing(data, source_text)
 
             data["requires_federation"] = self.normalizer.infer_federation_requirement(
                 data.get("entities", []),
@@ -358,6 +366,7 @@ NOTES:
             "priority": priority
         }
         self._apply_metric_routing(fallback_data, text)
+        self._apply_fraud_routing(fallback_data, text)
         entities = fallback_data["entities"]
         attributes = fallback_data["attributes"]
         systems = fallback_data["systems"]
@@ -399,6 +408,59 @@ NOTES:
             priority=priority,
             confidence_score=confidence
         )
+
+    @staticmethod
+    def _is_fraud_intent(data: dict[str, Any], source_text: str) -> bool:
+        text_lower = (source_text or "").lower()
+        fraud_phrases = (
+            "fraud",
+            "fraudulent",
+            "risky",
+            "risk score",
+            "risk assessment",
+            "risk detection",
+            "suspicious",
+            "unusual transaction",
+            "unusual activity",
+            "anomaly",
+            "anomalous",
+            "genuine transaction",
+            "fake transaction",
+            "unauthorized",
+            "unauthorised",
+        )
+        if any(phrase in text_lower for phrase in fraud_phrases):
+            return True
+        attributes = {str(attr).lower() for attr in data.get("attributes", [])}
+        return "fraud_risk" in attributes
+
+    def _apply_fraud_routing(self, data: dict[str, Any], source_text: str) -> None:
+        """Ensure fraud/risk queries surface IBM transactions and Unisys shopping."""
+        if not self._is_fraud_intent(data, source_text):
+            return
+
+        for entity in ("transaction", "shopping"):
+            if entity not in data["entities"]:
+                data["entities"].append(entity)
+        data["entities"] = self.normalizer.apply_entity_priority(data["entities"])
+
+        for system in ("ibm", "unisys"):
+            if system not in data["systems"]:
+                data["systems"].append(system)
+
+        attributes = data.setdefault("attributes", [])
+        if "fraud_risk" not in attributes:
+            attributes.append("fraud_risk")
+        for attr in DEFAULT_ENTITY_ATTRIBUTES.get("transaction", []):
+            if attr not in attributes:
+                attributes.append(attr)
+
+        data["requires_federation"] = True
+        if data.get("task") in {"fetch", None, ""}:
+            data["task"] = "analyze"
+            data["priority"] = infer_priority(data["task"])
+        if data.get("output_mode") in {None, "records"}:
+            data["output_mode"] = "insight"
 
     def _apply_metric_routing(self, data: dict[str, Any], source_text: str) -> None:
         """Enforce domain-specific routing for aggregate spend requests."""

@@ -91,9 +91,40 @@ def build_llm_model(
             try:
                 if logger:
                     logger.info(f"Using Gemini model {model_name}")
-                return model.invoke(input_value)
+                result = model.invoke(input_value)
+                try:
+                    from app.observability import get_current_llm_stage
+                    from app.observability.llm_usage import record_llm_usage
+
+                    stage = get_current_llm_stage()
+                    record_llm_usage(
+                        stage=stage,
+                        model=model_name,
+                        response=result,
+                        metadata={
+                            "candidate_count": len(initialized_models),
+                            "source": "ChatGoogleGenerativeAI.invoke",
+                        },
+                    )
+                except Exception:
+                    pass
+                return result
             except Exception as exc:
                 last_error = exc
+                try:
+                    from app.observability import get_current_llm_stage
+                    from app.observability.live import publish_event
+
+                    publish_event(
+                        {
+                            "type": "llm_error",
+                            "stage": get_current_llm_stage(),
+                            "model": model_name,
+                            "error": str(exc),
+                        }
+                    )
+                except Exception:
+                    pass
                 if logger:
                     logger.warning(f"Gemini invoke failed for {model_name}: {exc}")
                 continue

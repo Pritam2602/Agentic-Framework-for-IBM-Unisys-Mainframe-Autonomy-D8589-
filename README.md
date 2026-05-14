@@ -6,6 +6,7 @@ The current demo focuses on AWS Card Dataset use cases:
 
 - Customer Shopping 360
 - Loyalty & Rewards Optimization
+- Fraud & Risk Detection
 
 IBM is treated as the financial authority for transaction amounts. Unisys ePortal provides behavioral enrichment such as merchant, category, loyalty points, browsing time, cart status, and merchant category.
 
@@ -149,8 +150,10 @@ Discovers cross-system relationships, recommends federated views, executes view 
 - `loyalty_spend_correlation`
 - `cart_conversion_analysis`
 - `browsing_to_spend_funnel`
+- `fraud_risk_assessment`
 
 Reward-point or loyalty prompts are routed toward `loyalty_spend_correlation`.
+Fraud/risk prompts are routed toward `fraud_risk_assessment`.
 
 ## Demo Dataset
 
@@ -158,13 +161,27 @@ The local demo dataset has been expanded for more realistic discovery and federa
 
 - IBM customers: 10
 - IBM accounts: 10
-- IBM transactions: 60, with 6 transactions per customer
+- IBM transactions: 62, including two intentionally suspicious customer 103 transactions for fraud/risk testing
 - Unisys shopping enrichment records: 120, with 12 shopping events per customer
 - Merchants represented: Amazon, Flipkart, Swiggy, Zomato, Uber, Myntra, BigBasket, MakeMyTrip, Croma, BookMyShow, Nykaa, Decathlon
 - Categories represented: electronics, food, travel, shopping, fashion, grocery, entertainment, beauty, fitness
 - Shopping enrichment includes loyalty points, browsing minutes, cart status, and merchant category
 
 The Unisys shopping records are generated from IBM transaction customer/date/amount context by `generate_shopping_data.py`, then enriched with deterministic merchant, category, loyalty, browsing, and cart behavior. The Unisys amount remains behavioral/reference context and must not be added to IBM spend.
+
+## Fraud & Risk Detection
+
+Fraud and risk prompts join IBM transactions with same-day Unisys shopping behavior and route to the `fraud_risk_assessment` view.
+
+The scoring logic is deterministic and explainable. It evaluates:
+
+- high-value outliers against the customer's IBM transaction baseline
+- IBM charges with missing same-day Unisys shopping context
+- charges paired with abandoned or wishlisted carts
+- high spend with very short browsing time
+- IBM ledger amount divergence from Unisys observed shopping amount
+
+Each transaction receives a risk score, band, verdict, fired rules, and evidence. IBM remains the financial authority; Unisys is used only as behavioral validation context.
 
 ## Capability Discovery
 
@@ -220,6 +237,38 @@ Guardrails:
 - Unisys `amount` is not added to IBM `transactionAmount`.
 - Writes are limited to Unisys enrichment/context data.
 - Updates use `customerId + date + merchant` as the stable event key.
+
+## Observability
+
+The pipeline emits built-in observability data for every `/api/pipeline/run` request:
+
+- request correlation through `X-Request-ID`
+- end-to-end pipeline duration
+- per-stage timings for intent, context, planner, execution, normalization, and federation
+- stage reasoning for dashboard explainability
+- domain checks for join-key match rate, IBM amount authority, governance violations, LLM fallback, and record counts
+- optional OpenTelemetry spans and Jaeger/OTLP export
+- optional LangSmith trace contexts around pipeline stages
+- LLM token/cost tracking when provider metadata is available
+- SQLite persistence in `data/observability.sqlite3`
+- live server-sent events for stage and LLM activity
+
+Runtime endpoints:
+
+- `GET /metrics`: Prometheus-compatible metrics
+- `GET /api/observability/summary`: aggregate run summary
+- `GET /api/observability/runs`: recent pipeline runs
+- `GET /api/observability/events`: recent live events
+- `GET /api/observability/stream`: live SSE event stream
+- `GET /api/observability/llm-usage`: persisted LLM usage entries
+
+The frontend Control Center includes an **Observability** panel that displays the latest request ID, timings, reasoning, and domain health checks.
+
+External observability assets:
+
+- `observability/grafana_dashboard.json`
+- `observability/prometheus_alerts.yml`
+- `observability/README.md`
 
 ## LLM Model Used
 
@@ -326,6 +375,10 @@ Show shopping data for customer 101 on 2026-03-10
 
 ```text
 Show reward points for customer 101
+```
+
+```text
+Run fraud and risk assessment for customer 103
 ```
 
 ```text

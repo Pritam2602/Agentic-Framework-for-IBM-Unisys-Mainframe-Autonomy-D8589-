@@ -1,0 +1,47 @@
+groups:
+  - name: communicator-pipeline-alerts
+    rules:
+      - alert: CommunicatorPipelineHighLatency
+        expr: communicator_pipeline_duration_ms > 2000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "COMMUNICATOR pipeline latency is above target"
+          description: "Average retained pipeline duration exceeded 2000ms."
+
+      - alert: CommunicatorPipelineFailures
+        expr: communicator_pipeline_runs_total{status="failed"} > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "COMMUNICATOR pipeline failures detected"
+          description: "One or more pipeline runs failed."
+
+      - alert: CommunicatorJoinKeyMatchLow
+        expr: communicator_join_key_match_rate < 0.99
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Join key match rate below target"
+          description: "Latest IBM/Unisys join key match rate is below 99%."
+
+      - alert: CommunicatorAmountAuthorityViolation
+        expr: communicator_amount_authority_violations_total > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "IBM amount authority violation detected"
+          description: "A run violated the IBM-as-financial-authority rule."
+
+      - alert: CommunicatorLLMFallbackSpike
+        expr: communicator_llm_fallback_total{stage="pipeline"} > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LLM fallback count is rising"
+          description: "The pipeline is relying on deterministic fallback more often than expected."

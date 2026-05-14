@@ -71,6 +71,7 @@ async def execute(request: FederationExecuteRequest) -> Dict[str, Any]:
       - loyalty_spend_correlation
       - cart_conversion_analysis
       - browsing_to_spend_funnel
+      - fraud_risk_assessment
     """
     try:
         result = execute_view(

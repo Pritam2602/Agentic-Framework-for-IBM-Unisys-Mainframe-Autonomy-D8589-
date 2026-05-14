@@ -55,6 +55,19 @@ RELATED_CAPABILITY_HINTS: Dict[str, List[Dict[str, Any]]] = {
             "reason": "Shopping records include merchantCategory and category.",
             "evidence_fields": ["merchantCategory", "category"],
         },
+        {
+            "entity": "fraud_risk",
+            "status": "available",
+            "discovery_type": "related_capability",
+            "confidence": 0.88,
+            "source": "ibm.transaction + shopping.cartStatus + shopping.browsingSessionMinutes + shopping.amount",
+            "relationship": "transaction -> shopping (behavioral validation)",
+            "reason": (
+                "IBM transactions can be scored for fraud by checking whether same-day "
+                "Unisys shopping behavior supports the ledger entry."
+            ),
+            "evidence_fields": ["amount", "cartStatus", "browsingSessionMinutes", "merchant"],
+        },
     ]
 }
 
@@ -206,6 +219,7 @@ def discover_capabilities(intent: Dict[str, Any]) -> Dict[str, Any]:
             {"from": "merchant_category", "to": "inventory", "relationship": "maps to stock and availability context"},
             {"from": "shopping", "to": "loyalty", "relationship": "contains loyaltyPoints"},
             {"from": "shopping", "to": "cart", "relationship": "contains cartStatus"},
+            {"from": "transaction", "to": "fraud_risk", "relationship": "validated by shopping behavior"},
         ],
         "capability_recommendations": [
             {
@@ -228,6 +242,15 @@ def discover_capabilities(intent: Dict[str, Any]) -> Dict[str, Any]:
                     "Inventory schema/data are onboarded."
                     if "inventory" in entity_names
                     else "Merchant-category metadata suggests a possible inventory relationship."
+                ),
+            },
+            {
+                "capability": "fraud_risk_detection",
+                "discovery_type": "related_capability",
+                "confidence": 0.88,
+                "reason": (
+                    "IBM transactions can be cross-checked against Unisys shopping behavior "
+                    "(cart status, browsing time, amount divergence) for fraud signals."
                 ),
             },
         ],

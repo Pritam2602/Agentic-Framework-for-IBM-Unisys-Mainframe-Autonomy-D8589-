@@ -17,6 +17,7 @@ from app.federation.shopping_federation import (
     IBM_TRANSACTIONS,
     UNISYS_SHOPPING,
 )
+from app.federation.fraud_federation import assess_transaction_risk
 
 
 def execute_view(
@@ -36,6 +37,8 @@ def execute_view(
         return _cart_conversion_analysis(customer_id, date)
     elif view_id == "browsing_to_spend_funnel":
         return _browsing_to_spend_funnel(customer_id, date)
+    elif view_id == "fraud_risk_assessment":
+        return assess_transaction_risk(customer_id, date)
     else:
         return _customer_spend_enriched(customer_id, date)
 

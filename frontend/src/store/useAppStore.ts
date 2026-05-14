@@ -8,6 +8,7 @@ export type ControlCenterPanel =
   | "planner"
   | "normalization"
   | "federation"
+  | "observability"
   | "zoweCatalog";
 
 export interface IntentCondition {
@@ -83,6 +84,13 @@ export interface PipelineResponse {
   pipeline_stage: string;
   next_stage: string;
   summary: string;
+  request_id?: string;
+  total_duration_ms?: number;
+  stage_timings?: Record<string, number>;
+  stage_reasoning?: Record<string, string[]>;
+  pipeline_status?: string;
+  errors?: Array<Record<string, unknown>>;
+  observability?: Record<string, unknown>;
 }
 
 export interface ValidationItem {
@@ -139,6 +147,7 @@ export interface AppState {
   warnings: string[];
   validation: ValidationData | null;
   trace: Record<string, unknown> | null;
+  observability: Record<string, unknown> | null;
   loading: boolean;
   error: string | null;
   health: SystemHealth;
@@ -348,6 +357,7 @@ const initialState = (): Omit<
   warnings: [],
   validation: null,
   trace: null,
+  observability: null,
   loading: false,
   error: null,
   health: {
@@ -404,13 +414,20 @@ state = {
       ],
       validation: deriveValidation(response),
       trace: {
+        request_id: response.request_id,
         pipeline_stage: response.pipeline_stage,
         next_stage: response.next_stage,
+        pipeline_status: response.pipeline_status,
+        total_duration_ms: response.total_duration_ms,
+        stage_timings: response.stage_timings,
+        stage_reasoning: response.stage_reasoning,
+        errors: response.errors,
         systems_checked: response.context.systems_checked,
         execution_status: (response.execution as { status?: string } | null | undefined)?.status,
         normalized_records: (response.normalization as { summary?: { total_records?: number } } | null | undefined)?.summary?.total_records,
         federation_view: (response.federation_intelligence as { top_view?: { view_id?: string } } | null | undefined)?.top_view?.view_id,
       },
+      observability: response.observability ?? null,
       pipelineStage: response.pipeline_stage,
       summary: response.summary,
       nextStage: response.next_stage,

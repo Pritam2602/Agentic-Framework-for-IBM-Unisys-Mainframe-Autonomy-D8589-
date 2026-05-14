@@ -16,5 +16,7 @@ node_modules/
 .DS_Store
 database/*.db
 !database/.gitkeep
+data/observability.sqlite3*
+data/observability_llm_usage.jsonl
 *.pdf
 *.docx

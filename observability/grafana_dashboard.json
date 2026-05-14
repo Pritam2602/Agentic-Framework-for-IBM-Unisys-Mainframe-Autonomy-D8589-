@@ -1,0 +1,79 @@
+{
+  "title": "COMMUNICATOR Pipeline Observability",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "tags": ["communicator", "federation", "observability"],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Pipeline Success Rate",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "communicator_pipeline_success_rate",
+          "legendFormat": "success rate"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Average Pipeline Duration ms",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "communicator_pipeline_duration_ms",
+          "legendFormat": "duration"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Join Key Match Rate",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "communicator_join_key_match_rate",
+          "legendFormat": "join match"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Amount Authority Violations",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "targets": [
+        {
+          "expr": "communicator_amount_authority_violations_total",
+          "legendFormat": "violations"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Stage Duration ms",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "communicator_stage_duration_ms",
+          "legendFormat": "{{stage}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "LLM Token Usage",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "communicator_llm_tokens_total",
+          "legendFormat": "{{model}} {{kind}}"
+        }
+      ]
+    }
+  ]
+}

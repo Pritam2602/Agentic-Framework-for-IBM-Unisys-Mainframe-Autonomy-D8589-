@@ -24,6 +24,8 @@ Use only the grounded intent, context, and capability metadata provided.
 Do not claim that a related capability was executed in the current answer.
 If inventory is related, phrase it as an exploration unless the current intent
 explicitly asks for inventory.
+If fraud/risk is related, suggest explainable fraud-risk follow-ups grounded in
+IBM transactions and Unisys behavioral validation signals.
 
 Return STRICT JSON only:
 {{
@@ -74,6 +76,10 @@ def _fallback_recommendations(
     customer_suffix = _customer_prompt_suffix(intent)
 
     recommendations: List[Dict[str, Any]] = []
+    fraud_intent = bool(
+        attributes & {"fraud_risk"}
+        or entities & {"fraud", "risk"}
+    )
 
     if "shopping" in entities:
         if not requested_inventory:
@@ -120,6 +126,54 @@ def _fallback_recommendations(
                 },
             ]
         )
+        if not fraud_intent:
+            recommendations.append(
+                {
+                    "id": "fraud_risk_check",
+                    "title": "Check Fraud / Risk Signals",
+                    "prompt": f"Run fraud and risk assessment{customer_suffix} using IBM transactions and Unisys behavior.",
+                    "reason": (
+                        "IBM transactions can be cross-checked with Unisys cart status, "
+                        "browsing time, and observed amount to detect suspicious charges."
+                    ),
+                    "related_entity": "fraud_risk",
+                    "relationship": "transaction -> shopping (behavioral validation)",
+                    "confidence": 0.82,
+                }
+            )
+
+    if fraud_intent:
+        recommendations.extend(
+            [
+                {
+                    "id": "fraud_high_value_outliers",
+                    "title": "List High-Value Outliers",
+                    "prompt": f"List transactions whose amount is at least three times the average{customer_suffix}.",
+                    "reason": "High-value outliers vs the customer's baseline are a primary fraud signal.",
+                    "related_entity": "transaction",
+                    "relationship": "transaction -> customer baseline",
+                    "confidence": 0.86,
+                },
+                {
+                    "id": "fraud_abandoned_cart_charge",
+                    "title": "Inspect Abandoned-Cart Charges",
+                    "prompt": f"Show IBM charges that occurred on dates with only abandoned/wishlisted Unisys carts{customer_suffix}.",
+                    "reason": "Charges without supporting completed-cart behavior look suspicious.",
+                    "related_entity": "shopping",
+                    "relationship": "transaction -> shopping.cartStatus",
+                    "confidence": 0.84,
+                },
+                {
+                    "id": "fraud_missing_context",
+                    "title": "Find Charges Without Behavior",
+                    "prompt": f"Show high-value IBM transactions with no matching Unisys shopping events{customer_suffix}.",
+                    "reason": "Material charges with no behavioral evidence are common fraud indicators.",
+                    "related_entity": "transaction",
+                    "relationship": "transaction -> shopping (date join)",
+                    "confidence": 0.8,
+                },
+            ]
+        )
 
     if "inventory" in entities or requested_inventory:
         recommendations.extend(
@@ -143,6 +197,11 @@ def _fallback_recommendations(
                     "confidence": 0.78,
                 },
             ]
+        )
+
+    if fraud_intent:
+        recommendations.sort(
+            key=lambda item: 0 if str(item.get("id", "")).startswith("fraud_") else 1
         )
 
     seen: set[str] = set()

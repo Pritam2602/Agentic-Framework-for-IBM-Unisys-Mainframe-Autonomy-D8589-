@@ -119,6 +119,36 @@ VIEW_CATALOG: List[Dict[str, Any]] = [
         "trigger_metrics": {"average_spend"},
         "trigger_tasks": {"analyze"},
     },
+    {
+        "view_id": "fraud_risk_assessment",
+        "name": "Fraud and Risk Detection",
+        "description": (
+            "Scores IBM transactions for fraud risk by joining each charge with the "
+            "customer's Unisys shopping behavior on the same date. High-value outliers, "
+            "missing behavioral context, abandoned-cart-with-charge, instant-spend, and "
+            "IBM/Unisys amount divergence each contribute explainable signals."
+        ),
+        "entities_involved": ["transaction", "shopping"],
+        "systems_involved": ["ibm", "unisys"],
+        "join_key": "customerId + date",
+        "ibm_fields": ["transactionId", "customerId", "amount", "date", "transactionType"],
+        "unisys_fields": [
+            "merchant",
+            "category",
+            "amount",
+            "cartStatus",
+            "browsingSessionMinutes",
+            "merchantCategory",
+        ],
+        "business_value": (
+            "Lets fraud and risk teams validate whether each high-value or unusual "
+            "transaction is supported by genuine shopping behavior. Every verdict is "
+            "auditable with the rules that fired and the evidence they used."
+        ),
+        "trigger_entities": {"transaction", "shopping"},
+        "trigger_metrics": None,
+        "trigger_tasks": {"analyze", "reconcile", "compare", "discover"},
+    },
 ]
 
 
@@ -155,6 +185,27 @@ def _score_view(view_def: Dict[str, Any], intent: Dict[str, Any]) -> float:
             score += 0.30
         elif "loyaltypoints" in unisys_fields:
             score += 0.10
+
+    fraud_terms = {
+        "fraud",
+        "fraudulent",
+        "fraud_risk",
+        "risk",
+        "risky",
+        "suspicious",
+        "unusual",
+        "anomaly",
+        "anomalous",
+        "genuine",
+        "fake",
+        "unauthorized",
+        "unauthorised",
+    }
+    if intent_terms & fraud_terms:
+        if view_def.get("view_id") == "fraud_risk_assessment":
+            score += 0.45
+        else:
+            score -= 0.05
 
     if requires_federation:
         score += 0.15
@@ -199,6 +250,24 @@ def recommend_views(
         str(intent.get("task") or "").lower(),
     })
     loyalty_intent = bool(intent_terms & {"reward", "rewards", "loyalty", "loyaltypoints", "points"})
+    fraud_intent = bool(
+        intent_terms
+        & {
+            "fraud",
+            "fraudulent",
+            "fraud_risk",
+            "risk",
+            "risky",
+            "suspicious",
+            "unusual",
+            "anomaly",
+            "anomalous",
+            "genuine",
+            "fake",
+            "unauthorized",
+            "unauthorised",
+        }
+    )
 
     for view_def in VIEW_CATALOG:
         score = _score_view(view_def, intent)
@@ -206,6 +275,7 @@ def recommend_views(
 
     scored.sort(
         key=lambda x: (
+            1 if fraud_intent and x[1]["view_id"] == "fraud_risk_assessment" else 0,
             x[0],
             1 if loyalty_intent and x[1]["view_id"] == "loyalty_spend_correlation" else 0,
         ),

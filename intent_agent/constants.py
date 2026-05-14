@@ -69,6 +69,18 @@ ATTRIBUTE_MAPPINGS = {
     "reward points": "loyaltyPoints",
     "loyalty": "loyaltyPoints",
     "loyalty points": "loyaltyPoints",
+    "fraud": "fraud_risk",
+    "fraudulent": "fraud_risk",
+    "risk": "fraud_risk",
+    "risk score": "fraud_risk",
+    "risk assessment": "fraud_risk",
+    "suspicious": "fraud_risk",
+    "unusual": "fraud_risk",
+    "anomaly": "fraud_risk",
+    "anomalous": "fraud_risk",
+    "genuine": "fraud_risk",
+    "unauthorized": "fraud_risk",
+    "unauthorised": "fraud_risk",
 }
 
 # Metric phrases the user may ask for
@@ -107,7 +119,11 @@ TASK_KEYWORDS = {
     ],
     "fetch": ["get", "retrieve", "list", "show", "display", "pull", "view", "retrieve"],
     "reconcile": ["reconcile", "match", "compare", "verify", "validate", "check", "align"],
-    "analyze": ["analyze", "report", "summary", "stat", "insight", "trend", "pattern"],
+    "analyze": [
+        "analyze", "report", "summary", "stat", "insight", "trend", "pattern",
+        "assess", "assessment", "score", "evaluate", "detect", "detection",
+        "flag", "review",
+    ],
     "compare": ["compare", "difference", "diff", "versus", "vs", "between", "against"],
     "transform": ["convert", "transform", "map", "translate", "export", "parse"],
 }

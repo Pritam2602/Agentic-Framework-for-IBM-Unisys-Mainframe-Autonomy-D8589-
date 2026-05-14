@@ -6,7 +6,7 @@ Architecture:
   Intent Agent (WHAT) → Context Resolution Agent (WHERE) → Planner Agent (HOW)
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from pathlib import Path
@@ -29,6 +29,13 @@ from app.api.execution import router as execution_router
 from app.api.normalization import router as normalization_router
 from app.api.federation_intelligence import router as federation_router
 from app.api.mock_zos import router as mock_zos_router
+from app.api.observability import router as observability_router
+from app.middleware.observability import ObservabilityMiddleware
+from app.observability.logger import configure_logging
+from app.observability.metrics import metrics_response
+from app.observability.otel import setup_opentelemetry
+
+configure_logging()
 
 # -------------------------------------------------------------------
 # FastAPI App
@@ -60,6 +67,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+setup_opentelemetry(app)
+app.add_middleware(ObservabilityMiddleware)
 
 # -------------------------------------------------------------------
 # Paths
@@ -93,6 +102,7 @@ app.include_router(execution_router)
 app.include_router(normalization_router)
 app.include_router(federation_router)
 app.include_router(mock_zos_router)
+app.include_router(observability_router)
 
 # -------------------------------------------------------------------
 # Root / Health
@@ -123,6 +133,8 @@ async def root():
             "normalization": "/api/normalization/run",
             "federation": "/api/federation/analyze",
             "federation_views": "/api/federation/views",
+            "observability": "/api/observability/summary",
+            "metrics": "/api/observability/metrics",
             "agent": "/api/agent/execute",
             "catalog": "/api/catalog/commands",
             "docs": "/docs",
@@ -143,6 +155,12 @@ async def health():
         "federation_intelligence": "ready",
         "llm_model": "enabled" if model else "disabled"
     }
+
+
+@app.get("/metrics")
+async def metrics():
+    content, media_type = metrics_response()
+    return Response(content=content, media_type=media_type)
 
 
 # -------------------------------------------------------------------
