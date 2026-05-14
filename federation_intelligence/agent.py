@@ -424,14 +424,23 @@ def run(
     federated_result: Optional[Dict[str, Any]] = None
     executed = False
 
-    if normalized_records:
+    fraud_view_selected = bool(top_view and top_view.view_id == "fraud_risk_assessment")
+
+    if fraud_view_selected and execute:
+        customer_id = _extract_customer_id(intent)
+        if customer_id is not None:
+            date = _extract_date(intent)
+            federated_result = execute_view("fraud_risk_assessment", customer_id, date)
+            executed = True
+
+    if federated_result is None and normalized_records:
         federated_result = _build_normalized_federated_result(
             normalized_records,
             top_view,
             intent,
         )
         executed = True
-    elif execute:
+    elif federated_result is None and execute:
         customer_id = _extract_customer_id(intent)
         if customer_id is not None:
             date = _extract_date(intent)

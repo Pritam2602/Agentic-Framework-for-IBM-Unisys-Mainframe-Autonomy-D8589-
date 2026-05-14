@@ -172,6 +172,259 @@ const DiscoveryTable = ({
   );
 };
 
+type FraudSignal = {
+  rule?: string;
+  weight?: number;
+  severity?: string;
+  reason?: string;
+  evidence?: Record<string, unknown>;
+};
+
+type FraudEvaluation = {
+  transactionId?: string;
+  customerId?: number;
+  amount?: number;
+  date?: string;
+  transactionType?: string;
+  risk_score?: number;
+  risk_band?: string;
+  verdict?: string;
+  fraud_signals?: FraudSignal[];
+  supporting_context?: {
+    unisys_event_count?: number;
+    unisys_observed_amount_total?: number;
+    browsing_minutes_total?: number;
+    merchants?: string[];
+    cart_statuses?: string[];
+  };
+};
+
+type FraudResult = {
+  view_id?: string;
+  customerId?: number;
+  date_filter?: string | null;
+  summary?: {
+    transactions_evaluated?: number;
+    portfolio_risk_score?: number;
+    portfolio_risk_band?: string;
+    risk_band_counts?: { high?: number; medium?: number; low?: number };
+    verdict_counts?: { likely_fraud?: number; suspicious?: number; genuine?: number };
+    amount_at_risk?: number;
+    flagged_signal_counts?: Record<string, number>;
+    unisys_events_in_window?: number;
+  };
+  customer_baseline?: {
+    avg?: number;
+    stddev?: number;
+    max?: number;
+    count?: number;
+  };
+  rules_applied?: Array<{ rule?: string; weight?: number; trigger?: string }>;
+  evaluations?: FraudEvaluation[];
+};
+
+const verdictTone = (verdict?: string) => {
+  const normalized = String(verdict ?? "").toLowerCase();
+  if (normalized === "likely_fraud") {
+    return "border-red-500/40 bg-red-500/10 text-red-200";
+  }
+  if (normalized === "suspicious") {
+    return "border-amber-500/40 bg-amber-500/10 text-amber-200";
+  }
+  if (normalized === "genuine") {
+    return "border-emerald-500/40 bg-emerald-500/10 text-emerald-200";
+  }
+  return "border-slate-700 bg-slate-800/70 text-slate-300";
+};
+
+const bandTone = (band?: string) => {
+  const normalized = String(band ?? "").toLowerCase();
+  if (normalized === "high") {
+    return "border-red-500/40 bg-red-500/10 text-red-200";
+  }
+  if (normalized === "medium") {
+    return "border-amber-500/40 bg-amber-500/10 text-amber-200";
+  }
+  if (normalized === "low") {
+    return "border-emerald-500/40 bg-emerald-500/10 text-emerald-200";
+  }
+  return "border-slate-700 bg-slate-800/70 text-slate-300";
+};
+
+const formatCurrency = (value: unknown) => {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) {
+    return "N/A";
+  }
+  return numeric.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 2 });
+};
+
+const FraudAssessmentPanel = ({ result }: { result: FraudResult }) => {
+  const summary = result.summary ?? {};
+  const baseline = result.customer_baseline ?? {};
+  const evaluations = (result.evaluations ?? []).slice().sort(
+    (a, b) => (b.risk_score ?? 0) - (a.risk_score ?? 0),
+  );
+  const flagged = summary.flagged_signal_counts ?? {};
+  const rules = result.rules_applied ?? [];
+
+  const portfolioPct =
+    typeof summary.portfolio_risk_score === "number"
+      ? `${Math.round(summary.portfolio_risk_score * 100)}%`
+      : "N/A";
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 md:grid-cols-4">
+        <MiniStat label="Portfolio Risk" value={portfolioPct} tone="amber" />
+        <MiniStat label="Transactions" value={summary.transactions_evaluated} tone="cyan" />
+        <MiniStat label="Amount At Risk" value={formatCurrency(summary.amount_at_risk)} tone="violet" />
+        <MiniStat label="Unisys Events" value={summary.unisys_events_in_window} tone="emerald" />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-4">
+          <p className="text-xs uppercase tracking-[0.18em] text-red-200/80">Likely Fraud</p>
+          <p className="mt-2 text-3xl font-semibold text-red-200">
+            {summary.verdict_counts?.likely_fraud ?? 0}
+          </p>
+          <p className="mt-2 text-xs leading-5 text-slate-400">
+            High band — signals exceed 0.60 score threshold.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4">
+          <p className="text-xs uppercase tracking-[0.18em] text-amber-200/80">Suspicious</p>
+          <p className="mt-2 text-3xl font-semibold text-amber-200">
+            {summary.verdict_counts?.suspicious ?? 0}
+          </p>
+          <p className="mt-2 text-xs leading-5 text-slate-400">
+            Medium band — at least one rule fired, score 0.30–0.60.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+          <p className="text-xs uppercase tracking-[0.18em] text-emerald-200/80">Genuine</p>
+          <p className="mt-2 text-3xl font-semibold text-emerald-200">
+            {summary.verdict_counts?.genuine ?? 0}
+          </p>
+          <p className="mt-2 text-xs leading-5 text-slate-400">
+            Low band — behavioral context supports the charge.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <KeyValueTable
+          rows={[
+            ["Customer ID", result.customerId],
+            ["Date filter", result.date_filter ?? "all dates"],
+            ["Portfolio risk band", summary.portfolio_risk_band],
+            ["High / Medium / Low",
+              `${summary.risk_band_counts?.high ?? 0} / ${summary.risk_band_counts?.medium ?? 0} / ${summary.risk_band_counts?.low ?? 0}`,
+            ],
+          ]}
+        />
+        <KeyValueTable
+          rows={[
+            ["Baseline avg", formatCurrency(baseline.avg)],
+            ["Baseline stddev", formatCurrency(baseline.stddev)],
+            ["Baseline max", formatCurrency(baseline.max)],
+            ["History size", baseline.count],
+          ]}
+        />
+      </div>
+
+      {Object.keys(flagged).length ? (
+        <ObjectAmountTable title="Flagged Signal Counts" values={flagged} />
+      ) : null}
+
+      {evaluations.length ? (
+        <div className="overflow-hidden rounded-2xl border border-slate-800">
+          <div className="border-b border-slate-800 bg-slate-900/80 px-4 py-3">
+            <h3 className="text-sm font-semibold text-slate-100">Per-transaction Verdicts</h3>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              Sorted by risk score. Each verdict cites the rules that fired and the evidence behind them.
+            </p>
+          </div>
+          <div className="max-h-[640px] overflow-auto">
+            <table className="w-full min-w-[920px] text-left text-sm">
+              <thead className="sticky top-0 bg-slate-900 text-xs uppercase tracking-[0.16em] text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Transaction</th>
+                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3 text-right">Amount</th>
+                  <th className="px-4 py-3">Score</th>
+                  <th className="px-4 py-3">Band</th>
+                  <th className="px-4 py-3">Verdict</th>
+                  <th className="px-4 py-3">Signals</th>
+                </tr>
+              </thead>
+              <tbody>
+                {evaluations.map((evaluation) => (
+                  <tr key={evaluation.transactionId} className="border-t border-slate-800 align-top">
+                    <td className="px-4 py-3 font-mono text-xs text-slate-100">{valueText(evaluation.transactionId)}</td>
+                    <td className="px-4 py-3 font-mono text-slate-300">{valueText(evaluation.date)}</td>
+                    <td className="px-4 py-3 text-right font-mono text-cyan-200">{formatCurrency(evaluation.amount)}</td>
+                    <td className="px-4 py-3 font-mono text-slate-100">
+                      {typeof evaluation.risk_score === "number" ? evaluation.risk_score.toFixed(2) : "N/A"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={cn("inline-flex rounded-full border px-3 py-1 text-xs font-semibold", bandTone(evaluation.risk_band))}>
+                        {valueText(evaluation.risk_band)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={cn("inline-flex rounded-full border px-3 py-1 text-xs font-semibold", verdictTone(evaluation.verdict))}>
+                        {valueText(evaluation.verdict)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {evaluation.fraud_signals?.length ? (
+                        <ul className="space-y-1">
+                          {evaluation.fraud_signals.map((signal, idx) => (
+                            <li key={`${evaluation.transactionId}-${signal.rule}-${idx}`} className="text-xs leading-5 text-slate-300">
+                              <span className="font-mono text-slate-100">{signal.rule}</span>
+                              <span className="text-slate-500"> (+{typeof signal.weight === "number" ? signal.weight.toFixed(2) : "0.00"})</span>
+                              {signal.reason ? <span className="block text-slate-500">{signal.reason}</span> : null}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="text-xs text-slate-500">No signals fired.</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
+
+      {rules.length ? (
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+          <h3 className="text-sm font-semibold text-slate-100">Rules Applied</h3>
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            Deterministic risk rules. The verdicts above sum the weights of every rule that fired.
+          </p>
+          <ul className="mt-3 space-y-2">
+            {rules.map((rule) => (
+              <li key={rule.rule} className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-mono text-sm text-slate-100">{rule.rule}</span>
+                  <span className="font-mono text-xs text-cyan-200">
+                    weight {typeof rule.weight === "number" ? rule.weight.toFixed(2) : "n/a"}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs leading-5 text-slate-400">{rule.trigger}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
 const SuggestedExplorations = ({
   items,
 }: {
@@ -533,7 +786,7 @@ const renderPanel = (panel: ControlCenterPanel) => {
   if (panel === "federation") {
     const federation = store.federation as {
       top_view?: { name?: string; view_id?: string };
-      federated_result?: {
+      federated_result?: (FraudResult & {
         federation?: Record<string, unknown>;
         behavioral_enrichment?: {
           merchant_observed_amounts?: Record<string, unknown>;
@@ -543,7 +796,7 @@ const renderPanel = (panel: ControlCenterPanel) => {
           browsing?: { total_browsing_minutes?: number };
         };
         reconciliation?: Record<string, unknown>;
-      };
+      });
       governance?: Record<string, unknown>;
       capability_discovery?: {
         related_capabilities?: Array<{
@@ -574,6 +827,7 @@ const renderPanel = (panel: ControlCenterPanel) => {
     const enrichment = result?.behavioral_enrichment;
     const reconciliation = result?.reconciliation ?? federation?.governance?.amount_reconciliation as Record<string, unknown> | undefined;
     const discoveryItems = federation?.capability_discovery?.related_capabilities ?? [];
+    const isFraudView = result?.view_id === "fraud_risk_assessment" && !!result?.summary;
     return (
       <section className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6">
         <h2 className="text-base font-semibold text-violet-300">Federation Intelligence</h2>
@@ -584,25 +838,49 @@ const renderPanel = (panel: ControlCenterPanel) => {
         </p>
         {federation && (
           <div className="mt-5 space-y-5">
-            <div className="grid gap-4 md:grid-cols-4">
-              <MiniStat label="Total Spend" value={fedMetrics?.total_spend} tone="emerald" />
-              <MiniStat label="IBM Txns" value={fedMetrics?.ibm_transaction_count} tone="cyan" />
-              <MiniStat label="Unisys Events" value={fedMetrics?.unisys_enrichment_count} tone="violet" />
-              <MiniStat label="Confidence" value={`${Math.round((federation.overall_confidence ?? 0) * 100)}%`} tone="amber" />
-            </div>
-
             <KeyValueTable
               rows={[
                 ["Top view", topView?.name ?? topView?.view_id],
                 ["View ID", topView?.view_id],
-                ["IBM authoritative total", reconciliation?.ibm_authoritative_total],
-                ["Unisys observed total", reconciliation?.unisys_observed_total],
-                ["Variance", reconciliation?.variance],
-                ["Reconciliation", reconciliation?.status],
+                ["Overall confidence", `${Math.round((federation.overall_confidence ?? 0) * 100)}%`],
                 ["Double-counting protected", federation.governance?.double_counting_protected],
                 ["LLM refinement", federation.governance?.llm_refinement],
               ]}
             />
+
+            {isFraudView ? (
+              <FraudAssessmentPanel result={result as FraudResult} />
+            ) : (
+              <>
+                <div className="grid gap-4 md:grid-cols-4">
+                  <MiniStat label="Total Spend" value={fedMetrics?.total_spend} tone="emerald" />
+                  <MiniStat label="IBM Txns" value={fedMetrics?.ibm_transaction_count} tone="cyan" />
+                  <MiniStat label="Unisys Events" value={fedMetrics?.unisys_enrichment_count} tone="violet" />
+                  <MiniStat label="Confidence" value={`${Math.round((federation.overall_confidence ?? 0) * 100)}%`} tone="amber" />
+                </div>
+
+                <KeyValueTable
+                  rows={[
+                    ["IBM authoritative total", reconciliation?.ibm_authoritative_total],
+                    ["Unisys observed total", reconciliation?.unisys_observed_total],
+                    ["Variance", reconciliation?.variance],
+                    ["Reconciliation", reconciliation?.status],
+                  ]}
+                />
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <ObjectAmountTable title="Merchant Observed Amounts" values={enrichment?.merchant_observed_amounts} />
+                  <ObjectAmountTable title="Category Observed Amounts" values={enrichment?.category_observed_amounts} />
+                  <ObjectAmountTable title="Cart Status Breakdown" values={enrichment?.cart_status_breakdown} />
+                  <KeyValueTable
+                    rows={[
+                      ["Total loyalty points", enrichment?.loyalty?.total_loyalty_points],
+                      ["Total browsing minutes", enrichment?.browsing?.total_browsing_minutes],
+                    ]}
+                  />
+                </div>
+              </>
+            )}
 
             <SuggestedExplorations items={federation.suggested_explorations ?? []} />
 
@@ -614,18 +892,6 @@ const renderPanel = (panel: ControlCenterPanel) => {
                 </p>
               </div>
               <DiscoveryTable items={discoveryItems} />
-            </div>
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              <ObjectAmountTable title="Merchant Observed Amounts" values={enrichment?.merchant_observed_amounts} />
-              <ObjectAmountTable title="Category Observed Amounts" values={enrichment?.category_observed_amounts} />
-              <ObjectAmountTable title="Cart Status Breakdown" values={enrichment?.cart_status_breakdown} />
-              <KeyValueTable
-                rows={[
-                  ["Total loyalty points", enrichment?.loyalty?.total_loyalty_points],
-                  ["Total browsing minutes", enrichment?.browsing?.total_browsing_minutes],
-                ]}
-              />
             </div>
 
             <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">

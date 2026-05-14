@@ -31,13 +31,28 @@ The application contains these major parts:
    - Unisys provides `loyaltyPoints`, merchant, and category context.
    - Reward-point prompts now prefer the `loyalty_spend_correlation` federated view.
 
+4. Fraud and Risk Detection
+   - IBM/Zowe provides the authoritative transactions (the ledger).
+   - Unisys/ePortal provides shopping behavior on the same date — merchant,
+     cart status, browsing time, observed amount.
+   - The federation layer scores each IBM transaction by joining it with the
+     same-day Unisys behavior and applying explainable rules:
+     `high_value_outlier`, `missing_behavioral_context`,
+     `abandoned_cart_with_charge`, `instant_high_spend`, and
+     `ibm_unisys_amount_divergence`.
+   - Risk verdicts are `genuine | suspicious | likely_fraud`, with bands
+     `low / medium / high` and per-signal evidence.
+   - Fraud-related prompts (fraud, risk, suspicious, unusual, anomaly) prefer
+     the `fraud_risk_assessment` federated view.
+
 ## Demo Dataset Coverage
 
 The local data has been expanded so demos can show meaningful discovery across multiple customers, merchants, categories, reward-point patterns, cart states, and browsing behavior.
 
 - IBM customers: 10
 - IBM accounts: 10
-- IBM transactions: 60, with 6 transactions per customer
+- IBM transactions: 62 (6 per customer for nine customers; 8 for customer 103 — two
+  extra transactions are intentionally suspicious to anchor the fraud demo)
 - Unisys shopping enrichment records: 120, with 12 shopping events per customer
 - Merchant coverage: Amazon, Flipkart, Swiggy, Zomato, Uber, Myntra, BigBasket, MakeMyTrip, Croma, BookMyShow, Nykaa, Decathlon
 - Category coverage: electronics, food, travel, shopping, fashion, grocery, entertainment, beauty, fitness
@@ -120,6 +135,8 @@ Related implementation:
 - `federation_intelligence/recommendations.py`: LLM-based Discovery Recommendation Agent
 - `federation_intelligence/agent.py`
 - `federation_intelligence/view_recommender.py`
+- `federation_intelligence/executor.py`
+- `app/federation/fraud_federation.py`: deterministic fraud/risk scoring rules
 - `mock_eportal/schema/shopping_schema.json`
 - `frontend/src/pages/ExecutionPage.tsx`
 
@@ -207,8 +224,10 @@ Backend FastAPI:
 - `POST /api/normalization/run`: normalization agent.
 - `POST /api/federation/analyze`: federation intelligence.
 - `POST /api/federation/execute`: execute a federated view.
-- `GET /api/federation/views`: federated view catalog.
-- `POST /api/federation/discover`: grounded capability discovery.
+- `GET /api/federation/views`: federated view catalog (includes
+  `fraud_risk_assessment`).
+- `POST /api/federation/discover`: grounded capability discovery (includes
+  the fraud capability).
 - `GET /api/federation/write-feasibility`: save/update feasibility summary.
 
 Mock ePortal:
@@ -253,6 +272,9 @@ python mock_eportal/mcp_server.py
 - Federation test confirmed reward-point requests select `loyalty_spend_correlation`.
 - Discovery test confirmed inventory is available after phase-two onboarding when explicitly requested.
 - Recommendation smoke check confirmed shopping queries produce next-action prompts for inventory, rewards, merchant analytics, and cart conversion.
+- Fraud smoke check (`python verify_fraud_use_case.py`) confirmed the fraud query
+  routes to `fraud_risk_assessment` end-to-end and produces at least one high-band
+  verdict from the seeded data.
 
 ## AI Usage Disclosure
 

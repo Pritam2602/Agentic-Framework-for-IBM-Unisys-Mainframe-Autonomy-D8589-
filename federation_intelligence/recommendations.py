@@ -75,6 +75,11 @@ def _fallback_recommendations(
 
     recommendations: List[Dict[str, Any]] = []
 
+    fraud_intent = bool(
+        attributes & {"fraud_risk"}
+        or entities & {"fraud", "risk"}
+    )
+
     if "shopping" in entities:
         if not requested_inventory:
             recommendations.append(
@@ -117,6 +122,54 @@ def _fallback_recommendations(
                     "related_entity": "cart",
                     "relationship": "shopping -> cart/browsing",
                     "confidence": 0.84,
+                },
+            ]
+        )
+        if not fraud_intent:
+            recommendations.append(
+                {
+                    "id": "fraud_risk_check",
+                    "title": "Check Fraud / Risk Signals",
+                    "prompt": f"Run fraud and risk assessment{customer_suffix} using IBM transactions and Unisys behavior.",
+                    "reason": (
+                        "IBM transactions can be cross-checked with Unisys cart status, "
+                        "browsing time, and observed amount to detect suspicious charges."
+                    ),
+                    "related_entity": "fraud_risk",
+                    "relationship": "transaction -> shopping (behavioral validation)",
+                    "confidence": 0.82,
+                }
+            )
+
+    if fraud_intent:
+        recommendations.extend(
+            [
+                {
+                    "id": "fraud_high_value_outliers",
+                    "title": "List High-Value Outliers",
+                    "prompt": f"List transactions whose amount is at least three times the average{customer_suffix}.",
+                    "reason": "High-value outliers vs the customer's baseline are a primary fraud signal.",
+                    "related_entity": "transaction",
+                    "relationship": "transaction -> customer baseline",
+                    "confidence": 0.86,
+                },
+                {
+                    "id": "fraud_abandoned_cart_charge",
+                    "title": "Inspect Abandoned-Cart Charges",
+                    "prompt": f"Show IBM charges that occurred on dates with only abandoned/wishlisted Unisys carts{customer_suffix}.",
+                    "reason": "Charges without supporting completed-cart behavior look suspicious.",
+                    "related_entity": "shopping",
+                    "relationship": "transaction -> shopping.cartStatus",
+                    "confidence": 0.84,
+                },
+                {
+                    "id": "fraud_missing_context",
+                    "title": "Find Charges Without Behavior",
+                    "prompt": f"Show high-value IBM transactions with no matching Unisys shopping events{customer_suffix}.",
+                    "reason": "Material charges with no behavioral evidence are common fraud indicators.",
+                    "related_entity": "transaction",
+                    "relationship": "transaction -> shopping (date join)",
+                    "confidence": 0.8,
                 },
             ]
         )
