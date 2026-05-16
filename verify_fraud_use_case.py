@@ -24,7 +24,7 @@ from federation_intelligence.executor import execute_view
 from fastapi.testclient import TestClient
 
 
-CUSTOMER_ID = 103
+CUSTOMER_ID = 41
 
 
 def _print_evaluations(result: dict) -> None:
@@ -54,26 +54,26 @@ def _print_evaluations(result: dict) -> None:
 
 
 def step_direct() -> dict:
-    print("\n[1/3] Direct call: assess_transaction_risk(customer_id=103)")
+    print(f"\n[1/3] Direct call: assess_transaction_risk(customer_id={CUSTOMER_ID})")
     result = assess_transaction_risk(customer_id=CUSTOMER_ID)
     _print_evaluations(result)
     return result
 
 
 def step_executor() -> dict:
-    print("\n[2/3] Federation executor: execute_view('fraud_risk_assessment', 103)")
+    print(f"\n[2/3] Federation executor: execute_view('fraud_risk_assessment', {CUSTOMER_ID})")
     result = execute_view("fraud_risk_assessment", customer_id=CUSTOMER_ID)
     _print_evaluations(result)
     return result
 
 
 def step_pipeline() -> dict:
-    print("\n[3/3] Full pipeline: 'Run fraud and risk assessment for customer 103'")
+    print(f"\n[3/3] Full pipeline: 'Run fraud and risk assessment for customer {CUSTOMER_ID}'")
     client = TestClient(app)
     response = client.post(
         "/api/pipeline/run",
         json={
-            "user_query": "Run fraud and risk assessment for customer 103",
+            "user_query": f"Run fraud and risk assessment for customer {CUSTOMER_ID}",
             "enable_llm": False,
         },
     )

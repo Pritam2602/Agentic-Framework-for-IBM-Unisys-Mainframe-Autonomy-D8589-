@@ -1,6 +1,6 @@
 # COMMUNICATOR - AI Data Federation Platform
 
-COMMUNICATOR is an AI-driven data federation platform for querying IBM CardDemo-style mainframe data and simulated Unisys ePortal data through a multi-agent pipeline.
+COMMUNICATOR is an AI-driven data federation platform for querying AWS CardDemo mainframe sample data and simulated Unisys ePortal data through a multi-agent pipeline.
 
 The current demo focuses on AWS Card Dataset use cases:
 
@@ -8,7 +8,7 @@ The current demo focuses on AWS Card Dataset use cases:
 - Loyalty & Rewards Optimization
 - Fraud & Risk Detection
 
-IBM is treated as the financial authority for transaction amounts. Unisys ePortal provides behavioral enrichment such as merchant, category, loyalty points, browsing time, cart status, and merchant category.
+IBM/CardDemo is treated as the financial authority for transaction amounts. Unisys ePortal provides behavioral enrichment such as merchant, category, loyalty points, browsing time, cart status, and merchant category.
 
 ## Goal
 
@@ -101,7 +101,7 @@ Example:
   "attributes": ["reward points"],
   "filters": {
     "conditions": [
-      { "field": "customerId", "value": 101 }
+      { "field": "customerId", "value": 1 }
     ]
   },
   "systems": ["ibm", "unisys"],
@@ -157,17 +157,22 @@ Fraud/risk prompts are routed toward `fraud_risk_assessment`.
 
 ## Demo Dataset
 
-The local demo dataset has been expanded for more realistic discovery and federation testing.
+The local IBM dataset is imported from the AWS CardDemo sample repository:
 
-- IBM customers: 10
-- IBM accounts: 10
-- IBM transactions: 62, including two intentionally suspicious customer 103 transactions for fraud/risk testing
-- Unisys shopping enrichment records: 120, with 12 shopping events per customer
+- Source: `https://github.com/aws-samples/aws-mainframe-modernization-carddemo`
+- Import script: `scripts/import_aws_carddemo_data.py`
+- Source files used: `app/data/ASCII/custdata.txt`, `acctdata.txt`, `cardxref.txt`, and `dailytran.txt`
+- IBM customers: 50
+- IBM accounts: 50
+- IBM transactions: 300
+- Unisys shopping enrichment records: 600, with 12 shopping events per customer
 - Merchants represented: Amazon, Flipkart, Swiggy, Zomato, Uber, Myntra, BigBasket, MakeMyTrip, Croma, BookMyShow, Nykaa, Decathlon
 - Categories represented: electronics, food, travel, shopping, fashion, grocery, entertainment, beauty, fitness
 - Shopping enrichment includes loyalty points, browsing minutes, cart status, and merchant category
 
-The Unisys shopping records are generated from IBM transaction customer/date/amount context by `generate_shopping_data.py`, then enriched with deterministic merchant, category, loyalty, browsing, and cart behavior. The Unisys amount remains behavioral/reference context and must not be added to IBM spend.
+The IBM JSON files are generated from CardDemo fixed-width ASCII records. Card numbers are mapped to customer/account IDs through `cardxref.txt`, and transaction amounts are decoded from COBOL signed zoned decimal fields.
+
+The Unisys shopping records are generated from imported IBM transaction customer/date/amount context by `generate_shopping_data.py`, then enriched with deterministic merchant, category, loyalty, browsing, and cart behavior. The Unisys amount remains behavioral/reference context and must not be added to IBM spend.
 
 ## Fraud & Risk Detection
 
@@ -341,6 +346,14 @@ Install Python dependencies:
 pip install -r requirements.txt
 ```
 
+Import AWS CardDemo sample data into the local IBM JSON files:
+
+```bash
+python scripts/import_aws_carddemo_data.py
+```
+
+The importer clones the AWS sample repo into `.tmp_carddemo` if it is not already present, converts the CardDemo ASCII fixed-width files into `data/ibm/*.json`, and regenerates matching Unisys shopping enrichment.
+
 Create `.env`:
 
 ```env
@@ -370,15 +383,15 @@ python mock_eportal/mcp_server.py
 ## Example Queries
 
 ```text
-Show shopping data for customer 101 on 2026-03-10
+Show shopping data for customer 1 on 2022-06-10
 ```
 
 ```text
-Show reward points for customer 101
+Show reward points for customer 1
 ```
 
 ```text
-Run fraud and risk assessment for customer 103
+Run fraud and risk assessment for customer 41
 ```
 
 ```text

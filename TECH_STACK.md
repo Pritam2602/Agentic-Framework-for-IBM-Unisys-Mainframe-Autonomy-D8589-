@@ -231,6 +231,14 @@ Install backend dependencies:
 pip install -r requirements.txt
 ```
 
+Import AWS CardDemo sample data into the local IBM JSON files:
+
+```bash
+python scripts/import_aws_carddemo_data.py
+```
+
+This reads the AWS sample repo's ASCII files, writes `data/ibm/*.json`, and regenerates matching Unisys shopping enrichment.
+
 Create `.env`:
 
 ```env
@@ -295,15 +303,15 @@ GET http://localhost:8000/metrics
 ## Useful Demo Queries
 
 ```text
-Show shopping data for customer 101
+Show shopping data for customer 1
 ```
 
 ```text
-Analyze loyalty points versus total spend for customer 101
+Analyze loyalty points versus total spend for customer 1
 ```
 
 ```text
-Run fraud and risk assessment for customer 103
+Run fraud and risk assessment for customer 41
 ```
 
 ```text

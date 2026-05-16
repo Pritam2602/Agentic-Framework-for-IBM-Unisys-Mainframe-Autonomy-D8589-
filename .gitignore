@@ -18,5 +18,6 @@ database/*.db
 !database/.gitkeep
 data/observability.sqlite3*
 data/observability_llm_usage.jsonl
+.tmp_carddemo/
 *.pdf
 *.docx

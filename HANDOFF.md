@@ -2,7 +2,7 @@
 
 ## Purpose
 
-COMMUNICATOR is an AI-driven data federation platform that connects IBM CardDemo-style mainframe data with a simulated Unisys ePortal. The application accepts natural-language requests, resolves which systems hold the required data, plans execution, runs mock read flows, normalizes results, and produces federation intelligence for business use cases such as Customer Shopping 360 and Loyalty & Rewards Optimization.
+COMMUNICATOR is an AI-driven data federation platform that connects AWS CardDemo mainframe sample data with a simulated Unisys ePortal. The application accepts natural-language requests, resolves which systems hold the required data, plans execution, runs mock read flows, normalizes results, and produces federation intelligence for business use cases such as Customer Shopping 360 and Loyalty & Rewards Optimization.
 
 ## Application Scope
 
@@ -17,7 +17,7 @@ The application contains these major parts:
 - Normalization Agent: Converts execution output into canonical records.
 - Federation Intelligence: Recommends federated views, returns lineage/governance, and suggests related follow-up explorations.
 - Mock Unisys ePortal: Provides shopping behavior data, schema, MCP tools/resources, and guarded enrichment write APIs.
-- IBM simulation data: Local datasets and parsed CardDemo assets under `data/ibm/` and `tools/cobol-jcl-parser/`.
+- IBM simulation data: Local JSON generated from AWS CardDemo sample files under `data/ibm/`, plus parsed CardDemo assets under `tools/cobol-jcl-parser/`.
 
 ## Current Demo Use Cases
 
@@ -43,12 +43,14 @@ The application contains these major parts:
 
 ## Demo Dataset Coverage
 
-The local data has been expanded so demos can show meaningful discovery across multiple customers, merchants, categories, reward-point patterns, cart states, and browsing behavior.
+The local IBM data is imported from the AWS CardDemo sample repository using `scripts/import_aws_carddemo_data.py`. The script reads CardDemo ASCII fixed-width files, maps card numbers to customers/accounts through `cardxref.txt`, decodes signed zoned decimal amounts, and writes the JSON files used by this application.
 
-- IBM customers: 10
-- IBM accounts: 10
-- IBM transactions: 62, with two extra high-risk records for customer 103 to anchor the fraud demo
-- Unisys shopping enrichment records: 120, with 12 shopping events per customer
+- Source repo: `https://github.com/aws-samples/aws-mainframe-modernization-carddemo`
+- Source files: `custdata.txt`, `acctdata.txt`, `cardxref.txt`, `dailytran.txt`
+- IBM customers: 50
+- IBM accounts: 50
+- IBM transactions: 300
+- Unisys shopping enrichment records: 600, with 12 shopping events per customer
 - Merchant coverage: Amazon, Flipkart, Swiggy, Zomato, Uber, Myntra, BigBasket, MakeMyTrip, Croma, BookMyShow, Nykaa, Decathlon
 - Category coverage: electronics, food, travel, shopping, fashion, grocery, entertainment, beauty, fitness
 - Cart states: completed, abandoned, wishlisted
@@ -62,6 +64,7 @@ Source files:
 - `data/unisys/shopping.json`
 - `data/unisys/inventory.json`
 - `generate_shopping_data.py`
+- `scripts/import_aws_carddemo_data.py`
 
 ## Flow Diagram
 
@@ -93,7 +96,7 @@ flowchart TD
 
 The normal read path is:
 
-1. User submits a query, for example: `Show reward points for customer 101`.
+1. User submits a query, for example: `Show reward points for customer 1`.
 2. Intent Agent extracts task, entities, attributes, filters, and federation requirement.
 3. Context Resolution Agent resolves IBM transaction data and Unisys shopping data.
 4. Planner Agent creates a safe mock plan.
@@ -300,7 +303,7 @@ python mock_eportal/mcp_server.py
 - Federation test confirmed reward-point requests select `loyalty_spend_correlation`.
 - Discovery test confirmed inventory is available after phase-two onboarding when explicitly requested.
 - Recommendation smoke check confirmed shopping queries produce next-action prompts for inventory, rewards, merchant analytics, and cart conversion.
-- Fraud smoke check (`python verify_fraud_use_case.py`) confirmed fraud queries route to `fraud_risk_assessment` and produce high-band risk signals from seeded customer 103 transactions.
+- Fraud smoke check (`python verify_fraud_use_case.py`) confirmed fraud queries route to `fraud_risk_assessment` and produce high-band risk signals from imported CardDemo customer 41 transactions.
 
 ## AI Usage Disclosure
 
