@@ -321,6 +321,8 @@ def _llm_refine_output(
     if model is None or not output.recommended_views:
         return output
 
+    forced_view_id = _forced_view_id(intent)
+
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", FEDERATION_INTELLIGENCE_SYSTEM_PROMPT),
@@ -356,7 +358,7 @@ def _llm_refine_output(
         return output
 
     candidate_by_id = {view.view_id: view for view in output.recommended_views}
-    recommended_id = data.get("recommended_view_id")
+    recommended_id = forced_view_id or data.get("recommended_view_id")
     if recommended_id in candidate_by_id:
         selected = candidate_by_id[recommended_id]
         output.recommended_views = [
@@ -378,10 +380,56 @@ def _llm_refine_output(
     if data.get("reasoning"):
         output.reasoning = str(data["reasoning"])
 
+    if output.top_view and output.top_view.view_id == "fraud_risk_assessment":
+        current_result = output.federated_result if isinstance(output.federated_result, dict) else {}
+        if current_result.get("view_id") != "fraud_risk_assessment":
+            customer_id = _extract_customer_id(intent)
+            if customer_id is not None:
+                output.federated_result = execute_view(
+                    "fraud_risk_assessment",
+                    customer_id,
+                    _extract_date(intent),
+                )
+                output.governance["federation_executed"] = True
+                output.governance["fraud_executor_applied_after_refinement"] = True
+
     output.governance["llm_refinement"] = "applied"
     output.governance["llm_governance_notes"] = data.get("governance_notes", [])
     output.governance["llm_plan_notes"] = data.get("plan_notes", [])
+    if forced_view_id:
+        output.governance["forced_view_reason"] = "Fraud/risk intent requires fraud_risk_assessment."
     return output
+
+
+def _forced_view_id(intent: Dict[str, Any]) -> Optional[str]:
+    """Return a deterministic view override for high-specificity intents."""
+    terms = {
+        str(intent.get("task") or "").lower(),
+        str(intent.get("metric") or "").lower(),
+        *{str(entity).lower() for entity in intent.get("entities", [])},
+        *{str(attr).lower() for attr in intent.get("attributes", [])},
+    }
+    expanded = set(terms)
+    for term in terms:
+        expanded.update(token for token in re.split(r"[^a-z0-9_]+", term) if token)
+    fraud_terms = {
+        "fraud",
+        "fraudulent",
+        "fraud_risk",
+        "risk",
+        "risky",
+        "suspicious",
+        "unusual",
+        "anomaly",
+        "anomalous",
+        "genuine",
+        "fake",
+        "unauthorized",
+        "unauthorised",
+    }
+    if expanded & fraud_terms:
+        return "fraud_risk_assessment"
+    return None
 
 
 def run(
@@ -416,6 +464,14 @@ def run(
     )
 
     views = recommend_views(relationships, intent, top_n=5)
+    forced_view_id = _forced_view_id(intent)
+    if forced_view_id:
+        selected = next((view for view in views if view.view_id == forced_view_id), None)
+        if selected:
+            views = [
+                selected,
+                *[view for view in views if view.view_id != forced_view_id],
+            ]
     top_view = views[0] if views else None
 
     federation_plan = _build_federation_plan(relationships, top_view)

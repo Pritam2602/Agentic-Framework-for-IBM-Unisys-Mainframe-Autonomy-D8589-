@@ -812,7 +812,9 @@ const renderPanel = (panel: ControlCenterPanel) => {
     const enrichment = result?.behavioral_enrichment;
     const reconciliation = result?.reconciliation ?? federation?.governance?.amount_reconciliation as Record<string, unknown> | undefined;
     const discoveryItems = federation?.capability_discovery?.related_capabilities ?? [];
-    const isFraudView = result?.view_id === "fraud_risk_assessment" && !!result?.summary;
+    const isFraudView =
+      topView?.view_id === "fraud_risk_assessment" ||
+      result?.view_id === "fraud_risk_assessment";
     return (
       <section className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6">
         <h2 className="text-base font-semibold text-violet-300">Federation Intelligence</h2>
@@ -834,7 +836,7 @@ const renderPanel = (panel: ControlCenterPanel) => {
             />
 
             {isFraudView ? (
-              <FraudAssessmentPanel result={result as FraudResult} />
+              <FraudAssessmentPanel result={(result ?? {}) as FraudResult} />
             ) : (
               <>
                 <div className="grid gap-4 md:grid-cols-4">
@@ -1140,7 +1142,7 @@ export default function ExecutionPage() {
                   <textarea
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Show me shopping data for customer 101 on 2026-03-10"
+                      placeholder="Show me shopping data for customer 1 on 2022-06-10"
                     className="min-h-[132px] w-full rounded-3xl border border-slate-800 bg-slate-900/70 px-5 py-4 text-sm text-slate-100 outline-none transition focus:border-cyan-500/40 focus:ring-2 focus:ring-cyan-500/20"
                   />
                   <div className="flex flex-wrap items-center gap-3">

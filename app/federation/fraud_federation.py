@@ -363,5 +363,5 @@ def assess_transaction_risk(
 if __name__ == "__main__":
     import json
 
-    result = assess_transaction_risk(customer_id=103)
+    result = assess_transaction_risk(customer_id=41)
     print(json.dumps(result, indent=2))

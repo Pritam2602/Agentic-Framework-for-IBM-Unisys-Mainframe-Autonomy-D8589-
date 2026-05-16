@@ -182,5 +182,5 @@ def federate_customer_spend(
 
 
 if __name__ == "__main__":
-    result = federate_customer_spend(customer_id=101, date="2026-03-10")
+    result = federate_customer_spend(customer_id=1, date="2022-06-10")
     print(json.dumps(result, indent=4))
